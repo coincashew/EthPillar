@@ -1,7 +1,11 @@
 # EthPillar
 
-EthPillar simplifies the maintenance of your Ethereum validator node.
-Via a simple text based menu, you can start/stop/update consensus/execution and mevboost clients, as well as perform system administration activites.
+EthPillar: a simple UI for Ethereum Validator Node Management
+
+Why use EthPillar?
+* Fast Updates: Quickly find and download the latest consensus/execution release
+* Ease of use: No more remembering CLI commands required. Access common node operations via a simple text menu.
+* Compatiblity: Behind the scenes, node commands and file structure are identical to V2 staking setups. 
 
 **NOTE:** [Requires a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)
 
