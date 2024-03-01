@@ -7,7 +7,7 @@
 #!/bin/bash
 
 function promptYesNo(){
-    if whiptail --title "Uninstall Staking Node" --yesno "This will remove all data and files related to this staking node.\nAre you sure you want to remove all files?\n(consensus/execution/validator/mevboost)" 9 78; then
+    if whiptail --title "Uninstall Staking Node" --defaultno --yesno "This will remove all data and files related to this staking node.\nAre you sure you want to remove all files?\n(consensus/execution/validator/mevboost)" 9 78; then
   		uninstallCL
   		uninstallEL
   		uninstallVC
