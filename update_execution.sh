@@ -68,6 +68,7 @@ function updateClient(){
 		unzip -o nethermind.zip -d $HOME/nethermind
 		rm nethermind.zip
 		sudo systemctl stop execution
+		sudo rm -rf /usr/local/bin/nethermind
 		sudo mv $HOME/nethermind /usr/local/bin/nethermind
 		sudo systemctl start execution
 	    ;;
