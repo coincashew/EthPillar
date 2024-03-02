@@ -7,8 +7,8 @@
 #!/bin/bash
 
 # Install btop process monitoring
-if ! command -v btop &> /dev/null; then
-    sudo apt-get btop -y
+if  ! command -v btop &> /dev/null; then
+    sudo apt-get install btop -y
 fi
 
 # Kill prior session
