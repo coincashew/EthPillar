@@ -1,0 +1,19 @@
+# Customize Default Values if desired
+EL_P2P_PORT=30303
+EL_RPC_PORT=8545
+EL_MAX_PEER_COUNT=50
+CL_P2P_PORT=9000
+CL_REST_PORT=5052
+CL_MAX_PEER_COUNT=100
+JWTSECRET_PATH="/secrets/jwtsecret"
+
+# Graffiti for validator
+GRAFFITI='🏠🥩🪙🛡️'
+
+# ETH address receiving priority fees (tips) and MEV rewards
+FEE_RECIPIENT_ADDRESS=
+
+# Ethereum Clients to be installed
+CONSENSUS_CLIENT=NIMBUS
+EXECUTION_CLIENT=NETHERMIND
+VALIDATOR_CLIENT=NIMBUS

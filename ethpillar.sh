@@ -408,7 +408,7 @@ while true; do
       6)
         # Install btop process monitoring
         if ! command -v btop &> /dev/null; then
-            sudo apt-get btop -y
+            sudo apt-get install btop -y
         fi
         btop
       ;;
@@ -501,6 +501,16 @@ function checkV1StakingSetup(){
   fi
 }
 
+# If no consensus client service is installed, ask to install
+function askInstallNode(){
+  if [[ ! -f /etc/systemd/system/consensus.service ]]; then
+    if whiptail --title "Install Node" --yesno "Would you like to install an Ethereum node?" 8 78; then
+      runScript install-nimbus-nethermind.sh
+    fi
+  fi
+}
+
 checkV1StakingSetup
 setWhiptailColors
+askInstallNode
 menuMain

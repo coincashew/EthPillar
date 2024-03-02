@@ -81,7 +81,7 @@ linux_install_pre() {
     exit_on_error $?
 }
 
-linux_install_client-installer() {
+linux_install_installer() {
     ohai "Cloning ethpillar into ~/git/ethpillar"
     mkdir -p ~/git/ethpillar
     git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar/ 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin main ; git checkout main ; git pull --ff-only ; git reset --hard ; git clean -xdf)
@@ -102,18 +102,14 @@ if [[ "$OS" == "Linux" ]]; then
 ███████╗   ██║   ██║  ██║██║     ██║███████╗███████╗██║  ██║██║  ██║
 ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
                                                           
-                                   - Menu for your node
+                                   - Ethereum Nodes Made Easy
                                    - coincashew.com
     """
-    ohai "This script will install a menu called 'ethpillar' for your node:"
-    echo "curl"
-    echo "git"
-    echo "ccze"
-    echo "ethpillar"
+    ohai "This script will install a node management tool called 'ethpillar'"
 
     wait_for_user
     linux_install_pre
-    linux_install_client-installer
+    linux_install_installer
 
     echo ""
     echo ""
