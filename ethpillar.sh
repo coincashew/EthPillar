@@ -11,7 +11,7 @@
 
 #!/bin/bash
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 menuMain(){
 # Define the options for the main menu
@@ -94,8 +94,8 @@ done
 
 # Runs a script, name is passed as arg $1
 function runScript() {
-    CURRENT_DIR=$(pwd)
-    SCRIPT_PATH="$CURRENT_DIR/$1"
+    BASE_DIR="~/git/ethpillar"
+    SCRIPT_PATH="$BASE_DIR/$1"
 
     if [[ ! -x $SCRIPT_PATH ]]; then
         chmod +x $SCRIPT_PATH
