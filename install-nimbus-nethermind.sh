@@ -105,10 +105,10 @@ linux_update_pip() {
 
 linux_install_validator-install() {
     ohai "Cloning ethpillar into ~/git/ethpillar"
-    # mkdir -p ~/git/ethpillar
-    # git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin master ; git checkout master ; git pull --ff-only ; git reset --hard ; git clean -xdf)
+    mkdir -p ~/git/ethpillar
+    git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin master ; git checkout master ; git pull --ff-only ; git reset --hard ; git clean -xdf)
     ohai "Installing validator-install"
-    $python /shared/ethpillar/deploy-nimbus-nethermind.py
+    $python ~/git/ethpillar/deploy-nimbus-nethermind.py
     exit_on_error $?
 }
 
