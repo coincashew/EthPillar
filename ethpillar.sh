@@ -94,7 +94,7 @@ done
 
 # Runs a script, name is passed as arg $1
 function runScript() {
-    BASE_DIR="~/git/ethpillar"
+    BASE_DIR=$HOME/git/ethpillar
     SCRIPT_PATH="$BASE_DIR/$1"
 
     if [[ ! -x $SCRIPT_PATH ]]; then
