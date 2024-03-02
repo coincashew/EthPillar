@@ -12,6 +12,9 @@
 #!/bin/bash
 
 VERSION="1.1.0"
+BASE_DIR=$HOME/git/ethpillar
+
+cd $BASE_DIR
 
 menuMain(){
 # Define the options for the main menu
@@ -94,7 +97,6 @@ done
 
 # Runs a script, name is passed as arg $1
 function runScript() {
-    BASE_DIR=$HOME/git/ethpillar
     SCRIPT_PATH="$BASE_DIR/$1"
 
     if [[ ! -x $SCRIPT_PATH ]]; then
