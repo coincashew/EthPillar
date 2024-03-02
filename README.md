@@ -1,15 +1,18 @@
 # EthPillar
 
-EthPillar: a simple UI for Ethereum Validator Node Management
+EthPillar: a simple TUI for Validator Node Management
 
-Why use EthPillar?
-* Fast Updates: Quickly find and download the latest consensus/execution release
-* Ease of use: No more remembering CLI commands required. Access common node operations via a simple text menu.
-* Compatiblity: Behind the scenes, node commands and file structure are identical to V2 staking setups. 
+😄 Friendly Node Installer: No node yet? Helps you installs a Ethereum node stack in a jiffy.
 
-**NOTE:** [Requires a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)
+💾 Ease of use: No more remembering CLI commands required. Access common node operations via a simple text menu.
 
-The code is open source.
+🦉 Fast Updates: Quickly find and download the latest consensus/execution release. Less downtime!
+
+🎉Compatibility: Behind the scenes, node commands and file structure are identical to V2 staking setups. {% endhint %}
+
+**NOTE:** [Requires a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet) If no staking setup is installed, EthPillar offers a quickstart to install a full Nethermind EL/ Nimbus CL node with Nimbus validator and mevboost enabled.
+
+The code is open source. Your Pull requests and suggestions welcome!
 
 ## Install Unstructions:
 
@@ -42,3 +45,11 @@ sudo ln -s ~/git/ethpillar/ethpillar.sh /usr/local/bin/ethpillar
 ```bash
 ethpillar
 ```
+## Public Goods Support:
+👍Are you a EthPillar Enjooyer? [Support this public good by purchasing a limited edition POAP!](https://checkout.poap.xyz/169495)
+
+![Your EthPillar Enjoyoor POAP!](https://github.com/coincashew/coincashew/blob/7c9d3788e191d77810471edb7307637bc7b1726f/.gitbook/assets/3adf69e9-fb1b-4665-8645-60d71dd01a7b.png)
+
+Purchase link: https://checkout.poap.xyz/169495
+
+ETH accepted on Mainnet, Arbitrum, Base, Optimism. 🙏
