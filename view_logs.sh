@@ -8,7 +8,7 @@
 
 # Install btop process monitoring
 if ! command -v btop &> /dev/null; then
-   sudo apt-get btop -y
+   sudo apt-get install btop -y
 fi
 
 # Bool for validator
