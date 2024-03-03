@@ -1,12 +1,10 @@
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
-# Source: https://github.com/coincashew
+# Source: https://github.com/coincashew/ethpillar
 #
 # Made for home and solo stakers 🏠🥩
 
 #!/bin/bash
-
-BASE_DIR=$(pwd)
 
 function getCurrentVersion(){
     CL_INSTALLED=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/version'   -H 'accept: application/json' | jq '.data.version')

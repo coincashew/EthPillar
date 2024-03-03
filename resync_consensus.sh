@@ -1,12 +1,10 @@
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
-# Source: https://github.com/coincashew
+# Source: https://github.com/coincashew/ethpillar
 #
 # Made for home and solo stakers 🏠🥩
 
 #!/bin/bash
-
-BASE_DIR=$(pwd)
 
 function getClient(){
 	CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
@@ -26,12 +24,22 @@ function promptViewLogs(){
 }
 
 function getNetwork(){
-	# Get network name from consensus
-	NETWORK=$(cat /etc/systemd/system/consensus.service | grep Description= |  sed 's/.*for \(.*\)$/\1/')
+    # Get network name from execution client
+    result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' localhost:8545 | jq -r '.result')
+    case $result in
+    1)
+      NETWORK="Mainnet"
+      ;;
+    17000)
+      NETWORK="Holesky"
+      ;;
+    11155111)
+      NETWORK="Sepolia"
+      ;;
+    esac
 }
 
 function resyncClient(){
-	clear
 	case $CL in
 	  Lighthouse)
 		sudo systemctl stop consensus

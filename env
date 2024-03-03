@@ -7,7 +7,7 @@ CL_REST_PORT=5052
 CL_MAX_PEER_COUNT=100
 JWTSECRET_PATH="/secrets/jwtsecret"
 
-# Graffiti for validator
+# Graffiti for validator. Maximum length is 16 characters.
 GRAFFITI='🏠🥩🪙🛡️'
 
 # ETH address receiving priority fees (tips) and MEV rewards
