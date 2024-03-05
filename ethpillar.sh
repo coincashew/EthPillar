@@ -11,7 +11,7 @@
 
 #!/bin/bash
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 BASE_DIR=$HOME/git/ethpillar
 
 cd $BASE_DIR
@@ -246,7 +246,9 @@ while true; do
       4 "Restart validator"
       5 "Edit configuration"
       - ""
-      6 "Back to main menu"
+      6 "Generate / Import Validator Keys"
+      - ""
+      7 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -283,6 +285,9 @@ while true; do
         fi
         ;;
       6)
+        runScript manage_validator_keys.sh
+        ;;
+      7)
         break
         ;;
     esac
@@ -457,13 +462,13 @@ function getBackTitle(){
     # Latest block
     latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' localhost:8545 | jq -r '.result')
     LB=$(printf '%d' "$latest_block_number")
-    if [[ ! $LB  ]]; then 
+    if [[ ! $LB  ]]; then
       LB="N/A"
     fi
 
     # Latest slot
     LS=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/syncing'   -H 'accept: application/json' | jq -r '.data.head_slot')
-    if [[ ! $LS ]]; then 
+    if [[ ! $LS ]]; then
       LS="N/A"
     fi
 
