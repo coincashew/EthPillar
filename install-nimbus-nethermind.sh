@@ -151,7 +151,7 @@ if [[ "$OS" == "Linux" ]]; then
     echo ""
     echo "######################################################################"
     echo "##                                                                  ##"
-    echo "##                      VALIDATOR INSTALL COMPLETE                  ##"
+    echo "##      VALIDATOR INSTALL COMPLETE   To manage, use "ethpillar"     ##"
     echo "##                                                                  ##"
     echo "######################################################################"
     echo ""
