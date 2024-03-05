@@ -136,16 +136,22 @@ eth_network = eth_network.lower()
 
 Screen().clear()
 
-# Ask if wants to install a validator
-answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Install a Validator? If no, this will install a node only.")
-if not answer:
+# Sepolia is a permissioned validator set, default to NODE_ONLY
+if eth_network == "sepolia":
     NODE_ONLY=True
     MEVBOOST_ENABLED=False
     VALIDATOR_ENABLED=False
 else:
-    NODE_ONLY=False
-    MEVBOOST_ENABLED=True
-    VALIDATOR_ENABLED=True
+    # Ask to install a validator
+    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Install a Validator? If no, this will install a node only.")
+    if not answer:
+        NODE_ONLY=True
+        MEVBOOST_ENABLED=False
+        VALIDATOR_ENABLED=False
+    else:
+        NODE_ONLY=False
+        MEVBOOST_ENABLED=True
+        VALIDATOR_ENABLED=True
 
 def is_valid_eth_address(address):
     pattern = re.compile("^0x[a-fA-F0-9]{40}$")
