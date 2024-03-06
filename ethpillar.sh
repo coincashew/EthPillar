@@ -383,13 +383,13 @@ while true; do
         ;;
       2)
         sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
-        sudo reboot now
+        if whiptail --title "Reboot" --defaultno --yesno "Are you sure you want to reboot?" 8 78; then sudo reboot now; fi
         ;;
       3)
-        sudo reboot now
+        if whiptail --title "Reboot" --defaultno --yesno "Are you sure you want to reboot?" 8 78; then sudo reboot now; fi
         ;;
       4)
-        sudo shutdown now
+        if whiptail --title "Shutdown" --defaultno --yesno "Are you sure you want to shutdown?" 8 78; then sudo shutdown now; fi
         ;;
       5)
         CL=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/version'   -H 'accept: application/json' | jq -r '.data.version')
