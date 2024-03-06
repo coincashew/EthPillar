@@ -1,6 +1,7 @@
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
+# Description: EthPillar is a one-liner setup tool and node management TUI
 #
 # Made for home and solo stakers 🏠🥩
 
@@ -11,20 +12,24 @@
 
 #!/bin/bash
 
-VERSION="1.2.0"
+VERSION="1.2.1"
 BASE_DIR=$HOME/git/ethpillar
 
-cd $BASE_DIR
+# Load functions
+source $BASE_DIR/functions.sh && cd $BASE_DIR
 
 menuMain(){
+
 # Define the options for the main menu
 OPTIONS=(
   1 "View Logs (Exit: CTRL+B D)"
   - ""
   3 "Execution Client"
   4 "Consensus Client"
-  5 "Validator Client"
-  6 "MEV-Boost"
+)
+test -f /etc/systemd/system/validator.service && OPTIONS+=(5 "Validator Client")
+test -f /etc/systemd/system/mevboost.service && OPTIONS+=(6 "MEV-Boost")
+OPTIONS+=(
   - ""
   7 "Start all clients"
   8 "Stop all clients"
@@ -70,20 +75,20 @@ while true; do
       7)
         sudo service execution start
         sudo service consensus start
-        sudo service validator start
-        sudo service mevboost start
+        test -f /etc/systemd/system/validator.service && sudo service validator start
+        test -f /etc/systemd/system/mevboost.service && sudo service mevboost start
         ;;
       8)
         sudo service execution stop
         sudo service consensus stop
-        sudo service validator stop
-        sudo service mevboost stop
+        test -f /etc/systemd/system/validator.service && sudo service validator stop
+        test -f /etc/systemd/system/mevboost.service && sudo service mevboost stop
         ;;
       9)
         sudo service execution restart
         sudo service consensus restart
-        sudo service validator restart
-        sudo service mevboost restart
+        test -f /etc/systemd/system/validator.service && sudo service validator restart
+        test -f /etc/systemd/system/mevboost.service && sudo service mevboost restart
         ;;
       10)
         submenuAdminstrative
@@ -93,22 +98,6 @@ while true; do
         ;;
     esac
 done
-}
-
-# Runs a script, name is passed as arg $1
-function runScript() {
-    SCRIPT_PATH="$BASE_DIR/$1"
-
-    if [[ ! -x $SCRIPT_PATH ]]; then
-        chmod +x $SCRIPT_PATH
-    fi
-
-    if [[ -f $SCRIPT_PATH && -x $SCRIPT_PATH ]]; then
-      $SCRIPT_PATH
-    else
-        echo "Error: $SCRIPT_PATH not run. Check permissions or path."
-        exit 1
-    fi
 }
 
 submenuExecution(){
@@ -128,7 +117,7 @@ while true; do
     )
 
     # Display the submenu and get the user's choice
-    SUBCHOICE=$(whiptail --clear \
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
       --title "Execution Client" \
       --menu "Choose one of the following options:" \
@@ -190,7 +179,7 @@ while true; do
     )
 
     # Display the submenu and get the user's choice
-    SUBCHOICE=$(whiptail --clear \
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
       --title "Consensus Client" \
       --menu "Choose one of the following options:" \
@@ -252,7 +241,7 @@ while true; do
     )
 
     # Display the submenu and get the user's choice
-    SUBCHOICE=$(whiptail --clear \
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
       --title "Validator" \
       --menu "Choose one of the following options:" \
@@ -310,7 +299,7 @@ while true; do
     )
 
     # Display the submenu and get the user's choice
-    SUBCHOICE=$(whiptail --clear \
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
       --title "MEV-Boost" \
       --menu "Choose one of the following options:" \
@@ -364,16 +353,18 @@ while true; do
       - ""
       5 "View software versions"
       6 "View cpu/ram/disk/net (btop)"
-      7 "Update EthPillar"
-      8 "About EthPillar"
+      7 "View general node information"
       - ""
-      9 "Uninstall node"
+      10 "Update EthPillar"
+      11 "About EthPillar"
+      - ""
+      20 "Uninstall node"
       - ""
       99 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
-    SUBCHOICE=$(whiptail --clear \
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
       --title "System Administration" \
       --menu "Choose one of the following options:" \
@@ -420,13 +411,21 @@ while true; do
         btop
       ;;
       7)
-        cd ~/git/ethpillar ; git fetch origin main ; git checkout main ; git pull --ff-only ; git reset --hard ; git clean -xdf
+        print_node_info
+      ;;
+      10)
+        cd $BASE_DIR ; git fetch origin main ; git checkout main ; git pull --ff-only ; git reset --hard ; git clean -xdf
         whiptail --title "Updated EthPillar" --msgbox "Restart EthPillar for latest version." 10 78
         ;;
-      8)
-        whiptail --title "About EthPillar" --msgbox "🫰 Created as a Public Good by CoinCashew.eth since Pre-Genesis 2020\n🫶 Make improvements and suggestions on GitHub: https://github.com/coincashew/ethpillar\n🙌 Ask questions on Discord: https://discord.gg/w8Bx8W2HPW\n" 10 78
+      11)
+        MSG_ABOUT="🫰 Created as a Public Good by CoinCashew.eth since Pre-Genesis 2020
+        \n🫶 Make improvements and suggestions on GitHub: https://github.com/coincashew/ethpillar
+        \n🙌 Ask questions on Discord: https://discord.gg/w8Bx8W2HPW
+        \nIf you'd like to support this public goods project, find us on the next Gitcoin Grants.
+        \nOur donation address is 0xCF83d0c22dd54475cC0C52721B0ef07d9756E8C0 or coincashew.eth"
+        whiptail --title "About EthPillar" --msgbox "$MSG_ABOUT" 20 78
         ;;
-      9)
+      20)
         runScript uninstall.sh
         ;;
       99)
@@ -436,29 +435,9 @@ while true; do
 done
 }
 
-function getNetwork(){
-    # Get network name from execution client
-    result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' localhost:8545 | jq -r '.result')
-    case $result in
-    1)
-      NETWORK="Mainnet"
-      ;;
-    17000)
-      NETWORK="Holesky"
-      ;;
-    11155111)
-      NETWORK="Sepolia"
-      ;;
-    esac
-}
-
 function getBackTitle(){
     getNetwork
-    # Read clients from systemd config files
-    EL=$(cat /etc/systemd/system/execution.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
-    CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
-    VC=$(cat /etc/systemd/system/validator.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
-
+    getClient
     # Latest block
     latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' localhost:8545 | jq -r '.result')
     LB=$(printf '%d' "$latest_block_number")
@@ -482,23 +461,11 @@ function getBackTitle(){
     fi
 
     # Format backtitle
-    BACKTITLE="$NETWORK | Block $LB | Slot $LS | Gas $GP Gwei | $CL-$EL-$VC VC | Public Goods by CoinCashew.eth"
-}
-
-function setWhiptailColors(){
-    export NEWT_COLORS='root=,black
-border=green,black
-title=green,black
-roottext=red,black
-window=red,black
-textbox=white,black
-button=black,green
-compactbutton=white,black
-listbox=white,black
-actlistbox=black,white
-actsellistbox=black,green
-checkbox=green,black
-actcheckbox=black,green'
+    EL_TEXT=$(if systemctl is-active --quiet execution ; then printf "Block $LB | Gas $GP Gwei" ; else printf "Offline EL" ; fi)
+    CL_TEXT=$(if systemctl is-active --quiet consensus ; then printf "Slot $LS" ; else printf "Offline CL" ; fi)
+    VC_TEXT=$(if systemctl is-active --quiet validator && systemctl is-enabled --quiet validator; then printf "-$VC VC" ; fi)
+    NETWORK_TEXT=$(if systemctl is-active --quiet execution ; then printf "$NETWORK |" ; fi)
+    BACKTITLE="$NETWORK_TEXT $EL_TEXT | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
 }
 
 function checkV1StakingSetup(){
@@ -511,7 +478,7 @@ function checkV1StakingSetup(){
 # If no consensus client service is installed, ask to install
 function askInstallNode(){
   if [[ ! -f /etc/systemd/system/consensus.service ]]; then
-    if whiptail --title "Install Node" --yesno "Would you like to install an Ethereum node?" 8 78; then
+    if whiptail --title "Install Node" --yesno "Would you like to install an Ethereum node (Nimbus CL & Nethermind EL)?" 8 78; then
       runScript install-nimbus-nethermind.sh
     fi
   fi

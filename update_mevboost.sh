@@ -1,16 +1,20 @@
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
-# Source: https://github.com/coincashew
+# Source: https://github.com/coincashew/ethpillar
+# Description: EthPillar is a one-liner setup tool and node management TUI
 #
 # Made for home and solo stakers 🏠🥩
 
 #!/bin/bash
 
-BASE_DIR=$(pwd)
+BASE_DIR=$HOME/git/ethpillar
+
+# Load functions
+source $BASE_DIR/functions.sh
 
 function getCurrentVersion(){
     INSTALLED=$(mev-boost --version)
-    #Find version in format #.#.# 
+    #Find version in format #.#.#
     if [[ $INSTALLED ]] ; then
         VERSION=$(echo $INSTALLED | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
 	else
@@ -26,7 +30,7 @@ function promptYesNo(){
 }
 
 function promptViewLogs(){
-    if whiptail --title "Update complete - $CL" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
+    if whiptail --title "Update complete" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
   		sudo bash -c 'journalctl -fu mevboost | ccze'
 	fi
 }
@@ -45,7 +49,7 @@ function updateClient(){
 
 	cd $HOME
 	# Download
-	wget -O  mev-boost.tar.gz $BINARIES_URL
+	wget -O mev-boost.tar.gz $BINARIES_URL
 	# Untar
 	tar -xzvf mev-boost.tar.gz -C $HOME
 	# Cleanup
@@ -53,22 +57,6 @@ function updateClient(){
 	sudo systemctl stop mevboost
 	sudo mv $HOME/mev-boost /usr/local/bin
 	sudo systemctl start mevboost
-}
-
-function setWhiptailColors(){
-    export NEWT_COLORS='root=,black
-border=green,black
-title=green,black
-roottext=red,black
-window=red,black
-textbox=white,black
-button=black,green
-compactbutton=white,black
-listbox=white,black
-actlistbox=black,white
-actsellistbox=black,green
-checkbox=green,black
-actcheckbox=black,green'
 }
 
 setWhiptailColors

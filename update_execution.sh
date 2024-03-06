@@ -1,16 +1,20 @@
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
-# Source: https://github.com/coincashew
+# Source: https://github.com/coincashew/ethpillar
+# Description: EthPillar is a one-liner setup tool and node management TUI
 #
 # Made for home and solo stakers 🏠🥩
 
 #!/bin/bash
 
-BASE_DIR=$(pwd)
+BASE_DIR=$HOME/git/ethpillar
+
+# Load functions
+source $BASE_DIR/functions.sh
 
 function getCurrentVersion(){
 	 EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' localhost:8545 | jq '.result')
-    #Find version in format #.#.# 
+    #Find version in format #.#.#
     if [[ $EL_INSTALLED ]] ; then
         VERSION=$(echo $EL_INSTALLED | sed 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
 	else
@@ -80,7 +84,6 @@ function updateClient(){
 		cd $HOME
 		wget -O besu.tar.gz $BINARIES_URL
 		tar -xzvf besu.tar.gz -C $HOME
-		
 		sudo mv $HOME/besu-* besu
 		sudo systemctl stop execution
 		sudo rm -rf /usr/local/bin/besu
@@ -126,22 +129,6 @@ function updateClient(){
 		sudo systemctl start execution
 	    ;;
 	  esac
-}
-
-function setWhiptailColors(){
-    export NEWT_COLORS='root=,black
-border=green,black
-title=green,black
-roottext=red,black
-window=red,black
-textbox=white,black
-button=black,green
-compactbutton=white,black
-listbox=white,black
-actlistbox=black,white
-actsellistbox=black,green
-checkbox=green,black
-actcheckbox=black,green'
 }
 
 setWhiptailColors

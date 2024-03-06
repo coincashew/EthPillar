@@ -15,7 +15,7 @@ OFFLINE_MODE=false
 # Base directory with scripts
 BASE_DIR=$HOME/git/ethpillar
 # Load functions
-. $BASE_DIR/functions.sh
+source $BASE_DIR/functions.sh
 
 function downloadStakingDepositCLI(){
     if [ -d $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli ]; then
@@ -59,15 +59,14 @@ function generateNewValidatorKeys(){
           "mainnet" "Ethereum. Real ETH. Real staking rewards." ON \
           "holesky" "Testnet. Practice your staking setup here." OFF \
           3>&1 1>&2 2>&3)
-    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then
-        exit
-    fi
-    if network_isConnected; then
-        whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78
-    fi
+
+    if [ -z $NETWORK ]; then exit; fi # pressed cancel
+    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then exit; fi
+    if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
 
     while true; do
         ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+        if [ -z $ETHADDRESS ]; then exit; fi #pressed cancel
         if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
             break
         else
@@ -113,16 +112,15 @@ function addRestoreValidatorKeys(){
           "mainnet" "Real ETH. Real staking rewards." ON \
           "holesky" "Testnet. Practice your staking setup here." OFF \
           3>&1 1>&2 2>&3)
-    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then
-            exit
-    fi
-    if network_isConnected; then
-        whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78
-    fi
+
+    if [ -z $NETWORK ]; then exit; fi # pressed cancel
+    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then exit; fi
+    if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
 
     while true; do
         ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-        if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+        if [ -z $ETHADDRESS ]; then exit; fi #pressed cancel
+        if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then 
             break
         else
             whiptail --title "Error" --msgbox "Invalid ETH address. Try again." 8 78
@@ -213,16 +211,16 @@ function loadKeys(){
      sudo systemctl start validator
      ohai "Starting validator"
      #Rename Imported Keys Dir
-     KEYFOLDER=${KEYPATH}_Imported_On_$(date +%F_%H-%M-%S)
+     KEYFOLDER=${KEYPATH}_$(date +%F_%H-%M-%S)
      mv $KEYPATH $KEYFOLDER
      getLAUNCHPAD_URL
-     MSG_LAUNCHPAD="Visit the Launchpad: $LAUNCHPAD_URL
-\nUpload your deposit_data-#########.json found in the directory:
+     MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
+\n2) Upload your deposit_data-#########.json found in the directory:
 \n$KEYFOLDER
-\nConnect the Launchpad with your wallet, review and accept terms.
-\nConfirm the transaction(s). There's one deposit transaction for each validator."
+\n3) Connect the Launchpad with your wallet, review and accept terms.
+\n4) Complete the ETH deposit transaction(s). One transaction for each validator."
      #generate listing from api, show output
-     whiptail --title "Upload Deposit Data File to Launchpad" --msgbox "$MSG_LAUNCHPAD" 19 78
+     whiptail --title "Next Steps: Upload Deposit Data File to Launchpad" --msgbox "$MSG_LAUNCHPAD" 19 78
      ohai "Finished loading keys. Press enter to continue."
      read
      promptViewLogs
@@ -244,7 +242,7 @@ function getLAUNCHPAD_URL(){
 }
 
 function promptViewLogs(){
-    if whiptail --title "Validator keys imported - $VC" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
+    if whiptail --title "Validator Keys Imported - $VC" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
         sudo bash -c 'journalctl -fu validator | ccze'
     fi
 }
@@ -287,7 +285,7 @@ OPTIONS=(
 
 while true; do
     # Display the main menu and get the user's choice
-    CHOICE=$(whiptail --clear --cancel-button "Quit"\
+    CHOICE=$(whiptail --clear --cancel-button "Back"\
       --backtitle "Public Goods by Coincashew.eth" \
       --title "EthPillar - Validator Key Management" \
       --menu "Choose a category:" \
@@ -314,22 +312,6 @@ while true; do
         ;;
     esac
 done
-}
-
-function setWhiptailColors(){
-    export NEWT_COLORS='root=,black
-border=green,black
-title=green,black
-roottext=red,black
-window=red,black
-textbox=white,black
-button=black,green
-compactbutton=white,black
-listbox=white,black
-actlistbox=black,white
-actsellistbox=black,green
-checkbox=green,black
-actcheckbox=black,green'
 }
 
 setWhiptailColors
