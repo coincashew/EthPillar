@@ -75,7 +75,7 @@ ohai() {
 
 linux_install_pre() {
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze jq
+    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze jq tmux
     exit_on_error $?
 }
 
@@ -138,6 +138,7 @@ if [[ "$OS" == "Linux" ]]; then
     echo "jq"    
     echo "curl"
     echo "ccze"
+    echo "tmux"
     echo "python3-tk"
     echo "python3-pip"
     echo "validator-install"
