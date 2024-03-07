@@ -394,7 +394,7 @@ while true; do
       5)
         CL=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/version'   -H 'accept: application/json' | jq -r '.data.version')
         EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' localhost:8545 | jq -r '.result')
-        MB=$(mev-boost --version | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+        MB=$($(test -f /etc/systemd/system/mevboost.service && if systemctl is-active --quiet mevboost ; then $(mev-boost --version | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/') ; fi) || printf "Not Installed")
         if [[ ! $CL ]] ; then
           CL="Not running or still starting up."
         fi

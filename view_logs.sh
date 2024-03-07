@@ -15,7 +15,7 @@ fi
 hasValidator=false
 
 # Check for presense of validator
-if [ -f  /etc/systemd/system/validator.service ]; then
+if [ -f /etc/systemd/system/validator.service ]; then
    hasValidator=true
 fi
 
@@ -23,7 +23,7 @@ fi
 tmux kill-session -t logs
 
 # Create panes for validator node or non-staking node
-if [[ $hasValidator = false ]]; then
+if [ $hasValidator = false ]; then
    tmux new-session -d -s logs \; \
         send-keys 'journalctl -fu consensus | ccze' C-m \; \
         split-window -v \; \
