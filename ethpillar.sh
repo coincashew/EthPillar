@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.1"
+VERSION="1.2.2"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -36,6 +36,7 @@ OPTIONS+=(
   9 "Restart all clients"
   - ""
   10 "System Administration"
+  11 "Tools"
 )
 
 while true; do
@@ -92,6 +93,9 @@ while true; do
         ;;
       10)
         submenuAdminstrative
+        ;;
+      11)
+        submenuTools
         ;;
       99)
         break
@@ -347,13 +351,12 @@ while true; do
     # Define the options for the submenu
     SUBOPTIONS=(
       1 "Update system"
-      2 "Update system && restart system"
-      3 "Restart system"
-      4 "Shutdown system"
+      2 "Restart system"
+      3 "Shutdown system"
       - ""
-      5 "View software versions"
-      6 "View cpu/ram/disk/net (btop)"
-      7 "View general node information"
+      4 "View software versions"
+      5 "View cpu/ram/disk/net (btop)"
+      6 "View general node information"
       - ""
       10 "Update EthPillar"
       11 "About EthPillar"
@@ -382,16 +385,12 @@ while true; do
         sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
         ;;
       2)
-        sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
         if whiptail --title "Reboot" --defaultno --yesno "Are you sure you want to reboot?" 8 78; then sudo reboot now; fi
         ;;
       3)
-        if whiptail --title "Reboot" --defaultno --yesno "Are you sure you want to reboot?" 8 78; then sudo reboot now; fi
-        ;;
-      4)
         if whiptail --title "Shutdown" --defaultno --yesno "Are you sure you want to shutdown?" 8 78; then sudo shutdown now; fi
         ;;
-      5)
+      4)
         CL=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/version'   -H 'accept: application/json' | jq -r '.data.version')
         EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' localhost:8545 | jq -r '.result')
         MB=$($(test -f /etc/systemd/system/mevboost.service && if systemctl is-active --quiet mevboost ; then $(mev-boost --version | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/') ; fi) || printf "Not Installed")
@@ -403,7 +402,7 @@ while true; do
         fi
         whiptail --title "Installed versions" --msgbox "Consensus client: $CL\nExecution client: $EL\nMev-boost: $MB" 10 78
         ;;
-      6)
+      5)
         # Install btop process monitoring
         if ! command -v btop &> /dev/null; then
             sudo apt-get install btop -y
@@ -427,6 +426,43 @@ while true; do
         ;;
       20)
         runScript uninstall.sh
+        ;;
+      99)
+        break
+        ;;
+    esac
+done
+}
+
+
+submenuTools(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+
+      1 "EL: Switch Execution Clients"
+      - ""
+      99 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Tools" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
         ;;
       99)
         break
