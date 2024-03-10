@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.2"
+VERSION="1.2.3"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -331,7 +331,7 @@ while true; do
         ;;
       5)
         sudo nano /etc/systemd/system/mevboost.service
-        if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart MEV-Boost" 78; then
+        if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart MEV-Boost" 8 78; then
           sudo systemctl daemon-reload && sudo service mevboost restart
         fi
         ;;

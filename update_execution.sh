@@ -79,7 +79,7 @@ function updateClient(){
 	  Besu)
 	    RELEASE_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
 		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
-		BINARIES_URL="https://hyperledger.jfrog.io/hyperledger/besu-binaries/besu/$TAG/besu-$TAG.tar.gz"
+		BINARIES_URL="https://github.com/hyperledger/besu/releases/download/$TAG/besu-$TAG.tar.gz"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O besu.tar.gz $BINARIES_URL

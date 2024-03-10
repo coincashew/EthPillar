@@ -75,7 +75,7 @@ ohai() {
 
 linux_install_pre() {
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze jq tmux
+    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze jq tmux bc
     exit_on_error $?
 }
 
@@ -113,6 +113,7 @@ linux_install_validator-install() {
     $python ~/git/ethpillar/deploy-nimbus-nethermind.py
     ohai "Allowing user to view journalctl logs"
     sudo usermod -a -G systemd-journal $USER
+    ohai "Install complete!"
     exit_on_error $?
 }
 
@@ -138,7 +139,7 @@ if [[ "$OS" == "Linux" ]]; then
                                    - coincashew.com
     """
     ohai "This script will install a Nimbus-Nethermind Ethereum node:"
-    echo "git jq curl ccze tmux"
+    echo "git jq curl ccze tmux bc"
     echo "python3-tk python3-pip python3-venv"
     echo "validator-install"
 
@@ -151,7 +152,7 @@ if [[ "$OS" == "Linux" ]]; then
     echo ""
     echo "######################################################################"
     echo "##                                                                  ##"
-    echo "##      VALIDATOR INSTALL COMPLETE   To manage, use "ethpillar"     ##"
+    echo "##      VALIDATOR INSTALL COMPLETE   To manage, use \"ethpillar\"     ##"
     echo "##                                                                  ##"
     echo "######################################################################"
     echo ""
