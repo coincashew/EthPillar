@@ -77,7 +77,7 @@ ohai() {
 
 linux_install_pre() {
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze
+    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux
     exit_on_error $?
 }
 
@@ -118,7 +118,7 @@ if [[ "$OS" == "Linux" ]]; then
     echo ""
     echo "######################################################################"
     echo "##                                                                  ##"
-    echo "##           INSTALL COMPLETE - To run, type "ethpillar"            ##"
+    echo "##           INSTALL COMPLETE - To run, type \"ethpillar\"            ##"
     echo "##                                                                  ##"
     echo "######################################################################"
     echo ""

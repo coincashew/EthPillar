@@ -155,6 +155,7 @@ getClient(){
 
 # Get list of validator public keys
 getPubKeys(){
+   NETWORK=$(echo $NETWORK | tr "[:upper:]" "[:lower:]")
    case $CL in
       Lighthouse)
         TEMP=$(/usr/local/bin/lighthouse account validator list --network $NETWORK  --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
@@ -162,7 +163,7 @@ getPubKeys(){
       ;;
      Lodestar)
         cd /usr/local/bin/lodestar
-        LIST=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --network $NETWORK  --dataDir /var/lib/lodestar/validators | grep -Eo '0x[a-fA-F0-9]{96}')
+        TEMP=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --network $NETWORK  --dataDir /var/lib/lodestar/validators | grep -Eo '0x[a-fA-F0-9]{96}')
         convertLIST
       ;;
      Teku)
@@ -172,8 +173,9 @@ getPubKeys(){
         test -f /etc/systemd/system/validator.service && teku_cmd="ls /var/lib/teku_validator/validator_keys/*.json"
         for json in $(sudo -u validator bash -c '$teku_cmd')
         do
-          LIST+=(0x$(sudo -u validator bash -c "cat $json | jq -r '.pubkey'"))
+          TEMP+=(0x$(sudo -u validator bash -c "cat $json | jq -r '.pubkey'"))
         done
+        convertLIST
       ;;
      Nimbus)
         # Command if combined CL+VC
