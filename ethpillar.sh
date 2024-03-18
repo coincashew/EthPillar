@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.4"
+VERSION="1.2.5"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -440,8 +440,8 @@ while true; do
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
-
-      1 "EL: Switch Execution Clients"
+      1 "Port Checker: Test for Incoming Connections"
+      9 "EL: Switch Execution Clients"
       - ""
       99 "Back to main menu"
     )
@@ -461,7 +461,10 @@ while true; do
 
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
-      1)
+      1) 
+        checkOpenPorts
+        ;;
+      9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
         ;;
       99)

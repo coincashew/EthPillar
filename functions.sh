@@ -205,3 +205,38 @@ showPubkeys(){
    ohai "==================================="
    ohai ${LIST[@]}
 }
+
+# Checks for open ports. Diagnose peering/router/port-forwarding issues.
+checkOpenPorts(){
+    clear
+    ohai "Checking for Open Ports:"
+    ohai "- Properly configuring open ports will improve validator performance and network health."
+    ohai "- Test if ports (e.g. 30303, 9000) are accessible from the Internet."
+    ohai "- Test if port fowarding and/or firewalls are properly configured."
+    ohai "- Replace 30303 and 9000 with custom or client-specific port numbers as needed."
+
+    # Read the ports from user input
+    read -r -p "Enter your Consensus Client's P2P port (press Enter to use default 9000): " CL_PORT
+    CL_PORT=${CL_PORT:-9000}
+    ohai "Using port ${CL_PORT} for Consensus Client's P2P port."
+    read -r -p "Enter your Execution Client's P2P port (press Enter to use default 30303): " EL_PORT
+    EL_PORT=${EL_PORT:-30303}
+    ohai "Using port ${EL_PORT} for Execution Client's P2P port."
+
+    # Call port checker
+    ohai "Calling https://eth2-client-port-checker.vercel.app/api/checker?ports=$EL_PORT,$CL_PORT"
+    json=$(curl https://eth2-client-port-checker.vercel.app/api/checker?ports=$EL_PORT,$CL_PORT)
+
+    # Parse JSON using jq and print requester IP
+    ohai "Your IP: $(echo "$json" | jq -r .requester_ip)"
+
+    # Parse JSON using jq and check if any open ports exist
+    if $(echo "$json" | jq -e '.open_ports[]' > /dev/null 2>&1); then
+      ohai "Open ports found:"
+      echo "$json" | jq -r '.open_ports[]' | while read port; do echo $port; done
+    else
+      ohai "No open ports found."
+    fi
+    ohai "Press ENTER to finish."
+    read
+}
