@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.5"
+VERSION="1.2.6"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -441,7 +441,11 @@ while true; do
     # Define the options for the submenu
     SUBOPTIONS=(
       1 "Port Checker: Test for Incoming Connections"
+      2 "NCDU: Find large files. Analyze disk usage."
       9 "EL: Switch Execution Clients"
+      - ""
+      10 "Timezone: Update machine's timezone"
+      11 "Locales: Fix terminal formatting issues"
       - ""
       99 "Back to main menu"
     )
@@ -464,8 +468,24 @@ while true; do
       1) 
         checkOpenPorts
         ;;
+      2)
+        findLargestDiskUsage
+        ;;
       9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
+        ;;
+      10)
+        sudo dpkg-reconfigure tzdata
+        ohai "Timezone updated. Press ENTER to continue."
+        read
+        ;;
+      11)
+        sudo update-locale "LANG=en_US.UTF-8"
+        sudo locale-gen --purge "en_US.UTF-8"
+        sudo dpkg-reconfigure --frontend noninteractive locales
+        ohai "Updated locale to en_US.UTF-8"
+        ohai "Logout and login for terminal locale updates to take effect. Press ENTER to continue."
+        read
         ;;
       99)
         break

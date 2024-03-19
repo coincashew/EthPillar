@@ -212,7 +212,7 @@ checkOpenPorts(){
     ohai "Checking for Open Ports:"
     ohai "- Properly configuring open ports will improve validator performance and network health."
     ohai "- Test if ports (e.g. 30303, 9000) are accessible from the Internet."
-    ohai "- Test if port fowarding and/or firewalls are properly configured."
+    ohai "- Test if port forwarding and/or firewalls are properly configured."
     ohai "- Replace 30303 and 9000 with custom or client-specific port numbers as needed."
 
     # Read the ports from user input
@@ -239,4 +239,20 @@ checkOpenPorts(){
     fi
     ohai "Press ENTER to finish."
     read
+}
+
+# Find largest disk usage
+findLargestDiskUsage(){
+  # Install ncdu if not installed
+  if ! command -v ncdu >/dev/null 2>&1 ; then sudo apt-get install ncdu; fi
+  clear
+  # Explain ncdu's purpose
+  ohai "ncdu (NCurses Disk Usage) is a disk usage analysis tool that runs on the Linux command line interface (CLI)."
+  echo "- Provides an interactive, graphical display of your file system's directory content and their respective sizes."
+  echo "- Navigate through your directories to see a detailed breakdown of file and folder sizes in a tree-like hierarchy."
+  echo "- This tool is particularly useful for finding large files or folders that are consuming excessive storage space on your Linux systems."
+  ohai "Press ENTER to run ncdu."
+  read
+  # Run ncdu on root directory
+  ncdu /
 }
