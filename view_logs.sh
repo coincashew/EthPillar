@@ -28,7 +28,7 @@ if [ $hasValidator = false ]; then
         send-keys 'journalctl -fu consensus | ccze' C-m \; \
         split-window -v \; \
         split-window -h \; \
-        send-keys 'btop' C-m \; \
+        send-keys 'btop --utf-force' C-m \; \
         select-pane -t 1 \; \
         send-keys 'journalctl -fu execution | ccze' C-m \;
 else

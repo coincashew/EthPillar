@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.6"
+VERSION="1.2.7"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -409,7 +409,7 @@ while true; do
         fi
         btop
       ;;
-      7)
+      6)
         print_node_info
       ;;
       10)

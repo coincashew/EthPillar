@@ -72,12 +72,15 @@ print_node_info() {
   os_version=$(grep VERSION_ID /etc/os-release | sed 's/VERSION_ID=//g')
   kernel_version=$(uname -r)
   system_uptime=$(uptime | sed 's/.*up \([^,]*\), .*/\1/')
-  consensus_status=$(if systemctl is-active --quiet execution ; then printf "Online" ; else printf "Offline" ; fi)
+  consensus_status=$(if systemctl is-active --quiet consensus ; then printf "Online" ; else printf "Offline" ; fi)
   execution_status=$(if systemctl is-active --quiet execution ; then printf "Online" ; else printf "Offline" ; fi)
-  validator_status=$($(test -f /etc/systemd/system/validator.service && if systemctl is-active --quiet validator ; then printf "Online" ; else printf "Offline" ; fi) || printf "Not Installed")
-  mevboost_status=$($(test -f /etc/systemd/system/mevboost.service && if systemctl is-active --quiet mevboost ; then printf "Online" ; else printf "Offline" ; fi) || printf "Not Installed")
+  validator_status=$(if systemctl is-active --quiet validator ; then printf "Online" ; elif [ -f /etc/systemd/system/validator.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
+  mevboost_status=$(if systemctl is-active --quiet mevboost ; then printf "Online" ; elif [ -f /etc/systemd/system/mevboost.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   ethpillar_commit=$(git -C "${BASE_DIR}" rev-parse HEAD)
   ethpillar_version=$(grep VERSION= $BASE_DIR/ethpillar.sh | sed 's/VERSION=//g')
+
+
+
 
   info_txt=$(cat <<EOF
 Current time     :  $current_time
