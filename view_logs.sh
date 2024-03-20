@@ -15,7 +15,7 @@ fi
 hasValidator=false
 
 # Check for presense of validator
-if [ -f /etc/systemd/system/validator.service ]; then
+if systemctl is-active --quiet validator && systemctl is-enabled --quiet validator; then
    hasValidator=true
 fi
 
@@ -35,7 +35,7 @@ else
    tmux new-session -d -s logs \; \
         send-keys 'journalctl -fu consensus | ccze' C-m \; \
         split-window -h \; \
-        send-keys 'btop' C-m \; \
+        send-keys 'btop --utf-force' C-m \; \
         split-window -v \; \
         send-keys 'journalctl -fu validator | ccze' C-m \; \
         select-pane -t 0 \; \
