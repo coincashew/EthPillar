@@ -72,6 +72,7 @@ print_node_info() {
   os_version=$(grep VERSION_ID /etc/os-release | sed 's/VERSION_ID=//g')
   kernel_version=$(uname -r)
   system_uptime=$(uptime | sed 's/.*up \([^,]*\), .*/\1/')
+  chrony_status=$(if systemctl is-active --quiet chronyd ; then printf "Online" ; else printf "Offline" ; fi)
   consensus_status=$(if systemctl is-active --quiet consensus ; then printf "Online" ; else printf "Offline" ; fi)
   execution_status=$(if systemctl is-active --quiet execution ; then printf "Online" ; else printf "Offline" ; fi)
   validator_status=$(if systemctl is-active --quiet validator ; then printf "Online" ; elif [ -f /etc/systemd/system/validator.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
@@ -79,15 +80,13 @@ print_node_info() {
   ethpillar_commit=$(git -C "${BASE_DIR}" rev-parse HEAD)
   ethpillar_version=$(grep VERSION= $BASE_DIR/ethpillar.sh | sed 's/VERSION=//g')
 
-
-
-
   info_txt=$(cat <<EOF
 Current time     :  $current_time
 OS Description   :  $os_descrip
 OS Version       :  $os_version
 Kernel Version   :  $kernel_version
 Uptime           :  $system_uptime
+Chrony           :  $chrony_status
 Consensus Status :  $consensus_status
 Execution Status :  $execution_status
 Validator Status :  $validator_status
@@ -96,7 +95,7 @@ EthPillar Version:  $ethpillar_version
 EthPillar Commit :  $ethpillar_commit
 EOF
 )
-whiptail --title "General Node Information" --msgbox "$info_txt" 20 78
+whiptail --title "General Node Information" --msgbox "$info_txt" 21 78
 }
 
 setWhiptailColors(){
