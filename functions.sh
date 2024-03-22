@@ -258,3 +258,33 @@ findLargestDiskUsage(){
   # Run ncdu on root directory
   ncdu /
 }
+ 
+#Configure autostart of services
+configureAutoStart(){
+    clear
+    echo "${tty_bold}Enable node to autostart when system boots up? [y|n]${tty_reset}" 
+    read -rsn1 yn
+    if [[ ${yn} = [Yy]* ]]; then
+        sudo systemctl enable execution.service
+        sudo systemctl enable consensus.service
+        if [[ -f /etc/systemd/system/validator.service ]]; then
+          sudo systemctl enable validator.service
+        fi
+        if [[ -f /etc/systemd/system/mevboost.service ]]; then
+          sudo systemctl enable mevboost.service
+        fi
+        ohai "Enabled node's systemd services. Node will autostart at boot."
+    else
+        sudo systemctl disable execution.service
+        sudo systemctl disable consensus.service
+        if [[ -f /etc/systemd/system/validator.service ]]; then
+          sudo systemctl disable validator.service
+        fi
+        if [[ -f /etc/systemd/system/mevboost.service ]]; then
+          sudo systemctl disable mevboost.service
+        fi
+        ohai "Disabled node's systemd services. Node will not autostart at boot."
+    fi
+    ohai "Press ENTER to continue"
+    read
+}

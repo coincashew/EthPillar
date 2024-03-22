@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.7"
+VERSION="1.2.8"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -361,7 +361,8 @@ while true; do
       10 "Update EthPillar"
       11 "About EthPillar"
       - ""
-      20 "Uninstall node"
+      20 "Configure autostart"
+      21 "Uninstall node"
       - ""
       99 "Back to main menu"
     )
@@ -425,6 +426,9 @@ while true; do
         whiptail --title "About EthPillar" --msgbox "$MSG_ABOUT" 20 78
         ;;
       20)
+        configureAutoStart
+      ;;
+      21)
         runScript uninstall.sh
         ;;
       99)
