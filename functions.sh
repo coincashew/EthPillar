@@ -79,6 +79,14 @@ print_node_info() {
   mevboost_status=$(if systemctl is-active --quiet mevboost ; then printf "Online" ; elif [ -f /etc/systemd/system/mevboost.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   ethpillar_commit=$(git -C "${BASE_DIR}" rev-parse HEAD)
   ethpillar_version=$(grep VERSION= $BASE_DIR/ethpillar.sh | sed 's/VERSION=//g')
+  SERVICES=(execution consensus validator mevboost)
+  autostart_status=()
+  for UNIT in ${SERVICES[@]}
+      do
+        if [[ -f /etc/systemd/system/${UNIT}.service ]]; then
+          autostart_status+=("${UNIT}: $(if systemctl is-enabled --quiet ${UNIT}; then printf "✔"; else printf "❌"; fi)")
+        fi
+      done
 
   info_txt=$(cat <<EOF
 Current time     :  $current_time
@@ -87,15 +95,18 @@ OS Version       :  $os_version
 Kernel Version   :  $kernel_version
 Uptime           :  $system_uptime
 Chrony           :  $chrony_status
+
 Consensus Status :  $consensus_status
 Execution Status :  $execution_status
 Validator Status :  $validator_status
 Mevboost Status  :  $mevboost_status
+Autostart at Boot:  ${autostart_status[@]}
+
 EthPillar Version:  $ethpillar_version
 EthPillar Commit :  $ethpillar_commit
 EOF
 )
-whiptail --title "General Node Information" --msgbox "$info_txt" 21 78
+whiptail --title "General Node Information" --msgbox "$info_txt" 22 78
 }
 
 setWhiptailColors(){

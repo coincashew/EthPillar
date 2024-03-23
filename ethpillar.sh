@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.8"
+VERSION="1.2.9"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
