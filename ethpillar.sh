@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.2.9"
+VERSION="1.3.0"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -438,6 +438,74 @@ while true; do
 done
 }
 
+submenuMonitoring(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "View Logs"
+      2 "Start Monitoring"
+      3 "Stop Monitoring"
+      4 "Restart Monitoring"
+      5 "Edit configuration"
+      6 "Edit Prometheus.yml configuration"
+      7 "Update to latest release"
+      8 "Uninstall monitoring"
+      - ""
+      9 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Monitoring - Ethereum Metrics Exporter" \
+      --menu "\nAccess Grafana at: http://127.0.0.1:3000 or http://$ip_current:3000\n\nChoose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        sudo bash -c 'journalctl -fu grafana-server -fu prometheus -fu ethereum-metrics-exporter -fu prometheus-node-exporter -n 100 | ccze'
+        ;;
+      2)
+        sudo systemctl start grafana-server prometheus ethereum-metrics-exporter prometheus-node-exporter
+        ;;
+      3)
+        sudo systemctl stop grafana-server prometheus ethereum-metrics-exporter prometheus-node-exporter
+        ;;
+      4)
+        sudo systemctl restart grafana-server prometheus ethereum-metrics-exporter prometheus-node-exporter
+        ;;
+      5)
+        sudo nano /etc/systemd/system/ethereum-metrics-exporter.service
+        if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart ethereum metrics exporter?" 8 78; then
+          sudo systemctl daemon-reload && sudo service ethereum-metrics-exporter restart
+        fi
+        ;;
+      6)
+        sudo nano /etc/prometheus/prometheus.yml
+        if whiptail --title "Restart services" --yesno "Do you want to restart prometheus?" 8 78; then
+          sudo service prometheus restart
+        fi
+        ;;
+      7)
+        runScript ethereum-metrics-exporter.sh -u
+        ;;
+      8)
+        runScript ethereum-metrics-exporter.sh -r
+        ;;
+      9)
+        break
+        ;;
+    esac
+done
+}
 
 submenuTools(){
 while true; do
@@ -446,6 +514,8 @@ while true; do
     SUBOPTIONS=(
       1 "Port Checker: Test for Incoming Connections"
       2 "NCDU: Find large files. Analyze disk usage."
+      3 "Monitoring: Observe Ethereum Metrics. Explore Dashboards."
+      - ""
       9 "EL: Switch Execution Clients"
       - ""
       10 "Timezone: Update machine's timezone"
@@ -469,11 +539,20 @@ while true; do
 
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
-      1) 
+      1)
         checkOpenPorts
         ;;
       2)
         findLargestDiskUsage
+        ;;
+      3)
+        # Install monitoring if not yet installed
+        if [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]]; then
+          if whiptail --title "Install Monitoring" --yesno "Do you want to install Monitoring?\nIncludes: Ethereum Metrics Exporter, grafana, prometheus" 8 78; then
+            runScript ethereum-metrics-exporter.sh -i
+          fi
+        fi
+        submenuMonitoring
         ;;
       9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"

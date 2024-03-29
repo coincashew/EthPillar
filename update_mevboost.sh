@@ -23,7 +23,7 @@ function getCurrentVersion(){
 }
 
 function promptYesNo(){
-    if whiptail --title "Update mevboost" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nDo you want to update to $TAG?" 10 78; then
+    if whiptail --title "Update mevboost" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update to $TAG?" 15 78; then
   		updateClient
   		promptViewLogs
 	fi
@@ -39,6 +39,7 @@ function getLatestVersion(){
     TAG_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
 	#Get tag name and remove leading 'v'
 	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+	CHANGES_URL="https://github.com/flashbots/mev-boost/releases"
 }
 
 function updateClient(){

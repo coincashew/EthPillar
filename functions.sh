@@ -13,8 +13,8 @@ set -o history -o histexpand
 
 # VARIABLES
 BASE_DIR=$HOME/git/ethpillar
-ip_current=$(ip route get 1 | awk '{print $7}')
-interface_current=$(ip route get 1 | awk '{print $5}')
+ip_current=$(hostname --ip-address)
+interface_current=$(ip route | grep default | sed 's/.*dev \([^ ]*\) .*/\1/')
 network_current="$(ip route | grep $interface_current | grep -v default | awk '{print $1}')"
 
 exit_on_error() {
@@ -125,16 +125,20 @@ checkbox=green,black
 actcheckbox=black,green'
 }
 
-# Runs a script, name is passed as arg $1
+# Runs a script
 runScript() {
-    SCRIPT_PATH="$BASE_DIR/$1"
+    SCRIPT_NAME="$1"
+    SCRIPT_PATH="$BASE_DIR/$SCRIPT_NAME"
 
     if [[ ! -x $SCRIPT_PATH ]]; then
         chmod +x $SCRIPT_PATH
     fi
 
+    shift
+    ARGUMENTS="$*"
+
     if [[ -f $SCRIPT_PATH && -x $SCRIPT_PATH ]]; then
-      $SCRIPT_PATH
+        bash -c "$SCRIPT_PATH $ARGUMENTS"
     else
         echo "Error: $SCRIPT_PATH not run. Check permissions or path."
         exit 1

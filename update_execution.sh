@@ -27,7 +27,7 @@ function getClient(){
 }
 
 function promptYesNo(){
-    if whiptail --title "Update Execution Client - $EL" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nDo you want to update $EL to $TAG?" 10 78; then
+    if whiptail --title "Update Execution Client - $EL" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update $EL to $TAG?" 15 78; then
   		updateClient
   		promptViewLogs
 	fi
@@ -43,18 +43,23 @@ function getLatestVersion(){
 	case $EL in
 	  Nethermind)
 	    TAG_URL="https://api.github.com/repos/NethermindEth/nethermind/releases/latest"
+	    CHANGES_URL="https://github.com/NethermindEth/nethermind/releases"
 	    ;;
 	  Besu)
 	    TAG_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
+	    CHANGES_URL="https://github.com/hyperledger/besu/releases"
 	    ;;
 	  Erigon)
 	    TAG_URL="https://api.github.com/repos/ledgerwatch/erigon/releases/latest"
+	    CHANGES_URL="https://github.com/ledgerwatch/erigon/releases"
 	    ;;
 	  Geth)
-		TAG_URL="https://api.github.com/repos/ethereum/go-ethereum/releases/latest"
+	    TAG_URL="https://api.github.com/repos/ethereum/go-ethereum/releases/latest"
+	    CHANGES_URL="https://github.com/ethereum/go-ethereum/releases"
 		;;
   	  Reth)
 	    TAG_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
+	    CHANGES_URL="https://github.com/paradigmxyz/reth/releases"
 	    ;;
 	  esac
 	#Get tag name and remove leading 'v'
