@@ -77,7 +77,7 @@ ohai() {
 
 linux_install_pre() {
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux
+    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq
     exit_on_error $?
 }
 

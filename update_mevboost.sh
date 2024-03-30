@@ -16,7 +16,7 @@ function getCurrentVersion(){
     INSTALLED=$(mev-boost --version)
     #Find version in format #.#.#
     if [[ $INSTALLED ]] ; then
-        VERSION=$(echo $INSTALLED | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+        VERSION=$(echo $INSTALLED | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')
 	else
 		VERSION="Client not installed."
 	fi
