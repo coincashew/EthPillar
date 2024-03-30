@@ -197,7 +197,7 @@ subprocess.run([f'sudo mkdir -p $(dirname {JWTSECRET_PATH})'], shell=True)
 rand_hex = subprocess.run(['openssl', 'rand', '-hex', '32'], stdout=subprocess.PIPE)
 subprocess.run([f'sudo tee {JWTSECRET_PATH}'], input=rand_hex.stdout, stdout=subprocess.DEVNULL, shell=True)
 
-# Update and upgrade packages 
+# Update and upgrade packages
 subprocess.run(['sudo', 'apt', '-y', '-qq', 'update'])
 subprocess.run(['sudo', 'apt', '-y', '-qq', 'upgrade'])
 
@@ -486,6 +486,9 @@ RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
 ExecStart=/usr/local/bin/nimbus_validator_client --data-dir=/var/lib/nimbus_validator --metrics --metrics-port=8009 --beacon-node=http://127.0.0.1:{CL_REST_PORT} --non-interactive --graffiti={GRAFFITI} {_feeparameters} {_mevparameters}
+
+[Install]
+WantedBy=multi-user.target
     '''
 
     nimbus_temp_file = 'validator_temp.service'
@@ -517,14 +520,14 @@ if MEVBOOST_ENABLED == True:
         '    -min-bid 0.05 \\',
         '    -relay-check \\',
     ]
- 
+
     if eth_network == 'mainnet':
         relay_options=mainnet_relay_options
     elif eth_network == 'holesky':
         relay_options=holesky_relay_options
     else:
         relay_options=sepolia_relay_options
- 
+
     for relay in relay_options:
         relay_line = f'    -relay {relay["url"]} \\'
         mev_boost_service_file_lines.append(relay_line)
@@ -536,7 +539,7 @@ if MEVBOOST_ENABLED == True:
         '',
         '[Install]',
         'WantedBy=multi-user.target',
-    ])        
+    ])
     mev_boost_service_file = '\n'.join(mev_boost_service_file_lines)
 
     mev_boost_temp_file = 'mev_boost_temp.service'
@@ -576,3 +579,12 @@ answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nInstallation successful!\n
 
 if answer:
     os.system(f'sudo systemctl start execution consensus')
+
+answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nConfigure node to autostart:\nWould you like this node to autostart when system boots up?")
+
+if answer:
+    os.system(f'sudo systemctl enable execution consensus')
+    if VALIDATOR_ENABLED == True:
+        os.system(f'sudo systemctl enable validator')
+    if MEVBOOST_ENABLED == True:
+        os.system(f'sudo systemctl enable mevboost')
