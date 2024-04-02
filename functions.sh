@@ -274,7 +274,7 @@ findLargestDiskUsage(){
   ncdu /
 }
  
-#Configure autostart of services
+# Configure autostart of services
 configureAutoStart(){
     clear
     echo "${tty_bold}Enable node to autostart when system boots up? [y|n]${tty_reset}" 
@@ -300,6 +300,47 @@ configureAutoStart(){
         fi
         ohai "Disabled node's systemd services. Node will not autostart at boot."
     fi
+    ohai "Press ENTER to continue"
+    read
+}
+
+# Checks whether a validator pubkey is registered on all relays found in mevboost.service
+checkRelayRegistration(){
+    #Variables
+    URL_PATH="relay/v1/data/validator_registration?pubkey="
+
+    # Check for mevboost installation
+    if [ ! -f /etc/systemd/system/mevboost.service ]; then echo "No relays to check. Mevboost service not installed."; exit 1; fi;
+
+    # Extract relay urls from mevboost.service, store in array
+    RELAYS=($(cat /etc/systemd/system/mevboost.service  | sed "s/ /\n/g" | sed -n "/https.*@/p"))
+    ohai "Found # of relays in mevboost.service:  ${#RELAYS[@]}"
+
+    # Populate pubkeys into LIST
+    getPubKeys
+    if [ ${#LIST[@]} -gt 0 ]; then
+        # Query checks with the first pubkey
+        VALIDATOR_KEY=${LIST[0]}
+    else
+        echo "No validator pubkeys detected."
+        exit 1
+    fi
+    ohai "To check for relay registration, using the first pubkey: $VALIDATOR_KEY"
+
+    for INDEX in ${!RELAYS[@]}
+       do
+          # Strip out the relays domain name
+          URL_BASE=$(echo ${RELAYS[INDEX]} | sed 's/.*@\(.*\)/https:\/\/\1/')
+          # Build relay registration check url
+          URL_CHECK=${URL_BASE}/${URL_PATH}${VALIDATOR_KEY}
+          # Print out if registered to relay or not
+          if [ "$(curl --max-time 10 -Ls ${URL_CHECK} | jq .code)"  = null ]; then
+             echo "Relay $((INDEX+1)): $URL_BASE ✅"
+          else
+             echo "Relay $((INDEX+1)): $URL_BASE ❌"
+          fi
+       done
+    ohai "Relay check complete"
     ohai "Press ENTER to continue"
     read
 }

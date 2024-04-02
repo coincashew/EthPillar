@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.3.1"
+VERSION="1.3.2"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -298,8 +298,9 @@ while true; do
       4 "Restart MEV-Boost"
       5 "Edit configuration"
       6 "Update to latest release"
+      7 "Check relay registration"
       - ""
-      7 "Back to main menu"
+      8 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -339,6 +340,9 @@ while true; do
         runScript update_mevboost.sh
         ;;
       7)
+        checkRelayRegistration
+        ;;
+      8)
         break
         ;;
     esac
