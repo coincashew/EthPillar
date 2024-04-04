@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.3.2"
+VERSION="1.3.3"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -511,19 +511,72 @@ while true; do
 done
 }
 
+submenuEthduties(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "View duties"
+      2 "Wait for 90.0% of attestation duties to be executed in 90 sec. or later"
+      3 "Update to latest release"
+      4 "Uninstall eth-duties"
+      - ""
+      9 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "eth-duties" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        getNetwork && getPubKeys && getIndices
+        /usr/local/bin/eth-duties --validators ${INDICES[@]} --beacon-nodes $API_BN_ENDPOINT
+        ;;
+      2)
+        getNetwork && getPubKeys && getIndices
+        /usr/local/bin/eth-duties --validators ${INDICES[@]} --beacon-nodes $API_BN_ENDPOINT --max-attestation-duty-logs 60 --mode cicd-wait --mode-cicd-attestation-time 90 --mode-cicd-attestation-proportion 0.90
+        ohai "Ready! Press ENTER to continue."
+        read
+        ;;
+      3)
+        runScript eth-duties.sh -u
+        ;;
+      4)
+        runScript eth-duties.sh -r
+        ;;
+      9)
+        break
+        ;;
+    esac
+done
+}
+
 submenuTools(){
 while true; do
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
-      1 "Port Checker: Test for Incoming Connections"
-      2 "NCDU: Find large files. Analyze disk usage."
-      3 "Monitoring: Observe Ethereum Metrics. Explore Dashboards."
+      1 "eth-duties: Show upcoming block proposals, attestations, sync duties"
+      2 "Monitoring: Observe Ethereum Metrics. Explore Dashboards."
+      3 "NCDU: Find large files. Analyze disk usage."
+      4 "Port Checker: Test for Incoming Connections"
       - ""
       9 "EL: Switch Execution Clients"
       - ""
       10 "Timezone: Update machine's timezone"
       11 "Locales: Fix terminal formatting issues"
+      12 "Privacy: Clear bash shell history"
       - ""
       99 "Back to main menu"
     )
@@ -544,12 +597,18 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        checkOpenPorts
+        # Skip if no validators installed
+        if [[ ! -f /etc/systemd/system/validator.service ]]; then echo "No validator(s) installed. Press ENTER to continue."; read; break; fi
+
+        # Install eth-duties if not yet installed
+        if [[ ! -f /usr/local/bin/eth-duties ]]; then
+          if whiptail --title "Install eth-duties" --yesno "Do you want to install eth-duties?\n\neth-duties shows upcoming validator duties." 8 78; then
+            runScript eth-duties.sh -i
+          fi
+        fi
+        submenuEthduties
         ;;
       2)
-        findLargestDiskUsage
-        ;;
-      3)
         # Install monitoring if not yet installed
         if [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]]; then
           if whiptail --title "Install Monitoring" --yesno "Do you want to install Monitoring?\nIncludes: Ethereum Metrics Exporter, grafana, prometheus" 8 78; then
@@ -557,6 +616,12 @@ while true; do
           fi
         fi
         submenuMonitoring
+        ;;
+      3)
+        findLargestDiskUsage
+        ;;
+      4)
+        checkOpenPorts
         ;;
       9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
@@ -572,6 +637,11 @@ while true; do
         sudo dpkg-reconfigure --frontend noninteractive locales
         ohai "Updated locale to en_US.UTF-8"
         ohai "Logout and login for terminal locale updates to take effect. Press ENTER to continue."
+        read
+        ;;
+      12)
+        history -c && history -w
+        ohai "Cleared bash history"
         read
         ;;
       99)

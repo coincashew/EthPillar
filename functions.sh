@@ -16,6 +16,10 @@ BASE_DIR=$HOME/git/ethpillar
 ip_current=$(hostname --ip-address)
 interface_current=$(ip route | grep default | sed 's/.*dev \([^ ]*\) .*/\1/')
 network_current="$(ip route | grep $interface_current | grep -v default | awk '{print $1}')"
+# Consensus client or beacon node HTTP Endpoint
+API_BN_ENDPOINT=http://127.0.0.1:5052
+# Stores validator index
+declare -a INDICES
 
 exit_on_error() {
     exit_code=$1
@@ -175,45 +179,63 @@ getPubKeys(){
    NETWORK=$(echo $NETWORK | tr "[:upper:]" "[:lower:]")
    case $CL in
       Lighthouse)
-        TEMP=$(/usr/local/bin/lighthouse account validator list --network $NETWORK  --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
-        convertLIST
+         TEMP=$(/usr/local/bin/lighthouse account validator list --network $NETWORK  --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
+         convertLIST
       ;;
-     Lodestar)
-        cd /usr/local/bin/lodestar
-        TEMP=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --network $NETWORK  --dataDir /var/lib/lodestar/validators | grep -Eo '0x[a-fA-F0-9]{96}')
-        convertLIST
+      Lodestar)
+         cd /usr/local/bin/lodestar
+         TEMP=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --network $NETWORK  --dataDir /var/lib/lodestar/validators | grep -Eo '0x[a-fA-F0-9]{96}')
+         convertLIST
       ;;
-     Teku)
-        # Command if combined CL+VC
-        teku_cmd="ls /var/lib/teku/validator_keys/*.json"
-        # Command if standalone VC
-        test -f /etc/systemd/system/validator.service && teku_cmd="ls /var/lib/teku_validator/validator_keys/*.json"
-        for json in $(sudo -u validator bash -c '$teku_cmd')
-        do
-          TEMP+=(0x$(sudo -u validator bash -c "cat $json | jq -r '.pubkey'"))
-        done
-        convertLIST
+      Teku)
+         # Command if combined CL+VC
+         teku_cmd="ls /var/lib/teku/validator_keys/*.json"
+         # Command if standalone VC
+         test -f /etc/systemd/system/validator.service && teku_cmd="ls /var/lib/teku_validator/validator_keys/*.json"
+         for json in $(sudo -u validator bash -c '$teku_cmd')
+         do
+            TEMP+=(0x$(sudo -u validator bash -c "cat $json | jq -r '.pubkey'"))
+         done
+         convertLIST
       ;;
-     Nimbus)
-        # Command if combined CL+VC
-        nimbus_cmd="ls /var/lib/nimbus/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
-        # Command if standalone VC
-        test -f /etc/systemd/system/validator.service && nimbus_cmd="ls /var/lib/nimbus_validator/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
-        TEMP=$(sudo -u validator bash -c "$nimbus_cmd")
-        convertLIST
+      Nimbus)
+         # Command if combined CL+VC
+         nimbus_cmd="ls /var/lib/nimbus/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
+         # Command if standalone VC
+         test -f /etc/systemd/system/validator.service && nimbus_cmd="ls /var/lib/nimbus_validator/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
+         TEMP=$(sudo -u validator bash -c "$nimbus_cmd")
+         convertLIST
       ;;
-     Prysm)
-        TEMP=$(/usr/local/bin/validator accounts list --$NETWORK --wallet-dir=/var/lib/prysm/validators | grep -Eo '0x[a-fA-F0-9]{96}')
-        convertLIST
+      Prysm)
+         TEMP=$(/usr/local/bin/validator accounts list --$NETWORK --wallet-dir=/var/lib/prysm/validators | grep -Eo '0x[a-fA-F0-9]{96}')
+         convertLIST
       ;;
-     esac
+   esac
 }
 
 convertLIST(){
+# Reset var
+LIST=()
 for key in $TEMP
 do
-  LIST+=($key)
+   LIST+=($key)
 done
+}
+
+# Convert pubkeys to index
+function getIndices(){
+   # API URL Path for duties
+   local API_URL_DUTIES=$API_BN_ENDPOINT/eth/v1/
+   # API URL Path for indices
+   local API_URL_INDICES=$API_BN_ENDPOINT/eth/v1/beacon/states/head/validators
+   # Reset var
+   INDICES=()
+
+   for PUBKEY in ${LIST[@]}
+      do
+         VALIDATOR_INDEX=$(curl -s -X GET $API_URL_INDICES/$PUBKEY | jq -r .data.index)
+         INDICES+=($VALIDATOR_INDEX)
+      done
 }
 
 # Prints list of pubkeys
