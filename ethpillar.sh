@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.3.3"
+VERSION="1.3.4"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -240,8 +240,9 @@ while true; do
       5 "Edit configuration"
       - ""
       6 "Generate / Import Validator Keys"
+      7 "View validator pubkeys and indices"
       - ""
-      7 "Back to main menu"
+      8 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -281,6 +282,10 @@ while true; do
         runScript manage_validator_keys.sh
         ;;
       7)
+        getPubKeys && getIndices
+        viewPubkeyAndIndices
+        ;;
+      8)
         break
         ;;
     esac

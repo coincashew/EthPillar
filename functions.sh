@@ -223,7 +223,7 @@ done
 }
 
 # Convert pubkeys to index
-function getIndices(){
+getIndices(){
    # API URL Path for duties
    local API_URL_DUTIES=$API_BN_ENDPOINT/eth/v1/
    # API URL Path for indices
@@ -238,11 +238,26 @@ function getIndices(){
       done
 }
 
-# Prints list of pubkeys
-showPubkeys(){
-   ohai "Total # Validator Keys: ${#LIST[@]}"
-   ohai "==================================="
-   ohai ${LIST[@]}
+# Prints list of pubkeys and indices
+viewPubkeyAndIndices(){
+   local COUNT=${#LIST[@]}
+   if [ "$COUNT" = "0" ]; then
+      echo "No validators keys loaded. Press ENTER to finish."
+      read
+      return
+   fi
+   ohai "==========================================="
+   ohai "Total # Validator Keys: $COUNT"
+   ohai "==========================================="
+   ohai "Pubkeys:"
+   for i in "${LIST[@]}"; do
+      echo $i
+   done
+   ohai "==========================================="
+   ohai "Indices:"
+   echo ${INDICES[@]}
+   ohai "Press ENTER to finish."
+   read
 }
 
 # Checks for open ports. Diagnose peering/router/port-forwarding issues.
