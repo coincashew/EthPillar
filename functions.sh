@@ -177,9 +177,10 @@ getClient(){
 # Get list of validator public keys
 getPubKeys(){
    NETWORK=$(echo $NETWORK | tr "[:upper:]" "[:lower:]")
-   case $CL in
+   TEMP=""
+   case $VC in
       Lighthouse)
-         TEMP=$(/usr/local/bin/lighthouse account validator list --network $NETWORK  --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
+         TEMP=$(/usr/local/bin/lighthouse account validator list --network $NETWORK --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;
       Lodestar)
