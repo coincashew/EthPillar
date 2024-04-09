@@ -62,8 +62,8 @@ function getLatestVersion(){
 	    CHANGES_URL="https://github.com/paradigmxyz/reth/releases"
 	    ;;
 	  esac
-	#Get tag name and remove leading 'v'
-	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
+	#Get tag name
+	TAG=$(curl -s $TAG_URL | jq -r .tag_name)
 }
 
 function updateClient(){
