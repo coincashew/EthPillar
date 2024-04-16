@@ -382,3 +382,34 @@ checkRelayRegistration(){
     ohai "Press ENTER to continue"
     read
 }
+
+addSwapfile(){
+    # Check if there is already an active swap file
+    if [ "$(swapon --show | wc -l)" -eq "0" ]; then
+        # Prompt the user for the swap file size
+        read -r -p "Enter the size of the swap file (e.g. '8G' for 8GB). Press Enter to use default, 8G: " SWAP_SIZE
+        SWAP_SIZE=${SWAP_SIZE:-8G}
+
+        # Prompt the user for the swap path
+        read -r -p "Enter the path of the swap file (e.g. /swapfile). Press Enter to use default '/swapfile': " SWAP_PATH
+        SWAP_PATH=${SWAP_PATH:-/swapfile}
+
+        # Create the swap file in /swapfile with the given size
+        sudo fallocate -l "${SWAP_SIZE}" ${SWAP_PATH}
+
+        # Change the permissions to read and write for root
+        sudo chmod 600 ${SWAP_PATH}
+
+        # Make /swapfile
+        sudo mkswap ${SWAP_PATH}
+
+        # Enable swapping on the new file and remember the setting persistently across reboots
+        sudo swapon ${SWAP_PATH}
+        echo "${SWAP_PATH} swap swap defaults 0 0" | sudo tee -a /etc/fstab > /dev/null
+        echo "Swap file created."
+    else
+        echo "Swap is already enabled."
+    fi
+    ohai "Press ENTER to continue"
+    read
+}

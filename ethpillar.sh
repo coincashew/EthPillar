@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.3.5"
+VERSION="1.3.6"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -582,6 +582,7 @@ while true; do
       10 "Timezone: Update machine's timezone"
       11 "Locales: Fix terminal formatting issues"
       12 "Privacy: Clear bash shell history"
+      13 "Swapfile: Use disk space as extra RAM"
       - ""
       99 "Back to main menu"
     )
@@ -648,6 +649,9 @@ while true; do
         history -c && history -w
         ohai "Cleared bash history"
         read
+        ;;
+      13)
+        addSwapfile
         ;;
       99)
         break
