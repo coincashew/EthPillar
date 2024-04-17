@@ -413,3 +413,70 @@ addSwapfile(){
     ohai "Press ENTER to continue"
     read
 }
+
+generateVoluntaryExitMessage(){
+    local VEM_PATH=$HOME/voluntary-exit-messages
+    clear
+    echo "################################################################"
+    ohai "Generate a Voluntary Exit Message (VEM) for each validator."
+    echo "################################################################"
+    ohai "Before starting: Validators must be currently active and assigned a validator index."
+    echo ""
+    ohai "Requirements: To generate voluntary exit messages, have the following ready:"
+    echo "1) A path to the directory containing your keystore-m_####.json file(s)"
+    echo "2) The keystore's passphrase"
+    echo ""
+    echo "Note: “passphrase” is NOT your mnemonic or secret recovery phrase!"
+    echo ""
+    ohai "Result of this operation:"
+    echo "- One VEM file (e.g. exit_validator_index_#.json) per validator is generated."
+    echo "- VEMs do not expire and are valid throughout future forks/upgrades."
+    echo "- This operation does NOT broadcast your VEM and consequently, exit your validator."
+    echo ""
+    ohai "Next steps:"
+    echo "- When it's time to exit your validator, broadcast the VEM locally or with beaconcha.in tool"
+    echo "- Backup and save VEMs to external storage."
+    echo "- Share with your heirs."
+    echo "- For more information on what happens AFTER broadcasting a VEM with detailed timelines, see:"
+    echo "  https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-iii-tips/voluntary-exiting-a-validator"
+    echo ""
+    echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Yy]* ]]; then
+        # Create path to store VEMs
+        [[ -d $HOME/voluntary-exit-messages ]] || mkdir -p $VEM_PATH
+
+        # Prompt user for path to keystores
+        read -r -p "Enter path to your keystore-m_##.json file(s): " KEYSTORE_PATH
+        # Check number of keystores
+        local COUNT=$(ls ${KEYSTORE_PATH}/keystore*.json | wc -l)
+        if [[ $COUNT -gt 0 ]]; then
+            echo "INFO: Found $COUNT keystore files"
+            echo "INFO: Using keystore path: $KEYSTORE_PATH"
+        else
+            echo "No keystores found at $KEYSTORE_PATH"
+            ohai "Press ENTER to continue"
+            read
+            exit 1
+        fi
+
+        # Prompt user for keystore passphrase
+        read -r -p "Enter keystore passphrase: " KEYSTORE_PASSPHRASE
+        echo "INFO: Using keystore passphrase: $KEYSTORE_PASSPHRASE"
+
+        # Iterate through each file and create the VEM
+        for KEYSTORE in $(ls ${KEYSTORE_PATH}/keystore*.json);
+        do
+           ethdo validator exit --validator=${KEYSTORE} --passphrase=${KEYSTORE_PASSPHRASE} --json > $VEM_PATH/exit_tmp.json
+           INDEX=$(cat $VEM_PATH/exit_tmp.json | jq -r .message.validator_index)
+           # Rename exit file with validator index
+           mv $VEM_PATH/exit_tmp.json $VEM_PATH/exit_validator_index_${INDEX}.json
+           echo "INFO: Generated voluntary exit message for index ${INDEX}"
+        done
+        echo "${tty_bold}${COUNT} Voluntary exit message(s) saved at: $VEM_PATH${tty_reset}"
+    else
+        echo "Cancelled."
+    fi
+    ohai "Press ENTER to continue"
+    read
+}
