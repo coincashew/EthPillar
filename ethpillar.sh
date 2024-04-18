@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.0"
+VERSION="1.4.1"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -242,8 +242,9 @@ while true; do
       6 "Generate / Import Validator Keys"
       7 "View validator pubkeys and indices"
       8 "Generate Voluntary Exit Messages (VEM) with ethdo"
+      9 "Broadcast Voluntary Exit Messages (VEM) with ethdo"
       - ""
-      9 "Back to main menu"
+      10 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -296,6 +297,15 @@ while true; do
         generateVoluntaryExitMessage
         ;;
       9)
+        # Install ethdo if not yet installed
+        if [[ ! -f /usr/local/bin/ethdo ]]; then
+          if whiptail --title "Install ethdo" --yesno "Do you want to install ethdo?\n\nethdo helps you generate and broadcast exit messages." 10 78; then
+            runScript ethdo.sh -i
+          fi
+        fi
+        broadcastVoluntaryExitMessageLocally
+        ;;
+      10)
         break
         ;;
     esac

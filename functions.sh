@@ -480,3 +480,59 @@ generateVoluntaryExitMessage(){
     ohai "Press ENTER to continue"
     read
 }
+
+broadcastVoluntaryExitMessageLocally(){
+    local VEM_PATH_DEFAULT=$HOME/voluntary-exit-messages
+    clear
+    echo "################################################################"
+    ohai "Broadcast Voluntary Exit Message (VEM)"
+    echo "################################################################"
+    ohai "Requirements: To broadcast voluntary exit messages, have the following ready:"
+    echo "1) A path to the directory containing your VEM file(s) e.g. exit_validator_index_#####.json"
+    echo ""
+    ohai "Result of this operation:"
+    echo "- Exit Queue: Your validator(s) will soon no longer be responsible for attesting/proposing duties."
+    echo "- Irreversible: This operation exits your validator permanently."
+    echo ""
+    ohai "Next steps:"
+    echo "- Status: Keep validator processes running until a validator has fully exited the exit queue."
+    echo "- Balances: Validator's balance will be swept to your withdrawal address."
+    echo "- Wait time: Check estimated exit queue wait times at https://www.validatorqueue.com"
+    echo "- Timelines: For more detailed sequence of events, see:"
+    echo "  https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-iii-tips/voluntary-exiting-a-validator"
+    echo ""
+    echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Yy]* ]]; then
+        # Prompt user for path to VEMs
+        read -r -p "Enter path to your VEM file(s) (Press enter to use default: $VEM_PATH_DEFAULT):" VEM_PATH
+        VEM_PATH=${VEM_PATH:-$VEM_PATH_DEFAULT}
+        # Check number of keystores
+        local COUNT=$(ls ${VEM_PATH}/exit*.json | wc -l)
+        if [[ $COUNT -gt 0 ]]; then
+            echo "INFO: Found $COUNT VEM files"
+            echo "INFO: Using VEM path: $VEM_PATH"
+        else
+            echo "No VEMs found at $VEM_PATH"
+            ohai "Press ENTER to continue"
+            read
+            exit 1
+        fi
+
+        # Final confirmation
+        if whiptail --title "Broadcast Voluntary Exit Messages" --defaultno --yesno "This will voluntary exit ${COUNT} validator(s).\nAre you sure you want to continue?" 9 78; then
+            # Iterate through each file and broadcast the VEM
+            for VEM in $(ls ${VEM_PATH}/exit*.json);
+            do
+               ethdo --connection ${API_BN_ENDPOINT} validator exit --signed-operation ${VEM}
+               INDEX=$(cat $VEM | jq -r .message.validator_index)
+               echo "INFO: Broadcast VEM for index ${INDEX}"
+            done
+            echo "${tty_bold}${COUNT} Voluntary exit message(s) broadcasted.${tty_reset}"
+        fi
+    else
+        echo "Cancelled."
+    fi
+    ohai "Press ENTER to continue"
+    read
+}
