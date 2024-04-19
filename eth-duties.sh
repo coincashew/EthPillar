@@ -11,6 +11,9 @@
 GITHUB_URL=https://api.github.com/repos/TobiWo/eth-duties/releases/latest
 GITHUB_RELEASE_NODES=https://github.com/TobiWo/eth-duties/releases
 RELEASE_SUFFIX="ubuntu2204-amd64.tar.gz"
+DESCRIPTION="eth-duties logs upcoming validator duties to the console. Developed mainly for home stakers."
+DOCUMENTATION=https://tobiwo.github.io/eth-duties
+SOURCE_CODE=https://github.com/TobiWo/eth-duties
 APP_NAME=eth-duties
 
 # Asks to update
@@ -32,19 +35,19 @@ function downloadClient(){
 	echo Downloading URL: $BINARIES_URL
 	cd $HOME
 	# Download
-	wget -O eth-duties.tar.gz $BINARIES_URL
+	wget -O $APP_NAME.tar.gz $BINARIES_URL
 	# Untar
-	tar -xzvf eth-duties.tar.gz -C $HOME --strip-components=2
+	tar -xzvf $APP_NAME.tar.gz -C $HOME --strip-components=2
 	# Cleanup
-	rm eth-duties.tar.gz
+	rm $APP_NAME.tar.gz
 	# Install binary
-	sudo mv $HOME/eth-duties /usr/local/bin
+	sudo mv $HOME/$APP_NAME /usr/local/bin
 }
 
 # Uninstall
 function removeAll() {
 	if whiptail --title "Uninstall $APP_NAME" --defaultno --yesno "Are you sure you want to remove $APP_NAME" 9 78; then
-	  sudo rm /usr/local/bin/eth-duties
+	  sudo rm /usr/local/bin/$APP_NAME
   	whiptail --title "Uninstall finished" --msgbox "You have uninstalled $APP_NAME." 8 78
 	fi
 }
@@ -63,10 +66,9 @@ Options)
 -h    Display help
 
 About $APP_NAME)
-- ETH-duties logs upcoming validator duties to the console.
-- Developed mainly for home stakers.
-- Source code: https://github.com/TobiWo/eth-duties
-- Documentation: https://tobiwo.github.io/eth-duties
+- $DESCRIPTION
+- Source code: $SOURCE_CODE
+- Documentation: $DOCUMENTATION
 EOF
 }
 
