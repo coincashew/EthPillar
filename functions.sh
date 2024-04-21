@@ -435,7 +435,7 @@ generateVoluntaryExitMessage(){
     echo ""
     ohai "Next steps:"
     echo "- When it's time to exit your validator, broadcast the VEM locally or with beaconcha.in tool"
-    echo "- Backup and save VEMs to external storage."
+    echo "- Backup and save VEMs to external storage. (e.g. USB drive)"
     echo "- Share with your heirs."
     echo "- For more information on what happens AFTER broadcasting a VEM with detailed timelines, see:"
     echo "  https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-iii-tips/voluntary-exiting-a-validator"
@@ -496,6 +496,7 @@ broadcastVoluntaryExitMessageLocally(){
     echo ""
     ohai "Next steps:"
     echo "- Status: Keep validator processes running until a validator has fully exited the exit queue."
+    echo "- Verification: Using ethdo or beaconcha.in, check your validator's status to confirm exiting status. e.g. Status: active_exiting"
     echo "- Balances: Validator's balance will be swept to your withdrawal address."
     echo "- Wait time: Check estimated exit queue wait times at https://www.validatorqueue.com"
     echo "- Timelines: For more detailed sequence of events, see:"
@@ -535,4 +536,29 @@ broadcastVoluntaryExitMessageLocally(){
     fi
     ohai "Press ENTER to continue"
     read
+}
+
+# Takes a validator index # and checks status with ethdo
+checkValidatorStatus(){
+    local _INDEX=""
+    clear
+    # Get validator index from user
+    while true; do
+    read -r -p "${tty_blue}Enter your Validator's Index: ${tty_reset}" _INDEX
+    ethdo --connection ${API_BN_ENDPOINT} validator info --validator=${_INDEX}
+    read -r -p "${tty_blue}Check another index? (y/n) ${tty_reset}" yn
+    case ${yn} in
+      [Nn]*) break ;;
+          *) continue ;;
+    esac
+    done
+}
+
+# Install ethdo if not yet installed
+installEthdo(){
+    if [[ ! -f /usr/local/bin/ethdo ]]; then
+      if whiptail --title "Install ethdo" --yesno "Do you want to install ethdo?\n\nethdo helps you check validator status, generate and broadcast exit messages." 10 78; then
+        runScript ethdo.sh -i
+      fi
+    fi
 }

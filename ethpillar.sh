@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.1"
+VERSION="1.4.2"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -241,10 +241,12 @@ while true; do
       - ""
       6 "Generate / Import Validator Keys"
       7 "View validator pubkeys and indices"
+      - ""
       8 "Generate Voluntary Exit Messages (VEM) with ethdo"
       9 "Broadcast Voluntary Exit Messages (VEM) with ethdo"
+      10 "Check Validator Status by Index with ethdo"
       - ""
-      10 "Back to main menu"
+      11 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -288,24 +290,18 @@ while true; do
         viewPubkeyAndIndices
         ;;
       8)
-        # Install ethdo if not yet installed
-        if [[ ! -f /usr/local/bin/ethdo ]]; then
-          if whiptail --title "Install ethdo" --yesno "Do you want to install ethdo?\n\nethdo helps you generate and broadcast exit messages." 10 78; then
-            runScript ethdo.sh -i
-          fi
-        fi
+        installEthdo
         generateVoluntaryExitMessage
         ;;
       9)
-        # Install ethdo if not yet installed
-        if [[ ! -f /usr/local/bin/ethdo ]]; then
-          if whiptail --title "Install ethdo" --yesno "Do you want to install ethdo?\n\nethdo helps you generate and broadcast exit messages." 10 78; then
-            runScript ethdo.sh -i
-          fi
-        fi
+        installEthdo
         broadcastVoluntaryExitMessageLocally
         ;;
       10)
+        installEthdo
+        checkValidatorStatus
+        ;;
+      11)
         break
         ;;
     esac
@@ -587,6 +583,57 @@ while true; do
 done
 }
 
+submenuEthdo(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "Check Validator Status by Index"
+      2 "Generate Voluntary Exit Messages (VEM)"
+      3 "Broadcast Voluntary Exit Messages (VEM)"
+      4 "Update to latest release"
+      5 "Uninstall ethdo"
+      - ""
+      9 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "ethdo" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        checkValidatorStatus
+        ;;
+      2)
+        generateVoluntaryExitMessage
+        ;;
+      3)
+        broadcastVoluntaryExitMessageLocally
+        ;;
+      4)
+        runScript ethdo.sh -u
+        ;;
+      5)
+        runScript ethdo.sh -r
+        ;;
+      9)
+        break
+        ;;
+    esac
+done
+}
+
 submenuTools(){
 while true; do
     getBackTitle
@@ -596,6 +643,7 @@ while true; do
       2 "Monitoring: Observe Ethereum Metrics. Explore Dashboards."
       3 "NCDU: Find large files. Analyze disk usage."
       4 "Port Checker: Test for Incoming Connections"
+      5 "ethdo: Conduct Common Validator Tasks"
       - ""
       9 "EL: Switch Execution Clients"
       - ""
@@ -648,6 +696,10 @@ while true; do
         ;;
       4)
         checkOpenPorts
+        ;;
+      5)
+        installEthdo
+        submenuEthdo
         ;;
       9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
