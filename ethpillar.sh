@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.2"
+VERSION="1.4.3"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -634,6 +634,118 @@ while true; do
 done
 }
 
+submenuUFW(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "View ufw status"
+      2 "Allow incoming traffic on a port"
+      3 "Deny incoming traffic on a port"
+      4 "Delete a rule"
+      - ""
+      5 "Enable firewall with default settings"
+      6 "RPC Node: Allow local network access to RPC port 8545"
+      7 "Monitoring: Allow local network access to Grafana port 3000"
+      8 "Disable firewall"
+      9 "Reset firewall rules"
+      - ""
+      10 "Whitelist an IP address: Allow full access to this node"
+      - ""
+      99 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "UFW Firewall" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        sudo ufw status numbered
+        ohai "Press ENTER to continue."
+        read
+        ;;
+      2)
+        read -p "Enter the port number to allow: " port_number
+        sudo ufw allow $port_number
+        ohai "Port allowed."
+        sleep 2
+        ;;
+      3)
+        read -p "Enter the port number to deny: " port_number
+        sudo ufw deny $port_number
+        ohai "Port denied."
+        sleep 2
+        ;;
+      4)
+        sudo ufw status numbered
+        read -p "Enter the rule number to delete: " rule_number
+        sudo ufw delete $rule_number
+        ohai "Rule deleted."
+        sleep 2
+        ;;
+      5)
+        # Default ufw settings
+        sudo ufw default deny incoming
+        sudo ufw default allow outgoing
+        echo "${tty_bold}Allow SSH access? [y|n]${tty_reset}"
+        read -rsn1 yn
+        if [[ ${yn} = [Yy]* ]]; then
+          read -r -p "Enter your SSH port. Press Enter to use default '22': " _ssh_port
+          _ssh_port=${_ssh_port:-22}
+          sudo ufw allow ${_ssh_port}/tcp comment 'Allow SSH port'
+        fi
+        sudo ufw allow 30303 comment 'Allow execution client port'
+        sudo ufw allow 9000 comment 'Allow consensus client port'
+        sudo ufw enable
+        sudo ufw status numbered
+        ohai "UFW firewall enabled."
+        sleep 3
+        ;;
+      6)
+        sudo ufw allow from ${network_current} to any port 8545 comment 'Allow local network to access RPC'
+        ohai "Local network ${network_current} can access RPC port 8545"
+        sleep 2
+        ;;
+      7)
+        sudo ufw allow from ${network_current} to any port 3000 comment 'Allow local network to access Grafana'
+        ohai "Local network ${network_current} can access RPC port 3000"
+        sleep 2
+        ;;
+      8)
+        sudo ufw disable
+        ohai "UFW firewall disabled."
+        sleep 2
+        ;;
+      9)
+        sudo ufw disable
+        sudo ufw --force reset
+        ohai "UFW firewall reset."
+        sleep 2
+        ;;
+      10)
+        read -p "Enter the IP address to whitelist: " ip_whitelist
+        sudo ufw allow from $ip_whitelist
+        ohai "IP address whitelisted."
+        sleep 2
+        ;;
+      99)
+        break
+        ;;
+    esac
+done
+}
+
 submenuTools(){
 while true; do
     getBackTitle
@@ -651,6 +763,7 @@ while true; do
       11 "Locales: Fix terminal formatting issues"
       12 "Privacy: Clear bash shell history"
       13 "Swapfile: Use disk space as extra RAM"
+      14 "UFW Firewall: Control network traffic against unauthorized access"
       - ""
       99 "Back to main menu"
     )
@@ -724,6 +837,9 @@ while true; do
         ;;
       13)
         addSwapfile
+        ;;
+      14)
+        submenuUFW
         ;;
       99)
         break

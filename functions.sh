@@ -15,7 +15,7 @@ set -o history -o histexpand
 BASE_DIR=$HOME/git/ethpillar
 ip_current=$(hostname --ip-address)
 interface_current=$(ip route | grep default | sed 's/.*dev \([^ ]*\) .*/\1/')
-network_current="$(ip route | grep $interface_current | grep -v default | awk '{print $1}')"
+network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
 # Consensus client or beacon node HTTP Endpoint
 API_BN_ENDPOINT=http://127.0.0.1:5052
 # Stores validator index
@@ -407,6 +407,13 @@ addSwapfile(){
         sudo swapon ${SWAP_PATH}
         echo "${SWAP_PATH} swap swap defaults 0 0" | sudo tee -a /etc/fstab > /dev/null
         echo "Swap file created."
+
+        # Update Swappiness
+        echo "Lower RAM Swappiness to 10"
+        # Temporarily change the swappiness value
+        sudo sysctl vm.swappiness=10
+        # Make the change permanent
+        sudo bash -c 'echo "vm.swappiness = 10" >> /etc/sysctl.conf'
     else
         echo "Swap is already enabled."
     fi
