@@ -1,35 +1,80 @@
-# 🛡️ EthPillar: a one-liner setup tool and node management TUI
+---
+description: >-
+  Empowered, inspired, home staker. Free. Open source. Public goods for
+  Ethereum.
+---
+
+# 🛡️ EthPillar: one-liner setup tool and node management TUI
 
 ## :new: What is EthPillar?
 
-:smile: **Friendly Node Installer**: No node yet? Helps you installs a Ethereum node (Nimbus+Nethermind) stack in just minutes. MEVboost included. [Review the hardware requirements first.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/prerequisites)
+:smile: **Friendly Node Installer**: No node yet? Helps you installs a Ethereum node (Nimbus+Nethermind) stack in just minutes. MEVboost included.
 
-:floppy\_disk: **Ease of use**: No more remembering CLI commands required. Access common node operations via a simple text menu.
+:floppy\_disk: **Ease of use**: No more remembering CLI commands required. Access common node operations via a simple text user interface (TUI).
 
 :owl: **Fast Updates**: Quickly find and download the latest consensus/execution release. Less downtime!
 
 :tada:**Compatibility**: Behind the scenes, node commands and file structure are identical to V2 staking setups.&#x20;
 
-**NOTE**: Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)&#x20;
+{% hint style="warning" %}
+Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)
+{% endhint %}
 
-<figure><img src="https://1280931729-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-M5KYnWuA6dS_nKYsmfV-887967055%2Fuploads%2F8Qdb4d5VGlCRQgiFqNBO%2Fethpillar.png?alt=media&token=d80174a1-c6ca-44e3-bb96-ff6094cb0d3a" alt=""><figcaption><p>EthPillar Main Menu</p></figcaption></figure>
+## :sunglasses: Preview
 
-## Option 1: Automated One-Liner Install
+<figure><img src="https://raw.githubusercontent.com/coincashew/coincashew/17bb396f1b381eb99c66a4820887ec22ff3ba4df/.gitbook/assets/preview02.png" alt=""><figcaption><p>Main Menu</p></figcaption></figure>
+
+<div>
+
+<figure><img src="https://raw.githubusercontent.com/coincashew/coincashew/17bb396f1b381eb99c66a4820887ec22ff3ba4df/.gitbook/assets/preview01.png" alt=""><figcaption><p>Execution Client</p></figcaption></figure>
+
+ 
+
+<figure><img src="https://raw.githubusercontent.com/coincashew/coincashew/17bb396f1b381eb99c66a4820887ec22ff3ba4df/.gitbook/assets/preview03.png" alt=""><figcaption><p>Consensus Client</p></figcaption></figure>
+
+ 
+
+<figure><img src="https://raw.githubusercontent.com/coincashew/coincashew/17bb396f1b381eb99c66a4820887ec22ff3ba4df/.gitbook/assets/preview04.png" alt=""><figcaption><p>Validator</p></figcaption></figure>
+
+</div>
+
+<div>
+
+<figure><img src="https://raw.githubusercontent.com/coincashew/coincashew/17bb396f1b381eb99c66a4820887ec22ff3ba4df/.gitbook/assets/preview05.png" alt=""><figcaption><p>System Administration</p></figcaption></figure>
+
+ 
+
+<figure><img src="https://raw.githubusercontent.com/coincashew/coincashew/17bb396f1b381eb99c66a4820887ec22ff3ba4df/.gitbook/assets/preview06.png" alt=""><figcaption><p>Tools</p></figcaption></figure>
+
+ 
+
+<figure><img src="https://raw.githubusercontent.com/coincashew/coincashew/17bb396f1b381eb99c66a4820887ec22ff3ba4df/.gitbook/assets/preview07.png" alt=""><figcaption><p>Mevboost</p></figcaption></figure>
+
+</div>
+
+## :whale: Prerequisites
+
+* [Review how staking works and the hardware requirements](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/prerequisites)
+* An [Ubuntu](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/prerequisites#setup-ubuntu) installation.
+  * Tested working with Ubuntu 22.04 LTS
+  * Also appears compatible with Linux Mint 21.2, Debian 12
+
+## :triangular\_ruler: Option 1: Automated One-Liner Install
 
 Simply copy and paste the command into your terminal.
 
 Open source source code available here: [https://github.com/coincashew/EthPillar](https://github.com/coincashew/EthPillar)
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/ethpillar/master/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/EthPillar/main/install.sh)"
 ```
 
-## Option 2: Manual Install
+## :handshake: Option 2: Manual Install
 
 **Install updates and packages:**
 
 ```bash
-sudo apt-get update && sudo apt-get install git curl ccze
+sudo apt-get update && sudo apt-get install git curl ccze bc tmux
 ```
 
 **Clone the ethpillar repo and install:**
@@ -48,15 +93,21 @@ ethpillar
 
 ## :tada:Next Steps
 
-Congrats on installing a friendly TUI for making node maintenance easier!
+{% hint style="success" %}
+Congrats on installing a EthPillar, making nodes and home staking easier!
+{% endhint %}
 
 <details>
 
-<summary>Additional step for new Node operators</summary>
+<summary>Additional step for new Node operators, new Validators</summary>
 
-Step 1: Configure your network, port forwarding and firewall. From the main guide, [click here for detailed network configuration](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/step-2-configuring-node#network-configuration).
+**Step 1: Configure your network, port forwarding and firewall.**&#x20;
 
-* Involves setting UFW defaults, opening SSH port, allowing consensus/execution p2p port traffic, enabling the UFW firewall, configuring port forwarding and installing fail2ban.
+* With EthPillar, configuration can be changed at:
+  * **Tools > UFW Firewall > Enable firewall with default settings**
+  * Port forwarding is [manually configured](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/step-2-configuring-node#configure-port-forwarding), depending on your router.
+  * Confirm port forwarding is working with **Tools** > **Port Checker**
+* Alternatively configure manually per the manual guide. [Click here for detailed network configuration.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/step-2-configuring-node#network-configuration)
 
 </details>
 
@@ -87,7 +138,7 @@ Step 1: Configure your network, port forwarding and firewall. From the main guid
 
 Are you a EthPillar Enjooyer? [Support this public good by purchasing a limited edition POAP!](https://checkout.poap.xyz/169495)
 
-<figure><img src="https://1280931729-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-M5KYnWuA6dS_nKYsmfV-887967055%2Fuploads%2FT2zUNVSDv5VlDIbekFtZ%2F3adf69e9-fb1b-4665-8645-60d71dd01a7b.png?alt=media&token=97b0d882-61b0-4224-8f6b-66887f141c10" alt=""><figcaption><p>Your EthPillar Enjoyoor's POAP</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/3adf69e9-fb1b-4665-8645-60d71dd01a7b.png" alt=""><figcaption><p>Your EthPillar Enjoyoor's POAP</p></figcaption></figure>
 
 **Purchase link:** [https://checkout.poap.xyz/169495](https://checkout.poap.xyz/169495)
 
@@ -121,3 +172,7 @@ git pull
 ```
 {% endtab %}
 {% endtabs %}
+
+## :tada: Credits
+
+Shout out to [accidental-green](https://github.com/accidental-green/validator-install) for their pioneering work in Python validator tools, which has unintentionally ignited the inspiration and direction for this project. We are building upon their innovative foundations by forking their validator-install code. A heartfelt thanks to accidental-green for their game-changing contributions to the open-source Ethereum ecosystem!
