@@ -18,6 +18,9 @@ interface_current=$(ip route | grep default | sed 's/.*dev \([^ ]*\) .*/\1/')
 network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
 # Consensus client or beacon node HTTP Endpoint
 API_BN_ENDPOINT=http://127.0.0.1:5052
+# Execution layer RPC API
+EL_RPC_ENDPOINT=localhost:8545
+
 # Stores validator index
 declare -a INDICES
 
@@ -568,4 +571,27 @@ installEthdo(){
         runScript ethdo.sh -i
       fi
     fi
+}
+
+# Display peer count information from EL and CL
+getPeerCount(){
+    declare -A _peer_status=()
+    local _warn=""
+    # Get peer counts from CL and EL
+    _peer_status["Consensus_Layer_Connected_Peer_Count"]="$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/peer_count" -H  "accept: application/json" | jq -r ".data.connected")"
+    _peer_status["Execution_Layer_Connected_Peer_Count"]="$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc": "2.0", "method":"net_peerCount", "params": [], "id":1}' ${EL_RPC_ENDPOINT} | jq -r ".result" | awk '{ printf "%d\n",$1 }')"
+    # Get CL peers by direction
+    _json_cl=$(curl -s ${API_BN_ENDPOINT}/eth/v1/node/peers | jq -c '.data')
+    _peer_status["Consensus_Layer_Known_Inbound_Peers"]=$(jq -c '.[] | select(.direction == "inbound")' <<< "$_json_cl" | wc -l)
+    _peer_status["Consensus_Layer_Known_Outbound_Peers"]=$(jq -c '.[] | select(.direction == "outbound")' <<< "$_json_cl" | wc -l)
+
+    # Print each peer status
+    for _key in ${!_peer_status[@]}
+      do
+        if [[ ${_peer_status[$_key]} -gt 0 ]]; then printf "[${tty_blue}✔${tty_reset}]"; else printf "[${tty_red}✗${tty_reset}]" && _warn=1; fi
+        echo " ${tty_blue}[$_key]${tty_bold}: ${_peer_status[$_key]} peers${tty_reset}"
+      done
+    [[ ! -z ${_warn} ]] && echo "Suboptimal connectivity may affect validating nodes. To resolve, restart the service and check port forwarding, firewall-router settings, public IP, ENR."
+    ohai "Press ENTER to continue"
+    read
 }

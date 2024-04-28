@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.3"
+VERSION="1.4.4"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -756,6 +756,7 @@ while true; do
       3 "NCDU: Find large files. Analyze disk usage."
       4 "Port Checker: Test for Incoming Connections"
       5 "ethdo: Conduct Common Validator Tasks"
+      6 "Peer Count: Show # peers connected to EL & CL"
       - ""
       9 "EL: Switch Execution Clients"
       - ""
@@ -813,6 +814,9 @@ while true; do
       5)
         installEthdo
         submenuEthdo
+        ;;
+      6)
+        getPeerCount
         ;;
       9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
