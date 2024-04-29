@@ -6,6 +6,9 @@
 
 #!/bin/bash
 
+# Load functions
+source $BASE_DIR/functions.sh
+
 function getClient(){
 	CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
 }
@@ -25,7 +28,7 @@ function promptViewLogs(){
 
 function getNetwork(){
     # Get network name from execution client
-    result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' localhost:8545 | jq -r '.result')
+    result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' ${EL_RPC_ENDPOINT} | jq -r '.result')
     case $result in
     1)
       NETWORK="Mainnet"

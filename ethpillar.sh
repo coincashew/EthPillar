@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.4"
+VERSION="1.4.5"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -58,9 +58,6 @@ while true; do
       1)
         runScript view_logs.sh
         ;;
-      # 2)
-      #   runScript view_duties.sh
-      #  ;;
       3)
         submenuExecution
         ;;
@@ -417,8 +414,8 @@ while true; do
         if whiptail --title "Shutdown" --defaultno --yesno "Are you sure you want to shutdown?" 8 78; then sudo shutdown now; fi
         ;;
       4)
-        CL=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/version'   -H 'accept: application/json' | jq -r '.data.version')
-        EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' localhost:8545 | jq -r '.result')
+        CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+        EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq -r '.result')
         MB=$(if systemctl is-active --quiet mevboost ; then printf "$(mev-boost --version | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')" ; elif [ -f /etc/systemd/system/mevboost.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
         if [[ ! $CL ]] ; then
           CL="Not running or still starting up."
@@ -856,20 +853,20 @@ function getBackTitle(){
     getNetwork
     getClient
     # Latest block
-    latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' localhost:8545 | jq -r '.result')
+    latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' ${EL_RPC_ENDPOINT} | jq -r '.result')
     LB=$(printf '%d' "$latest_block_number")
     if [[ ! $LB  ]]; then
       LB="N/A"
     fi
 
     # Latest slot
-    LS=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/syncing'   -H 'accept: application/json' | jq -r '.data.head_slot')
+    LS=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot')
     if [[ ! $LS ]]; then
       LS="N/A"
     fi
 
     # Format gas price
-    latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' localhost:8545 | jq -r '.result')
+    latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' ${EL_RPC_ENDPOINT} | jq -r '.result')
     if [[ $latest_gas_price ]]; then
       WEI=$(printf '%d' "$latest_gas_price")
       GP=$(echo "scale=3; $WEI / 1000000000" | bc) #convert to Gwei
@@ -887,7 +884,7 @@ function getBackTitle(){
 
 function checkV1StakingSetup(){
   if [[ -f /etc/systemd/system/eth1.service ]]; then
-    echo "EthPillar is only compatible with V2 Staking Setups."
+    echo "EthPillar is only compatible with V2 Staking Setups. Using EthPillar, build a new node in minutes after wiping system or uninstalling V1."
     exit
   fi
 }

@@ -13,7 +13,7 @@ BASE_DIR=$HOME/git/ethpillar
 source $BASE_DIR/functions.sh
 
 function getCurrentVersion(){
-    CL_INSTALLED=$(curl -s -X 'GET'   'http://localhost:5052/eth/v1/node/version'   -H 'accept: application/json' | jq '.data.version')
+    CL_INSTALLED=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq '.data.version')
     #Find version in format #.#.#
     if [[ $CL_INSTALLED ]] ; then
         VERSION=$(echo $CL_INSTALLED | sed 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
