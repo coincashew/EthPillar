@@ -595,3 +595,23 @@ getPeerCount(){
     ohai "Press ENTER to continue"
     read
 }
+
+# Create Beaconcha.in Validator Dashboard Link
+createBeaconChainDashboardLink(){
+    getPubKeys
+    getIndices
+    local _ids=$(echo ${INDICES[@]} | sed  's/ /,/g')
+    case $NETWORK in
+       holesky)
+          _link="https://holesky.beaconcha.in/dashboard?validators=" ;;
+       mainnet)
+          _link="https://beaconcha.in/dashboard?validators=" ;;
+       *)
+          echo "Unsupported Network: ${NETWORK}" && exit 1
+    esac
+    _linkresult=${_link}${_ids}
+    ohai "Beaconcha.in Validator Dashboard: Copy and paste your link into a web browser. Bookmark."
+    echo ${_linkresult}
+    ohai "Press ENTER to continue"
+    read
+}

@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.5"
+VERSION="1.4.6"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -754,6 +754,7 @@ while true; do
       4 "Port Checker: Test for Incoming Connections"
       5 "ethdo: Conduct Common Validator Tasks"
       6 "Peer Count: Show # peers connected to EL & CL"
+      7 "Beaconcha.in Validator Dashboard: Create a link for my validators"
       - ""
       9 "EL: Switch Execution Clients"
       - ""
@@ -814,6 +815,9 @@ while true; do
         ;;
       6)
         getPeerCount
+        ;;
+      7)
+        createBeaconChainDashboardLink
         ;;
       9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
