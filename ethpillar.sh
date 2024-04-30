@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.6"
+VERSION="1.4.7"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -763,6 +763,7 @@ while true; do
       12 "Privacy: Clear bash shell history"
       13 "Swapfile: Use disk space as extra RAM"
       14 "UFW Firewall: Control network traffic against unauthorized access"
+      15 "Speedtest: Test internet bandwidth using speedtest.net"
       - ""
       99 "Back to main menu"
     )
@@ -845,6 +846,9 @@ while true; do
         ;;
       14)
         submenuUFW
+        ;;
+      15)
+        testBandwidth
         ;;
       99)
         break
