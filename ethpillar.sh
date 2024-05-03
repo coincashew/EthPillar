@@ -12,7 +12,7 @@
 
 #!/bin/bash
 
-VERSION="1.4.7"
+VERSION="1.4.8"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -37,6 +37,7 @@ OPTIONS+=(
   - ""
   10 "System Administration"
   11 "Tools"
+  99 "Quit"
 )
 
 while true; do
