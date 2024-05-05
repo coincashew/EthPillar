@@ -201,7 +201,7 @@ function loadKeys(){
      Prysm)
         sudo /usr/local/bin/validator accounts import \
           --accept-terms-of-use \
-          --mainnet \
+          --$NETWORK \
           --wallet-dir=/var/lib/prysm/validators \
           --keys-dir=$KEYPATH
         sudo chown -R validator:validator /var/lib/prysm/validators
