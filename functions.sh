@@ -193,14 +193,17 @@ getPubKeys(){
          convertLIST
       ;;
       Teku)
+         _teku=()
          # Command if combined CL+VC
          teku_cmd="ls /var/lib/teku/validator_keys/*.json"
          # Command if standalone VC
          test -f /etc/systemd/system/validator.service && teku_cmd="ls /var/lib/teku_validator/validator_keys/*.json"
          for json in $(sudo -u validator bash -c "$teku_cmd")
          do
-            TEMP+=(0x$(sudo -u validator bash -c "cat $json | jq -r '.pubkey'"))
+            _teku+=(0x$(sudo -u validator bash -c "cat $json | jq -r '.pubkey'"))
          done
+         # Convert to string
+         TEMP=${_teku[@]}
          convertLIST
       ;;
       Nimbus)
