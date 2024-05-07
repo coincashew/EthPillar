@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # https: //github.com/coincashew/ethpillar
@@ -5,7 +7,6 @@
 # Acknowledgments
 # validator-install is branched from validator-install written by Accidental-green: https: //github.com/accidental-green/validator-install
 
-#!/bin/bash
 set -u
 
 # enable  command completion

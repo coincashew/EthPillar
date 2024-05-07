@@ -1,11 +1,11 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
 # Description: EthPillar is a one-liner setup tool and node management TUI
 #
 # Made for home and solo stakers 🏠🥩
-
-#!/bin/bash
 
 BASE_DIR=$HOME/git/ethpillar
 

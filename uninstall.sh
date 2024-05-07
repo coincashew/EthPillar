@@ -1,10 +1,10 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew
 #
 # Made for home and solo stakers 🏠🥩
-
-#!/bin/bash
 
 function promptYesNo(){
     if whiptail --title "Uninstall Staking Node" --defaultno --yesno "This will remove all data and files related to this staking node.\nAre you sure you want to remove all files?\n(consensus/execution/validator/mevboost)" 9 78; then

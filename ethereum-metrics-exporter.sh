@@ -1,11 +1,11 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
 # Description: Installs ethereum-metrics-exporter, and supporting tools: grafana, prometheus
 #
 # Made for home and solo stakers 🏠🥩
-
-#!/bin/bash
 
 # Variables
 GITHUB_URL=https://api.github.com/repos/ethpandaops/ethereum-metrics-exporter/releases/latest

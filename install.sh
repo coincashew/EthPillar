@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
@@ -9,7 +11,6 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-#!/bin/bash
 set -u
 
 # enable  command completion

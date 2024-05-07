@@ -1,11 +1,11 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
 # Description: ethdo helper script
 #
 # Made for home and solo stakers 🏠🥩
-
-#!/bin/bash
 
 # Variables
 GITHUB_URL=https://api.github.com/repos/wealdtech/ethdo/releases/latest

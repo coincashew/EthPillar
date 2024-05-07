@@ -1,10 +1,10 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
 #
 # Made for home and solo stakers 🏠🥩
-
-#!/bin/bash
 
 # Dir to install staking-deposit-cli
 STAKING_DEPOSIT_CLI_DIR=$HOME

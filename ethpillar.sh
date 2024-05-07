@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
@@ -10,9 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-#!/bin/bash
-
-VERSION="1.4.8"
+VERSION="1.5.0"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions

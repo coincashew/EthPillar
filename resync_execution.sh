@@ -1,10 +1,10 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew
 #
 # Made for home and solo stakers 🏠🥩
-
-#!/bin/bash
 
 BASE_DIR=$(pwd)
 

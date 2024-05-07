@@ -1,10 +1,10 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
 #
 # Made for home and solo stakers 🏠🥩
-
-#!/bin/bash
 
 # Install btop process monitoring
 if ! command -v btop &> /dev/null; then

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Author: coincashew.eth | coincashew.com
 # License: GNU GPL
 # Source: https://github.com/coincashew/ethpillar
@@ -5,7 +7,6 @@
 
 # Made for home and solo stakers 🏠🥩
 
-#!/bin/bash
 set -u
 
 # enable command completion
