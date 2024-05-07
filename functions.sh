@@ -481,7 +481,7 @@ generateVoluntaryExitMessage(){
         # Iterate through each file and create the VEM
         for KEYSTORE in $(ls ${KEYSTORE_PATH}/keystore*.json);
         do
-           ethdo validator exit --validator=${KEYSTORE} --passphrase=${KEYSTORE_PASSPHRASE} --json > $VEM_PATH/exit_tmp.json
+           ethdo validator exit --validator=${KEYSTORE} "--passphrase=${KEYSTORE_PASSPHRASE}" --json > $VEM_PATH/exit_tmp.json
            INDEX=$(cat $VEM_PATH/exit_tmp.json | jq -r .message.validator_index)
            # Rename exit file with validator index
            mv $VEM_PATH/exit_tmp.json $VEM_PATH/exit_validator_index_${INDEX}.json
