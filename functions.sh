@@ -189,7 +189,7 @@ getPubKeys(){
       ;;
       Lodestar)
          cd /usr/local/bin/lodestar
-         TEMP=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --network $NETWORK  --dataDir /var/lib/lodestar/validators | grep -Eo '0x[a-fA-F0-9]{96}')
+         TEMP=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --network $NETWORK  --dataDir /var/lib/lodestar/validators --force | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;
       Teku)
