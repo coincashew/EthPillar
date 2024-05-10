@@ -15,7 +15,7 @@ set -o history -o histexpand
 # VARIABLES
 BASE_DIR=$HOME/git/ethpillar
 ip_current=$(hostname --ip-address)
-interface_current=$(ip route | grep default | sed 's/.*dev \([^ ]*\) .*/\1/')
+interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
 network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
 # Consensus client or beacon node HTTP Endpoint
 API_BN_ENDPOINT=http://127.0.0.1:5052
