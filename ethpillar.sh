@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.5.4"
+VERSION="1.5.5"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -463,6 +463,7 @@ done
 
 submenuMonitoring(){
 while true; do
+    getNetworkConfig
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
@@ -693,6 +694,7 @@ while true; do
         sleep 2
         ;;
       5)
+        getNetworkConfig
         # Default ufw settings
         sudo ufw default deny incoming
         sudo ufw default allow outgoing

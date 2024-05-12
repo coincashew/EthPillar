@@ -14,9 +14,6 @@ set -o history -o histexpand
 
 # VARIABLES
 BASE_DIR=$HOME/git/ethpillar
-ip_current=$(hostname --ip-address)
-interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
-network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
 # Consensus client or beacon node HTTP Endpoint
 API_BN_ENDPOINT=http://127.0.0.1:5052
 # Execution layer RPC API
@@ -24,6 +21,12 @@ EL_RPC_ENDPOINT=localhost:8545
 
 # Stores validator index
 declare -a INDICES
+
+getNetworkConfig() {
+    ip_current=$(hostname --ip-address)
+    interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
+    network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
+}
 
 exit_on_error() {
     exit_code=$1
@@ -62,10 +65,12 @@ ohai() {
 }
 
 network_down() {
+    getNetworkConfig
     sudo ip link set $interface_current down
 }
 
 network_up() {
+    getNetworkConfig
     sudo ip link set $interface_current up
 }
 

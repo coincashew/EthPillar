@@ -17,9 +17,11 @@ ETHEREUM_METRICS_EXPORTER_OPTIONS=(
 )
 GRAFANA_DIR=/etc/grafana
 
-ip_current=$(hostname --ip-address)
-interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
-network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
+function getNetworkConfig() {
+    ip_current=$(hostname --ip-address)
+    interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
+    network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
+}
 
 # Asks to update
 function upgradeBinaries(){
@@ -247,7 +249,7 @@ EOF
 # Process command line options
 while getopts :iurh opt; do
   case ${opt} in
-    i ) installGrafanaPrometheus ; installSystemd ; configureDataSource ; provisionDashboards ; downloadClient ; allowLocalAccessToGrafana ; showNextSteps ; promptViewLogs ;;
+    i ) installGrafanaPrometheus ; installSystemd ; configureDataSource ; provisionDashboards ; downloadClient ; getNetworkConfig ; allowLocalAccessToGrafana ; showNextSteps ; promptViewLogs ;;
     u ) upgradeBinaries ;;
     r ) removeAll ;;
     h)
