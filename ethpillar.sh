@@ -636,6 +636,7 @@ done
 submenuUFW(){
 while true; do
     getBackTitle
+    getNetworkConfig
     # Define the options for the submenu
     SUBOPTIONS=(
       1 "View ufw status"
@@ -694,7 +695,6 @@ while true; do
         sleep 2
         ;;
       5)
-        getNetworkConfig
         # Default ufw settings
         sudo ufw default deny incoming
         sudo ufw default allow outgoing
