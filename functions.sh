@@ -276,8 +276,8 @@ viewPubkeyAndIndices(){
 # Checks for open ports. Diagnose peering/router/port-forwarding issues.
 checkOpenPorts(){
     clear
-    if ! systemctl is-active --quiet execution ; then echo "WARNING: Execution client service not running. Ports will appear NOT open. Start service, then check ports."; fi
-    if ! systemctl is-active --quiet consensus ; then echo "WARNING: Consensus client service not running. Ports will appear NOT open. Start service, then check ports."; fi
+    if ! systemctl is-active --quiet execution ; then echo "${tty_red}WARNING: Execution client service not running. Ports will appear NOT open. Start service, then check ports."; fi
+    if ! systemctl is-active --quiet consensus ; then echo "${tty_red}WARNING: Consensus client service not running. Ports will appear NOT open. Start service, then check ports."; fi
     ohai "Checking for Open Ports:"
     ohai "- Properly configuring open ports will improve validator performance and network health."
     ohai "- Test if ports (e.g. 30303, 9000) are accessible from the Internet."
