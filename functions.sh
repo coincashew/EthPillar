@@ -636,3 +636,128 @@ testBandwidth(){
     ohai "Press ENTER to continue"
     read
 }
+
+# Allow external validators to connect to this consensus client (port 5052)
+exposeRpcCL(){
+    _closed='127.0.0.1'
+    _exposed='0.0.0.0'
+    _service='consensus'
+    _file="/etc/systemd/system/${_service}.service"
+    getNetworkConfig
+
+    case "${CL}" in
+        Nimbus     ) _flag='--rest-address';;
+        Lodestar   ) _flag='--rest.address';;
+        Lighthouse ) _flag='--http-address';;
+        Prysm      ) _flag='--grpc-gateway-host';;
+        Teku       ) _flag='--rest-api-interface';;
+        * ) echo "Consensus client not detected."; return 0;;
+    esac
+
+    clear
+    echo "###########################################################################"
+    ohai "Expose CL RPC: Allowing External Validator Clients to Connect to this Node"
+    echo "###########################################################################"
+    ohai "Purpose:"
+    echo "To allow attaching an external Validator client to your node's Consensus client, enable this feature."
+    echo "This will open up RPC ports (default 5052 for HTTP) on your node, allowing other machines on your local network to connect."
+    echo "For example, you can access this node's Consensus client (also called beacon-node) URL at http://${ip_current}:5052"
+    echo "When running multiple pairs of execution and consensus clients for client diversity or redundancy purposes, a staker may want to connect their Validator Client to multiple beacon nodes."
+    echo ""
+    ohai "Result of this operation:"
+    echo "- Flag Change:  This will modify ${CL}'s flag: ${_flag}"
+    echo "- Restarts ${_service} client for changes to take effect."
+    ohai "Next Steps:"
+    echo "- Review UFW firewall settings. Whitelist the connecting machine's IP or allow local LAN access."
+    echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Nn]* ]]; then return 0; fi
+
+    echo "${tty_bold}Do you wish to expose ${CL} RPC Port? This will modify ${_flag} and restart ${_service} client. Answer n to revoke access.[y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Yy]* ]]; then
+        _value=${_exposed}
+        ohai "Exposing $CL RPC Access with flag: ${_flag}"
+    else
+        _value=${_closed}
+        ohai "Closing $CL RPC Access with flag: ${_flag}"
+    fi
+
+    _updateFlagAndRestartService
+}
+
+# Allow external EL RPC access (port 8545)
+exposeRpcEL(){
+    _closed='127.0.0.1'
+    _exposed='0.0.0.0'
+    _service='execution'
+    _file="/etc/systemd/system/${_service}.service"
+    getNetworkConfig
+
+    case "${EL}" in
+        Nethermind ) _flag='--JsonRpc.Host';;
+        Besu       ) _flag='--rpc-http-host';;
+        Erigon     ) _flag='--http.addr';;
+        Geth       ) _flag='--http.addr';;
+        Reth       ) _flag='--http.addr';;
+        * ) echo "Execution client not detected"; return 0;;
+    esac
+
+    clear
+    echo "###########################################################################"
+    ohai "Expose EL RPC: Allowing External Access to Connect to this Node"
+    echo "###########################################################################"
+    ohai "Purpose:"
+    echo "To allow access from an external service to your node's Execution client, enable this feature."
+    echo "This will open up RPC ports (default 8545 for HTTP) on your node, allowing other machines on your local network to connect."
+    echo "For example, you can access this node's Execution client URL at http://${ip_current}:8545"
+    echo "A common use case is configuring your ETH wallet to use your own node as a RPC endpoint."
+    echo ""
+    ohai "Result of this operation:"
+    echo "- Flag Change:  This will modify ${EL}'s flag: ${_flag}"
+    echo "- Restarts ${_service} client for changes to take effect."
+    ohai "Next Steps:"
+    echo "- Review UFW firewall settings. Whitelist the connecting machine's IP or allow local LAN access."
+    echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Nn]* ]]; then return 0; fi
+
+    echo "${tty_bold}Do you wish to expose ${EL} RPC Port? This will modify ${_flag} and restart ${_service} client. Answer n to revoke access. [y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Yy]* ]]; then
+        _value=${_exposed}
+        ohai "Exposing $EL RPC Access with flag: ${_flag}"
+    else
+        _value=${_closed}
+        ohai "Closing $EL RPC Access with flag: ${_flag}"
+    fi
+
+    _updateFlagAndRestartService
+}
+
+# Helper function for Exposing RPC ports
+_updateFlagAndRestartService(){
+    # Check if multiline configuration file that ends with \
+    grep -q 'ExecStart.*\\$' ${_file}
+
+    if [[ $? = 0 ]]; then
+      # Multiline config
+      # Remove multiline configs remove trailing \ and then extra empty lines
+      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" ${_file} | sed 's=^\s*\\==g' | sed '/^[[:space:]]*$/d' > ${_file}.tmp
+      # Append new value after ExecStart line. Fix spacing and add \.
+      sed -e "/ExecStart.*$/a ${_flag}=${_value}" ${_file}.tmp | sed 's=^--.*$=  & \\=g' > ${_file}.result
+      rm ${_file}.tmp
+    else
+      # All on one line config
+      # Remove old value
+      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" ${_file} > ${_file}.result
+      # Add new value to end of ExecStart line
+      sed -i -e "s/^ExecStart.*$/& ${_flag}=${_value}/" ${_file}.result
+    fi
+    # Install new config
+    sudo mv ${_file}.result ${_file}
+    # Reload and restart
+    sudo systemctl daemon-reload && sudo service ${_service} restart
+    ohai "Configuration change complete."
+    sleep 2
+}

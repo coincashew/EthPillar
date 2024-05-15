@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.5.6"
+VERSION="1.5.7"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -114,8 +114,9 @@ while true; do
       5 "Edit configuration"
       6 "Update to latest release"
       7 "Resync execution client"
+      8 "Expose execution client RPC Port"
       - ""
-      8 "Back to main menu"
+      9 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -158,6 +159,9 @@ while true; do
         runScript resync_execution.sh
         ;;
       8)
+        exposeRpcEL
+        ;;
+      9)
         break
         ;;
     esac
@@ -176,8 +180,9 @@ while true; do
       5 "Edit configuration"
       6 "Update to latest release"
       7 "Resync consensus client"
+      8 "Expose consensus client RPC Port"
       - ""
-      8 "Back to main menu"
+      9 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -220,6 +225,9 @@ while true; do
         runScript resync_consensus.sh
         ;;
       8)
+        exposeRpcCL
+        ;;
+      9)
         break
         ;;
     esac
@@ -645,12 +653,13 @@ while true; do
       4 "Delete a rule"
       - ""
       5 "Enable firewall with default settings"
-      6 "RPC Node: Allow local network access to RPC port 8545"
-      7 "Monitoring: Allow local network access to Grafana port 3000"
-      8 "Disable firewall"
-      9 "Reset firewall rules"
+      6 "EC RPC Node: Allow local network access to RPC port 8545"
+      7 "CC RPC Node: Allow local network access to RPC port 5052"
+      8 "Monitoring: Allow local network access to Grafana port 3000"
+      9 "Disable firewall"
+      10 "Reset firewall rules: Delete all rules"
       - ""
-      10 "Whitelist an IP address: Allow full access to this node"
+      11 "Whitelist an IP address: Allow full access to this node"
       - ""
       99 "Back to main menu"
     )
@@ -713,27 +722,32 @@ while true; do
         sleep 3
         ;;
       6)
-        sudo ufw allow from ${network_current} to any port 8545 comment 'Allow local network to access RPC'
+        sudo ufw allow from ${network_current} to any port 8545 comment 'Allow local network to access execution client RPC port'
         ohai "Local network ${network_current} can access RPC port 8545"
         sleep 2
         ;;
       7)
+        sudo ufw allow from ${network_current} to any port 5052 comment 'Allow local network to access consensus client RPC port'
+        ohai "Local network ${network_current} can access RPC port 5052"
+        sleep 2
+        ;;
+      8)
         sudo ufw allow from ${network_current} to any port 3000 comment 'Allow local network to access Grafana'
         ohai "Local network ${network_current} can access RPC port 3000"
         sleep 2
         ;;
-      8)
+      9)
         sudo ufw disable
         ohai "UFW firewall disabled."
         sleep 2
         ;;
-      9)
+      10)
         sudo ufw disable
         sudo ufw --force reset
         ohai "UFW firewall reset."
         sleep 2
         ;;
-      10)
+      11)
         read -p "Enter the IP address to whitelist: " ip_whitelist
         sudo ufw allow from $ip_whitelist
         ohai "IP address whitelisted."
