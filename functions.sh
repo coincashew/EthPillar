@@ -630,7 +630,7 @@ testBandwidth(){
     echo "################################################################"
     ohai "Test internet bandwidth using speedtest.net"
     echo "################################################################"
-    ohai "Requirements: A full node uses at least 10MBbit/s upload and 10Mbit/s download."
+    ohai "Requirements: A full node uses at least 10Mbit/s upload and 10Mbit/s download."
     ohai "Starting speedtest ..."
     curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python3 -
     ohai "Press ENTER to continue"
