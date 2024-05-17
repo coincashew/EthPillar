@@ -294,7 +294,7 @@ checkOpenPorts(){
 
     # Call port checker
     ohai "Calling https://eth2-client-port-checker.vercel.app/api/checker?ports=$EL_PORT,$CL_PORT"
-    json=$(curl https://eth2-client-port-checker.vercel.app/api/checker?ports=$EL_PORT,$CL_PORT)
+    json=$(curl -s https://eth2-client-port-checker.vercel.app/api/checker?ports=$EL_PORT,$CL_PORT)
 
     # Parse JSON using jq and print requester IP
     ohai "Your IP: $(echo "$json" | jq -r .requester_ip)"
