@@ -564,9 +564,17 @@ broadcastVoluntaryExitMessageLocally(){
 checkValidatorStatus(){
     local _INDEX=""
     clear
+    echo "#############################################################################"
+    ohai "Validator Status: Given a validator index #, checks the status with ethdo"
+    echo "#############################################################################"
+    ohai "Key Points:"
+    echo "* Your validator will receive a unique index # after going live."
+    echo "* Until then, you'll need to use the public key to access it's status at beaconcha.in directly."
+    echo "* A validator can be identified by either its public key or its index #."
     # Get validator index from user
     while true; do
-    read -r -p "${tty_blue}Enter your Validator's Index: ${tty_reset}" _INDEX
+    read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
+    _INDEX=${_INDEX:-1337}
     ethdo --connection ${API_BN_ENDPOINT} validator info --validator=${_INDEX}
     read -r -p "${tty_blue}Check another index? (y/n) ${tty_reset}" yn
     case ${yn} in
