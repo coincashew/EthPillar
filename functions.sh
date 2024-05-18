@@ -161,6 +161,7 @@ runScript() {
 getNetwork(){
     # Get network name from execution client
     result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' ${EL_RPC_ENDPOINT} | jq -r '.result')
+    if [[ -z $result ]]; then NETWORK="Network Syncing"; return; fi
     case $result in
     1)
       NETWORK="Mainnet"

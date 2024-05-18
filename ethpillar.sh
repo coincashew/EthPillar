@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.5.9"
+VERSION="1.5.10"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -879,29 +879,19 @@ function getBackTitle(){
     getClient
     # Latest block
     latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    LB=$(printf '%d' "$latest_block_number")
-    if [[ ! $LB  ]]; then
-      LB="N/A"
-    fi
+    if [[ ! -z $latest_block_number ]]; then LB=$(printf 'Block %d' "$latest_block_number"); else LB="EL Syncing"; fi
 
     # Latest slot
     LS=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot')
-    if [[ ! $LS ]]; then
-      LS="N/A"
-    fi
+    if [[ ! -z $LS ]]; then LS="Slot $LS"; else LS="CL Syncing"; fi
 
     # Format gas price
     latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    if [[ $latest_gas_price ]]; then
-      WEI=$(printf '%d' "$latest_gas_price")
-      GP=$(echo "scale=3; $WEI / 1000000000" | bc) #convert to Gwei
-    else
-      GP="N/A"
-    fi
+    if [[ ! -z $latest_gas_price ]]; then WEI=$(printf '%d' "$latest_gas_price"); GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"; else GP="Gas N/A - Syncing"; fi
 
     # Format backtitle
-    EL_TEXT=$(if systemctl is-active --quiet execution ; then printf "Block $LB | Gas $GP Gwei" ; else printf "Offline EL" ; fi)
-    CL_TEXT=$(if systemctl is-active --quiet consensus ; then printf "Slot $LS" ; else printf "Offline CL" ; fi)
+    EL_TEXT=$(if systemctl is-active --quiet execution ; then printf "$LB | $GP" ; else printf "Offline EL" ; fi)
+    CL_TEXT=$(if systemctl is-active --quiet consensus ; then printf "$LS" ; else printf "Offline CL" ; fi)
     VC_TEXT=$(if systemctl is-active --quiet validator && systemctl is-enabled --quiet validator; then printf " | VC $VC" ; fi)
     NETWORK_TEXT=$(if systemctl is-active --quiet execution ; then printf "$NETWORK |" ; fi)
     BACKTITLE="$NETWORK_TEXT $EL_TEXT | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
