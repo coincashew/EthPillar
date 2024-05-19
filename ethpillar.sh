@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.5.11"
+VERSION="1.5.12"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -781,6 +781,7 @@ while true; do
       13 "Swapfile: Use disk space as extra RAM"
       14 "UFW Firewall: Control network traffic against unauthorized access"
       15 "Speedtest: Test internet bandwidth using speedtest.net"
+      16 "Yet-Another-Bench-Script: Test node performance. Automated Benchmarking."
       - ""
       99 "Back to main menu"
     )
@@ -866,6 +867,9 @@ while true; do
         ;;
       15)
         testBandwidth
+        ;;
+      16)
+        testYetAnotherBenchScript
         ;;
       99)
         break

@@ -648,6 +648,42 @@ testBandwidth(){
     read
 }
 
+testYetAnotherBenchScript(){
+    clear
+    echo "#######################################################"
+    ohai "Yet-Another-Bench-Script - yabs.sh"
+    echo "#######################################################"
+    ohai "Automated Benchmarking: Runs popular tools to test node performance"
+    echo "- Multi-Test Suite: It includes tests for:"
+    echo "  * Disk performance using fio"
+    echo "  * Network performance using iperf3"
+    echo "  * CPU/memory performance using Geekbench"
+    echo "- No External Dependencies Required: No additional downloads"
+    echo "- No Elevated Privileges Needed: Don't need administrator rights to run"
+    echo "#######################################################"
+    ohai "Reminder: Full node requirements"
+    echo "- Network:"
+    echo "  * Bandwidth should be at least 10Mbit/s upload and 10Mbit/s download"
+    echo "  * At least 2TB data transfer per month"
+    echo "- Disk:"
+    echo "  * Capacity at least 2TB Mainnet, 300GB Holesky testnet"
+    echo "  * NVME drive preferred, SSD with TLC cache can work"
+    echo "  * I/O Per Second on 4k block size test at least 15K IOPS read, 5K IOPS write"
+    echo "- CPU:"
+    echo "  * At least 2 cores, 4 threads"
+    echo "  * Geekbench 6 scores at least 700 single core score, 1400 multi-core score"
+    echo "- RAM:"
+    echo "  * At least 16GB. 32GB for future-proofing."
+    ohai "Testing completes in 30 minutes max, generally around 10 minutes."
+    echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Yy]* ]]; then
+      curl -sL yabs.sh | bash
+      ohai "Press ENTER to continue"
+      read
+    fi
+}
+
 # Allow external validators to connect to this consensus client (port 5052)
 exposeRpcCL(){
     _closed='127.0.0.1'
