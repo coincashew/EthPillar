@@ -659,8 +659,6 @@ testYetAnotherBenchScript(){
     echo "  * Network performance using iperf3"
     echo "  * CPU/memory performance using Geekbench"
     echo "- No External Dependencies Required: No additional downloads"
-    echo "- No Elevated Privileges Needed: Don't need administrator rights to run"
-    echo "#######################################################"
     ohai "Reminder: Full node requirements"
     echo "- Network:"
     echo "  * Bandwidth should be at least 10Mbit/s upload and 10Mbit/s download"
