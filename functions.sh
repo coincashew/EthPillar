@@ -787,22 +787,26 @@ _updateFlagAndRestartService(){
 
     if [[ $? = 0 ]]; then
       # Multiline config
+      # Copy service file to editable location
+      cp ${_file} $HOME/_edit
       # Remove multiline configs remove trailing \ and then extra empty lines
-      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" ${_file} | sed 's=^\s*\\==g' | sed '/^[[:space:]]*$/d' > ${_file}.tmp
+      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" $HOME/_edit | sed 's=^\s*\\==g' | sed '/^[[:space:]]*$/d' > $HOME/_tmp
       # Append new value after ExecStart line. Fix spacing and add \.
-      sed -e "/ExecStart.*$/a ${_flag}=${_value}" ${_file}.tmp | sed 's=^--.*$=  & \\=g' > ${_file}.result
-      rm ${_file}.tmp
+      sed -e "/ExecStart.*$/a ${_flag}=${_value}" $HOME/_tmp | sed 's=^--.*$=  & \\=g' > $HOME/_result
+      rm $HOME/_tmp
     else
       # All on one line config
+      # Copy service file to editable location
+      cp ${_file} $HOME/_edit
       # Remove old value
-      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" ${_file} > ${_file}.result
+      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" $HOME/_edit > $HOME/_result
       # Add new value to end of ExecStart line
-      sed -i -e "s/^ExecStart.*$/& ${_flag}=${_value}/" ${_file}.result
+      sed -i -e "s/^ExecStart.*$/& ${_flag}=${_value}/" $HOME/_result
     fi
     # Install new config
-    sudo mv ${_file}.result ${_file}
+    sudo mv $HOME/_result ${_file}
     # Reload and restart
     sudo systemctl daemon-reload && sudo service ${_service} restart
     ohai "Configuration change complete."
-    sleep 2
+    sleep 5
 }
