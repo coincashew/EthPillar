@@ -248,7 +248,7 @@ getIndices(){
    for PUBKEY in ${LIST[@]}
       do
          VALIDATOR_INDEX=$(curl -s -X GET $API_URL_INDICES/$PUBKEY | jq -r .data.index)
-         INDICES+=($VALIDATOR_INDEX)
+         if [[ ! -n $VALIDATOR_INDEX ]]; then INDICES+=($VALIDATOR_INDEX); fi
       done
 }
 

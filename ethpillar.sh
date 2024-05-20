@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.5.13"
+VERSION="1.5.14"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -569,10 +569,14 @@ while true; do
     case $SUBCHOICE in
       1)
         getNetwork && getPubKeys && getIndices
+        if [[ ${#INDICES[@]} = "0" ]]; then echo "No validators currently active. Once validators are activated, you can query duties."; sleep 5;
+return; fi
         /usr/local/bin/eth-duties --validators ${INDICES[@]} --beacon-nodes $API_BN_ENDPOINT
         ;;
       2)
         getNetwork && getPubKeys && getIndices
+        if [[ ${#INDICES[@]} = "0" ]]; then echo "No validators currently active. Once validators are activated, you can query duties."; sleep 5;
+return; fi
         /usr/local/bin/eth-duties --validators ${INDICES[@]} --beacon-nodes $API_BN_ENDPOINT --max-attestation-duty-logs 60 --mode cicd-wait --mode-cicd-attestation-time 90 --mode-cicd-attestation-proportion 0.90
         ohai "Ready! Press ENTER to continue."
         read
