@@ -19,6 +19,13 @@ if systemctl is-active --quiet validator && systemctl is-enabled --quiet validat
    hasValidator=true
 fi
 
+# Enable truecolor logs for btop
+if [[ ! -f ~/.tmux.conf ]]; then
+    cat << EOF > ~/.tmux.conf
+set-option -g terminal-overrides ",*:Tc"
+EOF
+fi
+
 # Kill prior session
 tmux kill-session -t logs
 
