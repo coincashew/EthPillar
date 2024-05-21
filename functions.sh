@@ -190,12 +190,12 @@ getPubKeys(){
    TEMP=""
    case $VC in
       Lighthouse)
-         TEMP=$(/usr/local/bin/lighthouse account validator list --network $NETWORK --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
+         TEMP=$(/usr/local/bin/lighthouse account validator list --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;
       Lodestar)
          cd /usr/local/bin/lodestar
-         TEMP=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --network $NETWORK  --dataDir /var/lib/lodestar/validators --force | grep -Eo '0x[a-fA-F0-9]{96}')
+         TEMP=$(sudo -u validator /usr/local/bin/lodestar/lodestar validator list --dataDir /var/lib/lodestar/validators --force | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;
       Teku)
@@ -221,7 +221,7 @@ getPubKeys(){
          convertLIST
       ;;
       Prysm)
-         TEMP=$(/usr/local/bin/validator accounts list --$NETWORK --wallet-dir=/var/lib/prysm/validators | grep -Eo '0x[a-fA-F0-9]{96}')
+         TEMP=$(/usr/local/bin/validator accounts list --wallet-dir=/var/lib/prysm/validators | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;
    esac

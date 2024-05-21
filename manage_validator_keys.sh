@@ -154,7 +154,6 @@ function loadKeys(){
    case $VC in
       Lighthouse)
         sudo lighthouse account validator import \
-          --network $NETWORK \
           --datadir /var/lib/lighthouse \
           --directory=$KEYPATH \
           --reuse-password
@@ -165,7 +164,6 @@ function loadKeys(){
         sudo mkdir -p /var/lib/lodestar/validators
         cd /usr/local/bin/lodestar
         sudo ./lodestar validator import \
-          --network $NETWORK \
           --dataDir="/var/lib/lodestar/validators" \
           --keystore=$KEYPATH
         sudo chown -R validator:validator /var/lib/lodestar/validators
@@ -201,7 +199,6 @@ function loadKeys(){
      Prysm)
         sudo /usr/local/bin/validator accounts import \
           --accept-terms-of-use \
-          --$NETWORK \
           --wallet-dir=/var/lib/prysm/validators \
           --keys-dir=$KEYPATH
         sudo chown -R validator:validator /var/lib/prysm/validators
