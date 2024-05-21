@@ -248,14 +248,18 @@ getIndices(){
    for PUBKEY in ${LIST[@]}
       do
          VALIDATOR_INDEX=$(curl -s -X GET $API_URL_INDICES/$PUBKEY | jq -r .data.index)
-         if [[ ! -n $VALIDATOR_INDEX ]]; then INDICES+=($VALIDATOR_INDEX); fi
+         if [[ $VALIDATOR_INDEX = null ]]; then
+            echo "INFO: $PUBKEY not yet activated."
+         else
+            INDICES+=($VALIDATOR_INDEX);
+         fi
       done
 }
 
 # Prints list of pubkeys and indices
 viewPubkeyAndIndices(){
    local COUNT=${#LIST[@]}
-   if [ "$COUNT" = "0" ]; then
+   if [[ "$COUNT" = "0" ]]; then
       echo "No validators keys loaded. Press ENTER to finish."
       read
       return
@@ -269,7 +273,11 @@ viewPubkeyAndIndices(){
    done
    ohai "==========================================="
    ohai "Indices:"
-   echo ${INDICES[@]}
+   if [[ ! ${#INDICES[@]} = "0" ]]; then
+      echo ${INDICES[@]}
+   else
+      echo "No validators currently active. Once a validator is activated, an index is assigned."
+   fi
    ohai "Press ENTER to finish."
    read
 }
