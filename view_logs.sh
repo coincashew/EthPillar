@@ -11,11 +11,24 @@ if ! command -v btop &> /dev/null; then
    sudo apt-get install btop -y
 fi
 
+# Check if the current user belongs to the systemd-journal group
+current_user=$(whoami)
+group_members=$(getent group systemd-journal | cut -d: -f2-)
+
+if ! echo "$current_user" | grep -qw "$current_user" <<<"$group_members"; then
+  # Add the user to the systemd-journal group if they're not already a member
+  sudo usermod -aG systemd-journal $current_user
+  echo "To view logs, $current_user has been added to systemd-journal group."
+  echo "Open a new terminal, then check logs again."
+  sleep 5
+  exit 0
+fi
+
 # Bool for validator
 hasValidator=false
 
-# Check for presense of validator
-if systemctl is-active --quiet validator && systemctl is-enabled --quiet validator; then
+# Check for presence of validator
+if systemctl is-active --quiet validator; then
    hasValidator=true
 fi
 
