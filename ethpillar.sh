@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.5.19"
+VERSION="1.6.0"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -599,13 +599,17 @@ while true; do
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
-      1 "Check Validator Status by Index"
-      2 "Generate Voluntary Exit Messages (VEM)"
-      3 "Broadcast Voluntary Exit Messages (VEM)"
-      4 "Update to latest release"
-      5 "Uninstall ethdo"
+      1 "Status: Check Validator Status by Index"
+      2 "VEM: Generate Voluntary Exit Messages (VEM)"
+      3 "VEM: Broadcast Voluntary Exit Messages (VEM)"
+      4 "Earnings: Show expected yield (APY)"
+      5 "Next duties: Show expected time between block proposals, sync comm"
+      6 "Sweep delay: Show time until next withdrawal for a validator"
+      7 "Credentials: Show withdrawal address"
+      8 "Update to latest release"
+      9 "Uninstall ethdo"
       - ""
-      9 "Back to main menu"
+      99 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -633,12 +637,36 @@ while true; do
         broadcastVoluntaryExitMessageLocally
         ;;
       4)
-        runScript ethdo.sh -u
+        ethdo validator --connection ${API_BN_ENDPOINT} yield
+        ohai "Current yield per validator (APY). Press ENTER to continue"
+        read
         ;;
       5)
-        runScript ethdo.sh -r
+        ethdo validator --connection ${API_BN_ENDPOINT} expectation
+        ohai "Expectation is based on current # of active validators on the Ethereum network. Press ENTER to continue"
+        read
+        ;;
+      6)
+        read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
+        _INDEX=${_INDEX:-1337}
+        ethdo validator --connection ${API_BN_ENDPOINT} withdrawal --validator=${_INDEX}
+        ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
+        read
+        ;;
+      7)
+        read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
+        _INDEX=${_INDEX:-1337}
+        ethdo validator --connection ${API_BN_ENDPOINT} credentials get --validator=${_INDEX}
+        ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
+        read
+        ;;
+      8)
+        runScript ethdo.sh -u
         ;;
       9)
+        runScript ethdo.sh -r
+        ;;
+      99)
         break
         ;;
     esac
