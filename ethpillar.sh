@@ -929,7 +929,8 @@ function getBackTitle(){
     EL_TEXT=$(if systemctl is-active --quiet execution ; then printf "$LB | $GP" ; else printf "Offline EL" ; fi)
     CL_TEXT=$(if systemctl is-active --quiet consensus ; then printf "$LS" ; else printf "Offline CL" ; fi)
     VC_TEXT=$(if systemctl is-active --quiet validator && systemctl is-enabled --quiet validator; then printf " | VC $VC" ; fi)
-    NETWORK_TEXT=$(if systemctl is-active --quiet execution ; then printf "$NETWORK |" ; fi)
+    HOSTNAME=echo hostname
+    NETWORK_TEXT=$(if systemctl is-active --quiet execution ; then printf "$NETWORK on $HOSTNAME |" ; fi)
     BACKTITLE="$NETWORK_TEXT $EL_TEXT | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
 }
 
