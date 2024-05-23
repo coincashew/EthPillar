@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.6.0"
+VERSION="1.6.1"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -599,12 +599,12 @@ while true; do
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
-      1 "Status: Check Validator Status by Index"
-      2 "VEM: Generate Voluntary Exit Messages (VEM)"
-      3 "VEM: Broadcast Voluntary Exit Messages (VEM)"
+      1 "Status: Check validator status, balance"
+      2 "VEM: Generate Voluntary Exit Messages"
+      3 "VEM: Broadcast Voluntary Exit Messages"
       4 "Earnings: Show expected yield (APY)"
       5 "Next duties: Show expected time between block proposals, sync comm"
-      6 "Sweep delay: Show time until next withdrawal for a validator"
+      6 "Sweep delay: Show time until next withdrawal"
       7 "Credentials: Show withdrawal address"
       8 "Update to latest release"
       9 "Uninstall ethdo"
@@ -637,28 +637,16 @@ while true; do
         broadcastVoluntaryExitMessageLocally
         ;;
       4)
-        ethdo validator --connection ${API_BN_ENDPOINT} yield
-        ohai "Current yield per validator (APY). Press ENTER to continue"
-        read
+        ethdoYield
         ;;
       5)
-        ethdo validator --connection ${API_BN_ENDPOINT} expectation
-        ohai "Expectation is based on current # of active validators on the Ethereum network. Press ENTER to continue"
-        read
+        ethdoExpectation
         ;;
       6)
-        read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
-        _INDEX=${_INDEX:-1337}
-        ethdo validator --connection ${API_BN_ENDPOINT} withdrawal --validator=${_INDEX}
-        ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
-        read
+        ethdoNextWithdrawalSweep
         ;;
       7)
-        read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
-        _INDEX=${_INDEX:-1337}
-        ethdo validator --connection ${API_BN_ENDPOINT} credentials get --validator=${_INDEX}
-        ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
-        read
+        ethdoWithdrawalAddress
         ;;
       8)
         runScript ethdo.sh -u
@@ -929,7 +917,7 @@ function getBackTitle(){
     EL_TEXT=$(if systemctl is-active --quiet execution ; then printf "$LB | $GP" ; else printf "Offline EL" ; fi)
     CL_TEXT=$(if systemctl is-active --quiet consensus ; then printf "$LS" ; else printf "Offline CL" ; fi)
     VC_TEXT=$(if systemctl is-active --quiet validator && systemctl is-enabled --quiet validator; then printf " | VC $VC" ; fi)
-    HOSTNAME=echo hostname
+    HOSTNAME=$(hostname)
     NETWORK_TEXT=$(if systemctl is-active --quiet execution ; then printf "$NETWORK on $HOSTNAME |" ; fi)
     BACKTITLE="$NETWORK_TEXT $EL_TEXT | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
 }

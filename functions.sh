@@ -818,3 +818,35 @@ _updateFlagAndRestartService(){
     ohai "Configuration change complete."
     sleep 5
 }
+
+# Returns yield per validator
+ethdoYield(){
+    ethdo validator --connection ${API_BN_ENDPOINT} yield
+    ohai "Current yield per validator (APY). Press ENTER to continue"
+    read
+}
+
+# Returns expectation between block proposals, sync committee duties
+ethdoExpectation(){
+    ethdo validator --connection ${API_BN_ENDPOINT} expectation
+    ohai "Expectation is based on current # of active validators on the Ethereum network. Press ENTER to continue"
+    read
+}
+
+# Returns time until next withdrawal sweep for given validator
+ethdoNextWithdrawalSweep(){
+    read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
+    _INDEX=${_INDEX:-1337}
+    ethdo validator --connection ${API_BN_ENDPOINT} withdrawal --validator=${_INDEX}
+    ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
+    read
+}
+
+# Returns withdrawal address for given validator
+ethdoWithdrawalAddress(){
+    read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
+    _INDEX=${_INDEX:-1337}
+    ethdo validator --connection ${API_BN_ENDPOINT} credentials get --validator=${_INDEX}
+    ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
+    read
+}
