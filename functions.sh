@@ -858,19 +858,19 @@ checkValidatorQueue(){
     declare -A BEACONCHAIN_URLS=()
     BEACONCHAIN_URLS["Mainnet"]="https://beaconcha.in"
     BEACONCHAIN_URLS["Holesky"]="https://holesky.beaconcha.in"
-    # 60min / 6.4min/epoch * 24 hr/day * churnPerEpoch
-    CHURN_ENTRY_PER_DAY=1800
-    CHURN_EXIT_PER_DAY=3375
     # Dencun entry churn cap
     CHURN_ENTRY_PER_EPOCH=8
     CHURN_RATE_CONSTANT=65536
+    EPOCHS_PER_DAY_CONSTANT=225
 
     # Query for data
     json=$(curl -s ${BEACONCHAIN_URLS["${NETWORK}"]}${BEACONCHAIN_VALIDATOR_QUEUE_API_URL})
 
     # Parse JSON using jq and print data
     if $(echo "$json" | jq -e '.data[]' > /dev/null 2>&1); then
+        CHURN_ENTRY_PER_DAY=$(echo "scale=0; $CHURN_ENTRY_PER_EPOCH * $EPOCHS_PER_DAY_CONSTANT" | bc)
         CHURN_EXIT_PER_EPOCH=$(echo "scale=0; $(echo "$json" | jq -r '.data.validatorscount') / $CHURN_RATE_CONSTANT" | bc)
+        CHURN_EXIT_PER_DAY=$(echo "scale=0; $CHURN_EXIT_PER_EPOCH * $EPOCHS_PER_DAY_CONSTANT" | bc)
         echo "#######################################################"
         ohai "${NETWORK} Validator Entry/Exit Queue Stats"
         echo "#######################################################"
