@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.6.1"
+VERSION="1.6.2"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -250,9 +250,10 @@ while true; do
       - ""
       8 "Generate Voluntary Exit Messages (VEM) with ethdo"
       9 "Broadcast Voluntary Exit Messages (VEM) with ethdo"
-      10 "Check Validator Status by Index with ethdo"
+      10 "Check validator status, balance with ethdo"
+      11 "Check validator entry/exit queue with beaconcha.in"
       - ""
-      11 "Back to main menu"
+      12 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -307,7 +308,11 @@ while true; do
         installEthdo
         checkValidatorStatus
         ;;
+
       11)
+         checkValidatorQueue
+         ;;
+      12)
         break
         ;;
     esac
@@ -792,9 +797,8 @@ while true; do
       5 "ethdo: Conduct Common Validator Tasks"
       6 "Peer Count: Show # peers connected to EL & CL"
       7 "Beaconcha.in Validator Dashboard: Create a link for my validators"
-      - ""
+      8 "Beaconcha.in: Check Validator Entry/Exit Queue time"
       9 "EL: Switch Execution Clients"
-      - ""
       10 "Timezone: Update machine's timezone"
       11 "Locales: Fix terminal formatting issues"
       12 "Privacy: Clear bash shell history"
@@ -858,6 +862,9 @@ while true; do
       7)
         createBeaconChainDashboardLink
         ;;
+      8)
+        checkValidatorQueue
+        ;;
       9)
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
         ;;
@@ -916,7 +923,7 @@ function getBackTitle(){
     # Format backtitle
     EL_TEXT=$(if systemctl is-active --quiet execution ; then printf "$LB | $GP" ; else printf "Offline EL" ; fi)
     CL_TEXT=$(if systemctl is-active --quiet consensus ; then printf "$LS" ; else printf "Offline CL" ; fi)
-    VC_TEXT=$(if systemctl is-active --quiet validator && systemctl is-enabled --quiet validator; then printf " | VC $VC" ; fi)
+    VC_TEXT=$(if systemctl is-active --quiet validator ; then printf " | VC $VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf " | Offline VC $VC"; fi)
     HOSTNAME=$(hostname)
     NETWORK_TEXT=$(if systemctl is-active --quiet execution ; then printf "$NETWORK on $HOSTNAME |" ; fi)
     BACKTITLE="$NETWORK_TEXT $EL_TEXT | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"

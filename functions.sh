@@ -850,3 +850,46 @@ ethdoWithdrawalAddress(){
     ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
     read
 }
+
+# Checks validator queue by querying beaconcha.in
+checkValidatorQueue(){
+    #Variables
+    BEACONCHAIN_VALIDATOR_QUEUE_API_URL="/api/v1/validators/queue"
+    declare -A BEACONCHAIN_URLS=()
+    BEACONCHAIN_URLS["Mainnet"]="https://beaconcha.in"
+    BEACONCHAIN_URLS["Holesky"]="https://holesky.beaconcha.in"
+    # 60min / 6.4min/epoch * 24 hr/day * churnPerEpoch
+    CHURN_ENTRY_PER_DAY=1800
+    CHURN_EXIT_PER_DAY=3375
+    # Dencun entry churn cap
+    CHURN_ENTRY_PER_EPOCH=8
+    CHURN_RATE_CONSTANT=65536
+
+    # Query for data
+    json=$(curl -s ${BEACONCHAIN_URLS["${NETWORK}"]}${BEACONCHAIN_VALIDATOR_QUEUE_API_URL})
+
+    # Parse JSON using jq and print data
+    if $(echo "$json" | jq -e '.data[]' > /dev/null 2>&1); then
+        CHURN_EXIT_PER_EPOCH=$(echo "scale=0; $(echo "$json" | jq -r '.data.validatorscount') / $CHURN_RATE_CONSTANT" | bc)
+        echo "#######################################################"
+        ohai "${NETWORK} Validator Entry/Exit Queue Stats"
+        echo "#######################################################"
+        ohai "Reminder: Important Timing Consideration"
+        echo "- Wait for Beacon Node Sync: Before making a deposit, ensure your beacon node is synced to avoid missing rewards."
+        echo "- Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
+        echo "- Timing of Validator Exiting: After initiating an exit by broadcasting a VEM, it takes validator a minimum of 4 epochs to be exited unless there's a long exit queue."
+        ohai "Entry Queue"
+        echo "Validators Entering: $(echo $json | jq -r '.data.beaconchain_entering')"
+        echo "Estimated wait time: $(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_entering') / $CHURN_ENTRY_PER_DAY" | bc) days"
+        echo "Churn: ${CHURN_ENTRY_PER_EPOCH} per epoch"
+        ohai "Exit Queue"
+        echo "Validators Exiting: $(echo $json | jq -r '.data.beaconchain_exiting')"
+        echo "Estimated wait time: $(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_exiting') / $CHURN_EXIT_PER_DAY" | bc) days"
+        echo "Churn: ${CHURN_EXIT_PER_EPOCH} per epoch"
+        ohai "Total Active Validator Count: $(echo $json | jq -r '.data.validatorscount')"
+    else
+      ohai "Unable to query beaconcha.in for $NETWORK validator queue data."
+    fi
+    ohai "Press ENTER to continue."
+    read
+}
