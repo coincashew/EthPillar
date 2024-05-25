@@ -211,16 +211,45 @@ function loadKeys(){
      KEYFOLDER=${KEYPATH}_$(date +%F_%H-%M-%S)
      mv $KEYPATH $KEYFOLDER
      getLAUNCHPAD_URL
+     queryValidatorQueue
      MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
 \n2) Upload your deposit_data-#########.json found in the directory:
 \n$KEYFOLDER
 \n3) Connect the Launchpad with your wallet, review and accept terms.
-\n4) Complete the ETH deposit transaction(s). One transaction for each validator."
+\n4) Complete the 32 ETH deposit transaction(s). One transaction per validator.
+\n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE
+\nTips:
+\n   - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
+\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
      #generate listing from api, show output
-     whiptail --title "Next Steps: Upload Deposit Data File to Launchpad" --msgbox "$MSG_LAUNCHPAD" 19 78
+     whiptail --title "Next Steps: Upload Deposit Data File to Launchpad" --msgbox "$MSG_LAUNCHPAD" 28 78
      ohai "Finished loading keys. Press enter to continue."
      read
      promptViewLogs
+}
+
+function queryValidatorQueue(){
+    #Variables
+    BEACONCHAIN_VALIDATOR_QUEUE_API_URL="/api/v1/validators/queue"
+    declare -A BEACONCHAIN_URLS=()
+    BEACONCHAIN_URLS["mainnet"]="https://beaconcha.in"
+    BEACONCHAIN_URLS["holesky"]="https://holesky.beaconcha.in"
+    # Dencun entry churn cap
+    CHURN_ENTRY_PER_EPOCH=8
+    EPOCHS_PER_DAY_CONSTANT=225
+
+    # Query for data
+    json=$(curl -s ${BEACONCHAIN_URLS["${NETWORK}"]}${BEACONCHAIN_VALIDATOR_QUEUE_API_URL})
+
+    # Parse JSON using jq and print data
+    if $(echo "$json" | jq -e '.data[]' > /dev/null 2>&1); then
+        CHURN_ENTRY_PER_DAY=$(echo "scale=0; $CHURN_ENTRY_PER_EPOCH * $EPOCHS_PER_DAY_CONSTANT" | bc)
+        _val_joining=$(echo $json | jq -r '.data.beaconchain_entering')
+        _val_wait_days=$(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_entering') / $CHURN_ENTRY_PER_DAY" | bc)
+        MSG_VALIDATOR_QUEUE="For ${NETWORK}, currently ${_val_joining} validators waiting to join. ETA: ${_val_wait_days} days."
+    else
+      echo "DEBUG: Unable to query beaconcha.in for $NETWORK validator queue data."
+    fi
 }
 
 function getClientVC(){
@@ -264,7 +293,7 @@ function setMessage(){
 \nETH address secured by a hardware wallet is recommended.
 \nIn checksum format, enter your Withdrawal Address:"
     MSG_IMPORT="Importing validator keys:
-\n1) I acknowledge that if migrating from another node, I must wait for at least two finished epochs before proceeding further.
+\n1) I acknowledge that if migrating from another node, I must wait for at least two epochs (12 mins 48 sec) before continuing.
 \n2) I acknowledge that if migrating from another node, I have deleted the keys from the previous machine. This ensures that the keys will NOT inadvertently restart and run in two places.
 \n3) Lastly, these validator keys are NOT operational on any other machine (such as a cloud hosting service or DVT).
 \nContinue?"
