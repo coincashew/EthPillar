@@ -9,7 +9,7 @@
 # 🫶 Make improvements and suggestions on GitHub:
 #    * https://github.com/coincashew/ethpillar
 # 🙌 Ask questions on Discord:
-#    * https://discord.gg/w8Bx8W2HPW
+#    * https://discord.gg/dEpAVWgFNB
 
 set -u
 

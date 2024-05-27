@@ -10,7 +10,7 @@
 # 🫶 Make improvements and suggestions on GitHub:
 #    * https://github.com/coincashew/ethpillar
 # 🙌 Ask questions on Discord:
-#    * https://discord.gg/w8Bx8W2HPW
+#    * https://discord.gg/dEpAVWgFNB
 
 VERSION="1.6.4"
 BASE_DIR=$HOME/git/ethpillar
@@ -460,7 +460,7 @@ while true; do
       11)
         MSG_ABOUT="🫰 Created as a Public Good by CoinCashew.eth since Pre-Genesis 2020
         \n🫶 Make improvements and suggestions on GitHub: https://github.com/coincashew/ethpillar
-        \n🙌 Ask questions on Discord: https://discord.gg/w8Bx8W2HPW
+        \n🙌 Ask questions on Discord: https://discord.gg/dEpAVWgFNB
         \nIf you'd like to support this public goods project, find us on the next Gitcoin Grants.
         \nOur donation address is 0xCF83d0c22dd54475cC0C52721B0ef07d9756E8C0 or coincashew.eth"
         whiptail --title "About EthPillar" --msgbox "$MSG_ABOUT" 20 78
