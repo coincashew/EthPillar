@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/w8Bx8W2HPW
 
-VERSION="1.6.3"
+VERSION="1.6.4"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -331,8 +331,9 @@ while true; do
       5 "Edit configuration"
       6 "Update to latest release"
       7 "Check relay registration"
+      8 "Check relay latency"
       - ""
-      8 "Back to main menu"
+      9 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -375,6 +376,9 @@ while true; do
         checkRelayRegistration
         ;;
       8)
+        checkRelayLatency
+        ;;
+      9)
         break
         ;;
     esac

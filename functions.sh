@@ -893,3 +893,33 @@ checkValidatorQueue(){
     ohai "Press ENTER to continue."
     read
 }
+
+
+# Checks local latency of relays found in mevboost.service file
+checkRelayLatency(){
+    echo "#########################################################"
+    ohai "Relay Latency Check: Tests response time to each relay"
+    echo "#########################################################"
+    # Check for mevboost installation
+    if [ ! -f /etc/systemd/system/mevboost.service ]; then echo "No relays to check. Mevboost service not installed."; exit 1; fi;
+
+    # Extract relay urls from mevboost.service, store in array
+    RELAYS=($(cat /etc/systemd/system/mevboost.service  | sed "s/ /\n/g" | sed -n "/https.*@/p"))
+    ohai "Found # of relays in mevboost.service:  ${#RELAYS[@]}"
+    for INDEX in ${!RELAYS[@]}
+       do
+          # Strip out the relays domain name
+          URL=$(echo ${RELAYS[INDEX]} | sed 's/.*@\(.*\)/\1/')
+          # Get response time in sec, check with relay API call
+          LATENCY=$(curl -s -w %{time_total} -o /dev/null https://${URL}/relay/v1/data/bidtraces/proposer_payload_delivered?limit=1)
+          # Convert to millisec integer
+          LATENCY=$(echo "$LATENCY*1000/1" | bc)
+          if [[ $LATENCY -lt 500 ]]; then EMOJI="✅"; elif [[ $LATENCY -lt 1000 ]]; then EMOJI="⚠️" && _WARN=true; else EMOJI="❌" && _WARN=true; fi
+          # Print out latency
+          echo "Relay $((INDEX+1)) - $URL: $LATENCY ms $EMOJI"
+       done
+    [[ $_WARN ]] && echo "${tty_bold}When relays are distant from your node, response times can be high. Consider removing relays with ⚠️ or ❌."
+    ohai "Relay latency check complete."
+    ohai "Press ENTER to continue"
+    read
+}
