@@ -45,25 +45,53 @@ fi
 # Kill prior session
 tmux kill-session -t logs
 
-# Create panes for validator node or non-staking node
-if [ $hasValidator = false ]; then
-   tmux new-session -d -s logs \; \
-        send-keys 'journalctl -fu consensus | ccze' C-m \; \
-        split-window -v \; \
-        split-window -h \; \
-        send-keys 'btop --utf-force' C-m \; \
-        select-pane -t 1 \; \
-        send-keys 'journalctl -fu execution | ccze' C-m \;
+# Get terminal width
+cols=$(tput cols)
+
+# Portrait view for narrow terminals <= 80 col
+if [[ $cols -lt 81 ]]; then
+   if [ $hasValidator = false ]; then
+      # RPC Node
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           split-window -h \; \
+           select-pane -t 1 \; \
+           send-keys 'journalctl -fu execution | ccze' C-m \; \
+           select-layout even-vertical \;
+   else
+      # Staking Node
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           split-window -v \; \
+           send-keys 'journalctl -fu validator | ccze' C-m \; \
+           select-pane -t 0 \; \
+           split-window -v \; \
+           send-keys 'journalctl -fu execution | ccze' C-m \; \
+           select-layout even-vertical \;
+   fi
 else
-   tmux new-session -d -s logs \; \
-        send-keys 'journalctl -fu consensus | ccze' C-m \; \
-        split-window -h \; \
-        send-keys 'btop --utf-force' C-m \; \
-        split-window -v \; \
-        send-keys 'journalctl -fu validator | ccze' C-m \; \
-        select-pane -t 0 \; \
-        split-window -v \; \
-        send-keys 'journalctl -fu execution | ccze' C-m \;
+   # Create full screen panes for validator node or non-staking node
+   if [ $hasValidator = false ]; then
+      # RPC Node
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           split-window -v \; \
+           split-window -h \; \
+           send-keys 'btop --utf-force' C-m \; \
+           select-pane -t 1 \; \
+           send-keys 'journalctl -fu execution | ccze' C-m \;
+   else
+      # Staking Node
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           split-window -h \; \
+           send-keys 'btop --utf-force' C-m \; \
+           split-window -v \; \
+           send-keys 'journalctl -fu validator | ccze' C-m \; \
+           select-pane -t 0 \; \
+           split-window -v \; \
+           send-keys 'journalctl -fu execution | ccze' C-m \;
+   fi
 fi
 
 # Attach to the tmux session
