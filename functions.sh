@@ -555,7 +555,7 @@ broadcastVoluntaryExitMessageLocally(){
             # Iterate through each file and broadcast the VEM
             for VEM in $(ls ${VEM_PATH}/exit*.json);
             do
-               ethdo --connection ${API_BN_ENDPOINT} validator exit --signed-operation ${VEM}
+               ethdo --connection ${API_BN_ENDPOINT} validator exit --signed-operations ${VEM}
                INDEX=$(cat $VEM | jq -r .message.validator_index)
                echo "INFO: Broadcast VEM for index ${INDEX}"
             done
