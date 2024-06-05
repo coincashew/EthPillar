@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-VERSION="1.6.6"
+VERSION="1.7.0"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -492,8 +492,9 @@ while true; do
       6 "Edit Prometheus.yml configuration"
       7 "Update to latest release"
       8 "Uninstall monitoring"
+      9 "Configure alerting with Grafana"
       - ""
-      9 "Back to main menu"
+      10 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -542,6 +543,14 @@ while true; do
         runScript ethereum-metrics-exporter.sh -r
         ;;
       9)
+        whiptail --title "Configure Alerting with Grafana" --msgbox "Grafana enables users to create custom alert systems that notify them via multiple channels, including email, messaging apps like Telegram and Discord.
+\nWith the default install, basic alerts for CPU/DISK/RAM are configured.
+\nTo receive these alerts:
+\n- Navigate to Grafana in your web browser
+\n- Click "Alerting" (the alert bell icon) on the left-hand side menu
+\n- Create contact points and notification policies" 20 78
+        ;;
+      10)
         break
         ;;
     esac
@@ -949,7 +958,18 @@ function askInstallNode(){
   fi
 }
 
+# Ask to apply patches
+function applyPatches(){
+  # Has monitoring installed but previous configuration without alert rules
+  if [[ ! -f /etc/prometheus/alert.rules.yml && -f /etc/systemd/system/ethereum-metrics-exporter.service ]]; then
+    if whiptail --title "New Patch Available - Enable Grafana Alerting" --yesno "Would you like to apply patch 1 to enable Grafana Alerting?" 8 78; then
+      runScript patches/001-alerts.sh
+    fi
+  fi
+}
+
 checkV1StakingSetup
 setWhiptailColors
 askInstallNode
+applyPatches
 menuMain

@@ -16,6 +16,7 @@ ETHEREUM_METRICS_EXPORTER_OPTIONS=(
   --execution-url=http://localhost:8545
 )
 GRAFANA_DIR=/etc/grafana
+PROMETHEUS_DIR=/etc/prometheus
 
 function getNetworkConfig() {
     ip_current=$(hostname --ip-address)
@@ -88,7 +89,10 @@ function installGrafanaPrometheus(){
 	sudo systemctl restart grafana-server prometheus prometheus-node-exporter
 
 # Setup prometheus.yml config file
-sudo bash -c "cat << 'EOF' > /etc/prometheus/prometheus.yml
+sudo bash -c "cat << 'EOF' > ${PROMETHEUS_DIR}/prometheus.yml
+rule_files:
+  - alert.rules.yml
+
 global:
   scrape_interval:     15s # By default, scrape targets every 15 seconds.
 
@@ -224,6 +228,10 @@ sudo bash -c "wget -qO - $URL | jq 'walk(if . == \"\${DS__VICTORIAMETRICS}\" the
 
 # Delete any failed 0 size dashboards
 find $GRAFANA_PROVISION_DIR -type f -size 0 -delete
+
+# Install default alert rules and restart prometheus
+sudo cp $(dirname $(realpath "${BASH_SOURCE[0]}"))/alert.rules.yml $PROMETHEUS_DIR
+sudo systemctl restart prometheus
 }
 
 # Displays usage info
