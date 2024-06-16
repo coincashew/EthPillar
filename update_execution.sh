@@ -82,6 +82,7 @@ function updateClient(){
 		sudo systemctl start execution
 	    ;;
 	  Besu)
+		updateBesuJRE
 	    RELEASE_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
 		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
 		BINARIES_URL="https://github.com/hyperledger/besu/releases/download/$TAG/besu-$TAG.tar.gz"
@@ -134,6 +135,24 @@ function updateClient(){
 		sudo systemctl start execution
 	    ;;
 	  esac
+}
+
+function updateBesuJRE(){
+	# Check if OpenJDK-21-JRE or OpenJDK-21-JDK is already installed
+	if dpkg --list | grep -q -E "openjdk-21-jre|openjdk-21-jdk"; then
+	   echo "OpenJDK-21-JRE or OpenJDK-21-JDK is already installed. Skipping installation."
+	else
+	   # Install OpenJDK-21-JRE
+	   sudo apt-get update
+	   sudo apt-get install -y openjdk-21-jre
+
+       # Check if the installation was successful
+       if [ $? -eq 0 ]; then
+	      echo "OpenJDK-21-JRE installed successfully!"
+	   else
+	      echo "Error installing OpenJDK-21-JRE. Please check the error log."
+	   fi
+	fi
 }
 
 setWhiptailColors
