@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-VERSION="1.7.0"
+VERSION="1.7.1"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
