@@ -53,20 +53,20 @@ if [[ $cols -lt 81 ]]; then
    if [ $hasValidator = false ]; then
       # RPC Node
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
            split-window -h \; \
            select-pane -t 1 \; \
-           send-keys 'journalctl -fu execution | ccze' C-m \; \
+           send-keys 'journalctl -fu execution | ccze -A' C-m \; \
            select-layout even-vertical \;
    else
       # Staking Node
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
            split-window -v \; \
-           send-keys 'journalctl -fu validator | ccze' C-m \; \
+           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
            select-pane -t 0 \; \
            split-window -v \; \
-           send-keys 'journalctl -fu execution | ccze' C-m \; \
+           send-keys 'journalctl -fu execution | ccze -A' C-m \; \
            select-layout even-vertical \;
    fi
 else
@@ -74,23 +74,23 @@ else
    if [ $hasValidator = false ]; then
       # RPC Node
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
            split-window -v \; \
            split-window -h \; \
            send-keys 'btop --utf-force' C-m \; \
            select-pane -t 1 \; \
-           send-keys 'journalctl -fu execution | ccze' C-m \;
+           send-keys 'journalctl -fu execution | ccze -A' C-m \;
    else
       # Staking Node
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze' C-m \; \
+           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
            split-window -h \; \
            send-keys 'btop --utf-force' C-m \; \
            split-window -v \; \
-           send-keys 'journalctl -fu validator | ccze' C-m \; \
+           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
            select-pane -t 0 \; \
            split-window -v \; \
-           send-keys 'journalctl -fu execution | ccze' C-m \;
+           send-keys 'journalctl -fu execution | ccze -A' C-m \;
    fi
 fi
 

@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-VERSION="1.7.1"
+VERSION="1.7.2"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -135,7 +135,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        sudo bash -c 'journalctl -fu execution | ccze'
+        sudo bash -c 'journalctl -fu execution | ccze -A'
         ;;
       2)
         sudo service execution start
@@ -201,7 +201,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        sudo bash -c 'journalctl -fu consensus | ccze'
+        sudo bash -c 'journalctl -fu consensus | ccze -A'
         ;;
       2)
         sudo service consensus start
@@ -272,7 +272,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        sudo bash -c 'journalctl -fu validator | ccze'
+        sudo bash -c 'journalctl -fu validator | ccze -A'
         ;;
       2)
         sudo service validator start
@@ -352,7 +352,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        sudo bash -c 'journalctl -fu mevboost | ccze'
+        sudo bash -c 'journalctl -fu mevboost | ccze -A'
         ;;
       2)
         sudo service mevboost start
@@ -513,7 +513,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        sudo bash -c 'journalctl -fu grafana-server -fu prometheus -fu ethereum-metrics-exporter -fu prometheus-node-exporter -n 100 | ccze'
+        sudo bash -c 'journalctl -fu grafana-server -fu prometheus -fu ethereum-metrics-exporter -fu prometheus-node-exporter -n 100 | ccze -A'
         ;;
       2)
         sudo systemctl start grafana-server prometheus ethereum-metrics-exporter prometheus-node-exporter
