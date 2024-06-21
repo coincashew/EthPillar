@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-VERSION="1.7.2"
+VERSION="1.7.3"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -403,6 +403,7 @@ while true; do
       - ""
       20 "Configure autostart"
       21 "Uninstall node"
+      22 "Change Network: Switch between Testnet/Mainnet"
       - ""
       99 "Back to main menu"
     )
@@ -470,6 +471,14 @@ while true; do
       ;;
       21)
         runScript uninstall.sh
+        ;;
+      22)
+        if whiptail --title "Switch Networks" --defaultno --yesno "Are you sure you want to switch networks?\nAll current node data will be removed." 9 78; then
+           if runScript uninstall.sh; then
+              runScript install-nimbus-nethermind.sh true
+              whiptail --title "Switch Networks" --msgbox "Completed network switching process." 8 78
+           fi
+        fi
         ;;
       99)
         break
@@ -953,7 +962,7 @@ function checkV1StakingSetup(){
 function askInstallNode(){
   if [[ ! -f /etc/systemd/system/consensus.service ]]; then
     if whiptail --title "Install Node" --yesno "Would you like to install an Ethereum node (Nimbus CL & Nethermind EL)?" 8 78; then
-      runScript install-nimbus-nethermind.sh
+      runScript install-nimbus-nethermind.sh true
     fi
   fi
 }

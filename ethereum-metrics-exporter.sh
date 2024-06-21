@@ -75,7 +75,8 @@ function removeAll() {
 	  sudo systemctl disable grafana-server prometheus prometheus-node-exporter
 	  sudo systemctl stop grafana-server prometheus prometheus-node-exporter
 	  sudo apt remove -y grafana prometheus prometheus-node-exporter
-  	whiptail --title "Uninstall finished" --msgbox "You have uninstalled all monitoring tools." 8 78
+    sudo rm /etc/apt/sources.list.d/grafana.list
+    whiptail --title "Uninstall finished" --msgbox "You have uninstalled all monitoring tools." 8 78
 	fi
 }
 

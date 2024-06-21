@@ -14,6 +14,11 @@ set -o history -o histexpand
 
 python="python3"
 
+skip_prompt=""
+if [[ $# -eq 1 ]]; then
+   skip_prompt="$1"
+fi
+
 abort() {
   printf "%s\n" "$1"
   exit 1
@@ -109,7 +114,7 @@ linux_update_pip() {
 linux_install_validator-install() {
     ohai "Cloning ethpillar into ~/git/ethpillar"
     mkdir -p ~/git/ethpillar
-    git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin master ; git checkout master ; git pull --ff-only ; git reset --hard)
+    git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin master ; git checkout master ; git pull)
     ohai "Installing validator-install"
     $python ~/git/ethpillar/deploy-nimbus-nethermind.py
     ohai "Allowing user to view journalctl logs"
@@ -144,7 +149,7 @@ if [[ "$OS" == "Linux" ]]; then
     echo "python3-tk python3-pip python3-venv"
     echo "validator-install"
 
-    wait_for_user
+    if [[ -z $skip_prompt ]]; then wait_for_user; fi
     linux_install_pre
     linux_install_python
     linux_update_pip

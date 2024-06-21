@@ -12,8 +12,26 @@ function promptYesNo(){
   		uninstallEL
   		uninstallVC
   		uninstallMevboost
+		cleanupMisc
   		whiptail --title "Uninstall finished" --msgbox "You have uninstalled this staking node and all validator keys." 8 78
-  	fi
+	else
+		echo "Cancelled uninstall." && return 1
+	fi
+}
+
+function cleanupMisc(){
+	if [[ -f /etc/systemd/system/ethereum-metrics-exporter.service ]]; then
+	   sudo rm /etc/apt/sources.list.d/grafana.list
+	   sudo systemctl disable ethereum-metrics-exporter
+	   sudo systemctl stop ethereum-metrics-exporter
+	   sudo rm /etc/systemd/system/ethereum-metrics-exporter.service
+	   sudo rm /usr/local/bin/ethereum-metrics-exporter
+	   sudo systemctl disable grafana-server prometheus prometheus-node-exporter
+	   sudo systemctl stop grafana-server prometheus prometheus-node-exporter
+	   sudo apt remove -y grafana prometheus prometheus-node-exporter
+	fi
+	if [[ -f /usr/local/bin/eth-duties ]]; then sudo rm /usr/local/bin/eth-duties; fi
+	if [[ -f /usr/local/bin/ethdo ]]; then sudo rm /usr/local/bin/ethdo; fi
 }
 
 function uninstallCL(){
