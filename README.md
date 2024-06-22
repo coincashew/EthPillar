@@ -14,11 +14,9 @@ description: >-
 
 :owl: **Fast Updates**: Quickly find and download the latest consensus/execution release. Less downtime!
 
-:tada:**Compatibility**: Behind the scenes, node commands and file structure are identical to V2 staking setups.&#x20;
+:tada:**Compatibility**: Behind the scenes, node commands and file structure are identical to V2 staking setups.
 
-{% hint style="warning" %}
-Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)
-{% endhint %}
+**Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)**
 
 ## :sunglasses: Preview
 
@@ -124,7 +122,7 @@ Congrats on installing a EthPillar, making nodes and home staking easier!
 
 * To begin staking on Ethereum as a validator, you need to submit to the Launchpad your  deposit\_data.json file, which includes crucial withdrawal address details, and pay the required deposit of 32ETH per validator.
 
-**Step 3: Congrats!**&#x20;
+**Step 3: Congrats!**
 
 * Now you're waiting in the Entry Queue [https://www.validatorqueue.com](https://www.validatorqueue.com/)
 
@@ -172,6 +170,15 @@ git pull
 ```
 {% endtab %}
 {% endtabs %}
+
+## :star2:Contribute
+
+We appreciate any help! To join in:
+
+* Star the project on [GitHub](https://github.com/coincashew/EthPillar).
+* Share the project on X or reddit. Talk about your experiences with solo staking.
+* Provide feedback on [Github](https://github.com/coincashew/EthPillar/issues).
+* [Submit PRs](https://github.com/coincashew/EthPillar/pulls) to improve the code.
 
 ## :tada: Credits
 
