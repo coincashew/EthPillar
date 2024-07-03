@@ -114,7 +114,7 @@ function updateClient(){
 		;;
 	  Nimbus)
 		RELEASE_URL="https://api.github.com/repos/status-im/nimbus-eth2/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep _Linux_amd64.*.tar.gz$)"
+		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep "_Linux_amd64.*.tar.gz$")"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O nimbus.tar.gz $BINARIES_URL

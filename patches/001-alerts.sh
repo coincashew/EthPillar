@@ -40,5 +40,5 @@ whiptail --title "Configure Alerting with Grafana" --msgbox "Grafana enables use
 \nWith the default install, basic alerts for CPU/DISK/RAM are configured.
 \nTo receive these alerts:
 \n- Navigate to Grafana in your web browser
-\n- Click "Alerting" (the alert bell icon) on the left-hand side menu
+\n- Click Alerting (the alert bell icon) on the left-hand side menu
 \n- Create contact points and notification policies" 20 78

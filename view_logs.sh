@@ -15,7 +15,7 @@ fi
 current_user=$(whoami)
 group_members=$(getent group systemd-journal | cut -d: -f2-)
 
-if ! echo "$current_user" | grep -qw "$current_user" <<<"$group_members"; then
+if ! echo "$group_members" | grep -qE -o -- "$current_user"; then
   clear
   # Add the user to the systemd-journal group if they're not already a member
   sudo usermod -aG systemd-journal $current_user

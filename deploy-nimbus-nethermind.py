@@ -105,7 +105,7 @@ parser.add_argument("--fee_address", type=str, help="Sets the fee recipient addr
 parser.add_argument("--el_p2p_port", type=int, help="Sets the Execution Client's P2P Port", default=EL_P2P_PORT)
 parser.add_argument("--el_rpc_port", type=int, help="Sets the Execution Client's RPC Port", default=EL_RPC_PORT)
 parser.add_argument("--el_max_peers", type=int, help="Sets the Execution Client's max peer count", default=EL_MAX_PEER_COUNT)
-parser.add_argument("--cl_p2p_port",  type=int, help="Sets the Consensus Client's P2P Port", default=CL_P2P_PORT)
+parser.add_argument("--cl_p2p_port", type=int, help="Sets the Consensus Client's P2P Port", default=CL_P2P_PORT)
 parser.add_argument("--cl_rest_port", type=int, help="Sets the Consensus Client's REST Port", default=CL_REST_PORT)
 parser.add_argument("--cl_max_peers", type=int, help="Sets the Consensus Client's max peer count", default=CL_MAX_PEER_COUNT)
 parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0.0")
@@ -174,7 +174,7 @@ else:
     answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstall Node Only (Not a validator): {NODE_ONLY}\n\nIs this correct?")    
 
 if not answer:
-    file_name =  os.path.basename(sys.argv[0])
+    file_name = os.path.basename(sys.argv[0])
     print(f'\nInstall cancelled by user. \n\nWhen ready, re-run install command:\npython3 {file_name}')
     exit(0)
 

@@ -30,7 +30,7 @@ getNetworkConfig() {
 
 exit_on_error() {
     exit_code=$1
-    last_command=${@:2}
+    last_command="${@:2}"
     if [ $exit_code -ne 0 ]; then
         >&2 echo "\"${last_command}\" command failed with exit code ${exit_code}."
         exit $exit_code
@@ -209,7 +209,7 @@ getPubKeys(){
             _teku+=(0x$(sudo -u validator bash -c "cat $json | jq -r '.pubkey'"))
          done
          # Convert to string
-         TEMP=${_teku[@]}
+         TEMP="${_teku[@]}"
          convertLIST
       ;;
       Nimbus)
@@ -479,7 +479,7 @@ generateVoluntaryExitMessage(){
         # Prompt user for path to keystores
         read -r -p "Enter path to your keystore-m_##.json file(s): " KEYSTORE_PATH
         # Check number of keystores
-        local COUNT=$(ls ${KEYSTORE_PATH}/keystore*.json | wc -l)
+        local COUNT=$(ls "${KEYSTORE_PATH}"/keystore*.json | wc -l)
         if [[ $COUNT -gt 0 ]]; then
             echo "INFO: Found $COUNT keystore files"
             echo "INFO: Using keystore path: $KEYSTORE_PATH"
@@ -495,7 +495,7 @@ generateVoluntaryExitMessage(){
         echo "INFO: Using keystore passphrase: $KEYSTORE_PASSPHRASE"
 
         # Iterate through each file and create the VEM
-        for KEYSTORE in $(ls ${KEYSTORE_PATH}/keystore*.json);
+        for KEYSTORE in "${KEYSTORE_PATH}"/keystore*.json;
         do
            ethdo validator exit --validator=${KEYSTORE} "--passphrase=${KEYSTORE_PASSPHRASE}" --json > $VEM_PATH/exit_tmp.json
            INDEX=$(cat $VEM_PATH/exit_tmp.json | jq -r .message.validator_index)
@@ -539,7 +539,7 @@ broadcastVoluntaryExitMessageLocally(){
         read -r -p "Enter path to your VEM file(s) (Press enter to use default: $VEM_PATH_DEFAULT):" VEM_PATH
         VEM_PATH=${VEM_PATH:-$VEM_PATH_DEFAULT}
         # Check number of keystores
-        local COUNT=$(ls ${VEM_PATH}/exit*.json | wc -l)
+        local COUNT=$(ls "${VEM_PATH}"/exit*.json | wc -l)
         if [[ $COUNT -gt 0 ]]; then
             echo "INFO: Found $COUNT VEM files"
             echo "INFO: Using VEM path: $VEM_PATH"
@@ -553,7 +553,7 @@ broadcastVoluntaryExitMessageLocally(){
         # Final confirmation
         if whiptail --title "Broadcast Voluntary Exit Messages" --defaultno --yesno "This will voluntary exit ${COUNT} validator(s).\nAre you sure you want to continue?" 9 78; then
             # Iterate through each file and broadcast the VEM
-            for VEM in $(ls ${VEM_PATH}/exit*.json);
+            for VEM in "${VEM_PATH}"/exit*.json;
             do
                ethdo --connection ${API_BN_ENDPOINT} validator exit --signed-operations ${VEM}
                INDEX=$(cat $VEM | jq -r .message.validator_index)
