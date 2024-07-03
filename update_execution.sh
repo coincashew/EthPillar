@@ -124,7 +124,8 @@ function updateClient(){
 	    ;;
   	  Reth)
 	    RELEASE_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep x86_64-unknown-linux-gnu.tar.gz$)"
+		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
+		BINARIES_URL="https://github.com/paradigmxyz/reth/releases/download/$TAG/reth-$TAG-x86_64-unknown-linux-gnu.tar.gz"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O reth.tar.gz $BINARIES_URL
