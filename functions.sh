@@ -592,6 +592,32 @@ checkValidatorStatus(){
     done
 }
 
+# Takes a validator index # or pubkey and checks attestation inclusion
+checkValidatorAttestationInclusion(){
+    local _INDEX=""
+    clear
+    echo "#############################################################################"
+    ohai "Attestation Performance: Obtain information about attester inclusion"
+    echo "#############################################################################"
+    ohai "Key Points:"
+    echo "* Timely: Validators are called to attest (or vote) only once every epoch."
+    echo "* Correctness: When attesting, validators vote on their version of the perceived state of the chain, namely the source, head and target."
+    echo "* Inclusion delay: Ideally, 1. The number of slots separating the block proposal and attestation."
+    # Get validator index from user
+    while true; do
+    read -r -p "${tty_blue}Enter your Validator's Index or public key: (Press enter for example)${tty_reset} " _INDEX
+    _INDEX=${_INDEX:-1337}
+    read -r -p "${tty_blue}Enter epoch: (Press enter for last epoch)${tty_reset} " _EPOCH
+    _EPOCH=${_EPOCH:-"-1"}
+    ethdo --connection ${API_BN_ENDPOINT} attester inclusion --validator=${_INDEX} --epoch=${_EPOCH} --verbose
+    read -r -p "${tty_blue}Check another validator or epoch? (y/n) ${tty_reset}" yn
+    case ${yn} in
+      [Nn]*) break ;;
+          *) continue ;;
+    esac
+    done
+}
+
 # Install ethdo if not yet installed
 installEthdo(){
     if [[ ! -f /usr/local/bin/ethdo ]]; then

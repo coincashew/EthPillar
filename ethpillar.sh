@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-VERSION="1.7.3"
+VERSION="1.7.5"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
@@ -248,12 +248,13 @@ while true; do
       6 "Generate / Import Validator Keys"
       7 "View validator pubkeys and indices"
       - ""
-      8 "Generate Voluntary Exit Messages (VEM) with ethdo"
-      9 "Broadcast Voluntary Exit Messages (VEM) with ethdo"
-      10 "Check validator status, balance with ethdo"
+      8 "Generate Voluntary Exit Messages (VEM)"
+      9 "Broadcast Voluntary Exit Messages (VEM)"
+      10 "Check validator status, balance"
       11 "Check validator entry/exit queue with beaconcha.in"
+      12 "Attestation Performance: Obtain information about attester inclusion"
       - ""
-      12 "Back to main menu"
+      13 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -308,11 +309,14 @@ while true; do
         installEthdo
         checkValidatorStatus
         ;;
-
       11)
          checkValidatorQueue
          ;;
       12)
+        installEthdo
+        checkValidatorAttestationInclusion
+        ;;
+      13)
         break
         ;;
     esac
@@ -633,8 +637,9 @@ while true; do
       5 "Next duties: Show expected time between block proposals, sync comm"
       6 "Sweep delay: Show time until next withdrawal"
       7 "Credentials: Show withdrawal address"
-      8 "Update to latest release"
-      9 "Uninstall ethdo"
+      8 "Attestation Performance: Obtain information about attester inclusion"
+      9 "Update to latest release"
+      10 "Uninstall ethdo"
       - ""
       99 "Back to main menu"
     )
@@ -676,9 +681,12 @@ while true; do
         ethdoWithdrawalAddress
         ;;
       8)
-        runScript ethdo.sh -u
+        checkValidatorAttestationInclusion
         ;;
       9)
+        runScript ethdo.sh -u
+        ;;
+      10)
         runScript ethdo.sh -r
         ;;
       99)
