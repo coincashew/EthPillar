@@ -861,7 +861,7 @@ ethdoExpectation(){
 
 # Returns time until next withdrawal sweep for given validator
 ethdoNextWithdrawalSweep(){
-    read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
+    read -r -p "${tty_blue}Enter your Validator's Index or pubkey: (Press enter for example)${tty_reset} " _INDEX
     _INDEX=${_INDEX:-1337}
     ethdo validator --connection ${API_BN_ENDPOINT} withdrawal --validator=${_INDEX}
     ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
@@ -870,7 +870,7 @@ ethdoNextWithdrawalSweep(){
 
 # Returns withdrawal address for given validator
 ethdoWithdrawalAddress(){
-    read -r -p "${tty_blue}Enter your Validator's Index: (Press enter for example)${tty_reset} " _INDEX
+    read -r -p "${tty_blue}Enter your Validator's Index or pubkey: (Press enter for example)${tty_reset} " _INDEX
     _INDEX=${_INDEX:-1337}
     ethdo validator --connection ${API_BN_ENDPOINT} credentials get --validator=${_INDEX}
     ohai "Results for Validator # ${_INDEX} ~ Press ENTER to continue"
