@@ -74,6 +74,10 @@ function updateClient(){
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O lighthouse.tar.gz $BINARIES_URL
+		if [ ! -f lighthouse.tar.gz ]; then
+			echo "Error: Downloading lighthouse archive failed!"
+			exit 1
+		fi
 		tar -xzvf lighthouse.tar.gz -C $HOME
 		rm lighthouse.tar.gz
 		sudo systemctl stop consensus
@@ -84,14 +88,23 @@ function updateClient(){
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  Lodestar)
-		cd ~/git/lodestar
-		git checkout stable && git pull
-		yarn clean:nm && yarn install
-		yarn run build
+		RELEASE_URL="https://api.github.com/repos/ChainSafe/lodestar/releases/latest"
+		LATEST_TAG="$(curl -s $RELEASE_URL | jq -r ".tag_name")"
+		BINARIES_URL="https://github.com/ChainSafe/lodestar/releases/download/${LATEST_TAG}/lodestar-${LATEST_TAG}-linux-amd64.tar.gz"
+		echo Downloading URL: $BINARIES_URL
+		cd $HOME
+		wget -O lodestar.tar.gz $BINARIES_URL
+		if [ ! -f lodestar.tar.gz ]; then
+			echo "Error: Downloading lodestar archive failed!"
+			exit 1
+		fi
+		tar -xzvf lodestar.tar.gz -C $HOME
+		rm lodestar.tar.gz
 		sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
 		sudo rm -rf /usr/local/bin/lodestar
-		sudo cp -a $HOME/git/lodestar /usr/local/bin/lodestar
+		sudo mkdir -p /usr/local/bin/lodestar
+		sudo mv $HOME/lodestar /usr/local/bin/lodestar
 		sudo systemctl start consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
@@ -102,6 +115,10 @@ function updateClient(){
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O teku.tar.gz $BINARIES_URL
+		if [ ! -f teku.tar.gz ]; then
+			echo "Error: Downloading teku archive failed!"
+			exit 1
+		fi
 		tar -xzvf teku.tar.gz -C $HOME
 		mv teku-* teku
 		rm teku.tar.gz
@@ -118,6 +135,10 @@ function updateClient(){
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O nimbus.tar.gz $BINARIES_URL
+		if [ ! -f nimbus.tar.gz ]; then
+			echo "Error: Downloading nimbus archive failed!"
+			exit 1
+		fi
 		tar -xzvf nimbus.tar.gz -C $HOME
 		mv nimbus-eth2_Linux_amd64_* nimbus
 		sudo systemctl stop consensus
