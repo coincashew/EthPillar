@@ -76,6 +76,22 @@ ohai() {
   printf "${tty_blue}==>${tty_bold} %s${tty_reset}\n" "$(shell_join "$@")"
 }
 
+requirements_check() {
+  # Check CPU architecture
+  if ! [[ $(lscpu | grep -oE 'x86') ]]; then
+    echo "This machine's CPU architecture is not yet unsuppported."
+    echo "Recommend using Intel or AMD x86 systems for best experience."
+    exit 1
+  fi
+
+  # Check operating system
+  if ! [[ "$(uname)" == "Linux" ]]; then
+    echo "This operating system is not yet unsuppported."
+    echo "Recommend installing Ubuntu Desktop 22.04+ LTS or Ubuntu Server 22.04+ LTS for best experience."
+    exit 1
+  fi
+}
+
 linux_install_pre() {
     sudo apt-get update
     sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq
@@ -94,6 +110,9 @@ linux_install_installer() {
     sudo ln -s ~/git/ethpillar/ethpillar.sh /usr/local/bin/ethpillar
     exit_on_error $?
 }
+
+# Check OS and CPU requirements
+requirements_check
 
 # Do install.
 OS="$(uname)"
