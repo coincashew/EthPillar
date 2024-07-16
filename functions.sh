@@ -854,7 +854,9 @@ ethdoYield(){
 
 # Returns expectation between block proposals, sync committee duties
 ethdoExpectation(){
-    ethdo validator --connection ${API_BN_ENDPOINT} expectation
+    read -r -p "${tty_blue}How many validators do you have? (Press enter for example of 1)${tty_reset} " _NUM
+    _NUM=${_NUM:-1}
+    ethdo validator --connection ${API_BN_ENDPOINT} expectation --validators=${_NUM}
     ohai "Expectation is based on current # of active validators on the Ethereum network. Press ENTER to continue"
     read
 }
