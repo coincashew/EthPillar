@@ -157,6 +157,10 @@ else:
 
 Screen().clear()
 
+if eth_network == "mainnet" and install_config == "Lido CSM Staking Node":
+    print("Lido CSM is only available on HOLESKY. Mainnet not yet available.")
+    exit(0)
+
 # Sepolia is a permissioned validator set, default to NODE_ONLY
 if eth_network == "sepolia":
     NODE_ONLY=True
