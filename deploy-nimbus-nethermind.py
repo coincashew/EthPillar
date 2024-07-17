@@ -34,6 +34,7 @@ from dotenv import load_dotenv, dotenv_values
 valid_networks = ['MAINNET', 'HOLESKY', 'SEPOLIA']
 valid_exec_clients = ['NETHERMIND']
 valid_consensus_clients = ['NIMBUS']
+valid_install_configs = ['Solo Staking Node', 'Full Node Only', 'Lido CSM Staking Node']
 
 # MEV Relay Data
 mainnet_relay_options = [
@@ -98,6 +99,11 @@ CL_MAX_PEER_COUNT=os.getenv('CL_MAX_PEER_COUNT')
 JWTSECRET_PATH=os.getenv('JWTSECRET_PATH')
 GRAFFITI=os.getenv('GRAFFITI')
 FEE_RECIPIENT_ADDRESS=os.getenv('FEE_RECIPIENT_ADDRESS')
+MEV_MIN_BID=os.getenv('MEV_MIN_BID')
+CSM_FEE_RECIPIENT_ADDRESS=os.getenv('CSM_FEE_RECIPIENT_ADDRESS')
+CSM_GRAFFITI=os.getenv('CSM_GRAFFITI')
+CSM_MEV_MIN_BID=os.getenv('CSM_MEV_MIN_BID')
+CSM_WITHDRAWAL_ADDRESS=os.getenv('CSM_WITHDRAWAL_ADDRESS')
 
 # Create argparse options
 parser = argparse.ArgumentParser(description='Validator Install Options :: CoinCashew.com',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -137,6 +143,18 @@ consensus_client = consensus_client.lower()
 execution_client = execution_client.lower()
 eth_network = eth_network.lower()
 
+# Sepolia can only be full node
+if eth_network == "sepolia":
+    install_config=valid_install_configs[1]
+else:
+    # Ask the user for installation config
+    index = SelectionMenu.get_selection(valid_install_configs,title='Validator Install Quickstart :: CoinCashew.com',subtitle='What type of installation would you like?\nSelect your type:',show_exit_option=False)
+    # Exit selected
+    if index == 3:
+        exit(0)
+    # Set install configuration
+    install_config=valid_install_configs[index]
+
 Screen().clear()
 
 # Sepolia is a permissioned validator set, default to NODE_ONLY
@@ -145,17 +163,23 @@ if eth_network == "sepolia":
     MEVBOOST_ENABLED=False
     VALIDATOR_ENABLED=False
 else:
-    # Ask to install a validator
-    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Install a Validator? If no, this will install a node only.")
-    if not answer:
-        NODE_ONLY=True
-        MEVBOOST_ENABLED=False
-        VALIDATOR_ENABLED=False
-    else:
+    if install_config == "Solo Staking Node":
         NODE_ONLY=False
         MEVBOOST_ENABLED=True
         VALIDATOR_ENABLED=True
+    elif install_config == "Full Node Only":
+        NODE_ONLY=True
+        MEVBOOST_ENABLED=False
+        VALIDATOR_ENABLED=False
+    elif install_config == "Lido CSM Staking Node":
+        NODE_ONLY=False
+        MEVBOOST_ENABLED=True
+        VALIDATOR_ENABLED=True
+        FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS
+        GRAFFITI=CSM_GRAFFITI
+        MEV_MIN_BID=CSM_MEV_MIN_BID
 
+# Validates an eth address
 def is_valid_eth_address(address):
     pattern = re.compile("^0x[a-fA-F0-9]{40}$")
     return bool(pattern.match(address))
@@ -172,9 +196,9 @@ if not NODE_ONLY and FEE_RECIPIENT_ADDRESS == "":
 
 Screen().clear()
 if NODE_ONLY == False:
-    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nIs this correct?")
+    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nIs this correct?")
 else:
-    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstall Node Only (Not a validator): {NODE_ONLY}\n\nIs this correct?")    
+    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\n\nIs this correct?")
 
 if not answer:
     file_name = os.path.basename(sys.argv[0])
@@ -193,190 +217,179 @@ elif eth_network == "sepolia":
 sync_url = random.choice(sync_urls)[1]
 print(f'Using Sync URL: {sync_url}')
 
-# Create JWT directory
-subprocess.run([f'sudo mkdir -p $(dirname {JWTSECRET_PATH})'], shell=True)
+def setup_node():
+    # Create JWT directory
+    subprocess.run([f'sudo mkdir -p $(dirname {JWTSECRET_PATH})'], shell=True)
 
-# Generate random hex string and save to file
-rand_hex = subprocess.run(['openssl', 'rand', '-hex', '32'], stdout=subprocess.PIPE)
-subprocess.run([f'sudo tee {JWTSECRET_PATH}'], input=rand_hex.stdout, stdout=subprocess.DEVNULL, shell=True)
+    # Generate random hex string and save to file
+    rand_hex = subprocess.run(['openssl', 'rand', '-hex', '32'], stdout=subprocess.PIPE)
+    subprocess.run([f'sudo tee {JWTSECRET_PATH}'], input=rand_hex.stdout, stdout=subprocess.DEVNULL, shell=True)
 
-# Update and upgrade packages
-subprocess.run(['sudo', 'apt', '-y', '-qq', 'update'])
-subprocess.run(['sudo', 'apt', '-y', '-qq', 'upgrade'])
+    # Update and upgrade packages
+    subprocess.run(['sudo', 'apt', '-y', '-qq', 'update'])
+    subprocess.run(['sudo', 'apt', '-y', '-qq', 'upgrade'])
 
-# Autoremove packages
-subprocess.run(['sudo', 'apt', '-y', '-qq' , 'autoremove'])
+    # Autoremove packages
+    subprocess.run(['sudo', 'apt', '-y', '-qq' , 'autoremove'])
 
-# Chrony timesync package
-subprocess.run(['sudo', 'apt', '-y', '-qq', 'install', 'chrony'])
+    # Chrony timesync package
+    subprocess.run(['sudo', 'apt', '-y', '-qq', 'install', 'chrony'])
 
-############ MEVBOOST ##################
-if MEVBOOST_ENABLED == True:
-    # Step 1: Create mevboost service account
-    os.system("sudo useradd --no-create-home --shell /bin/false mevboost")
+def install_mevboost():
+    if MEVBOOST_ENABLED == True:
+        # Step 1: Create mevboost service account
+        os.system("sudo useradd --no-create-home --shell /bin/false mevboost")
 
-    # Step 2: Install mevboost
-    # Change to the home folder
-    os.chdir(os.path.expanduser("~"))
+        # Step 2: Install mevboost
+        # Change to the home folder
+        os.chdir(os.path.expanduser("~"))
 
-    # Define the Github API endpoint to get the latest release
-    url = 'https://api.github.com/repos/flashbots/mev-boost/releases/latest'
+        # Define the Github API endpoint to get the latest release
+        url = 'https://api.github.com/repos/flashbots/mev-boost/releases/latest'
 
-    # Send a GET request to the API endpoint
-    response = requests.get(url)
-    mevboost_version = response.json()['tag_name']
+        # Send a GET request to the API endpoint
+        response = requests.get(url)
+        global mevboost_version
+        mevboost_version = response.json()['tag_name']
 
-    # Search for the asset with the name that ends in linux_amd64.tar.gz
-    assets = response.json()['assets']
-    download_url = None
-    for asset in assets:
-        if asset['name'].endswith('linux_amd64.tar.gz'):
-            download_url = asset['browser_download_url']
-            break
+        # Search for the asset with the name that ends in linux_amd64.tar.gz
+        assets = response.json()['assets']
+        download_url = None
+        for asset in assets:
+            if asset['name'].endswith('linux_amd64.tar.gz'):
+                download_url = asset['browser_download_url']
+                break
 
-    if download_url is None:
-        print("Error: Could not find the download URL for the latest release.")
-        exit(1)
+        if download_url is None:
+            print("Error: Could not find the download URL for the latest release.")
+            exit(1)
 
-    # Download the latest release binary
-    print(f"Download URL: {download_url}")
-    response = requests.get(download_url)
+        # Download the latest release binary
+        print(f"Download URL: {download_url}")
+        response = requests.get(download_url)
 
-    # Save the binary to the home folder
-    with open('mev-boost.tar.gz', 'wb') as f:
-        f.write(response.content)
+        # Save the binary to the home folder
+        with open('mev-boost.tar.gz', 'wb') as f:
+            f.write(response.content)
 
-    # Extract the binary to the home folder
-    with tarfile.open('mev-boost.tar.gz', 'r:gz') as tar:
-        tar.extractall()
+        # Extract the binary to the home folder
+        with tarfile.open('mev-boost.tar.gz', 'r:gz') as tar:
+            tar.extractall()
 
-    # Move the binary to /usr/local/bin using sudo
-    os.system(f"sudo mv mev-boost /usr/local/bin")
+        # Move the binary to /usr/local/bin using sudo
+        os.system(f"sudo mv mev-boost /usr/local/bin")
 
-    # Remove files
-    os.system(f"rm mev-boost.tar.gz LICENSE README.md")
+        # Remove files
+        os.system(f"rm mev-boost.tar.gz LICENSE README.md")
 
-############ NETHERMIND ##################
-if execution_client == 'nethermind':
-    # Create User and directories
-    subprocess.run(["sudo", "useradd", "--no-create-home", "--shell", "/bin/false", "execution"])
-    subprocess.run(["sudo", "mkdir", "-p", "/var/lib/nethermind"])
-    subprocess.run(["sudo", "chown", "-R", "execution:execution", "/var/lib/nethermind"])
-    subprocess.run(["sudo", "apt-get", '-qq', "install", "libsnappy-dev", "libc6-dev", "libc6", "unzip", "-y"], check=True)
+        ##### MEV Boost Service File
+        mev_boost_service_file_lines = [
+        '[Unit]',
+        f'Description=MEV-Boost Service for {eth_network.upper()}',
+        'Wants=network-online.target',
+        'After=network-online.target',
+        'Documentation=https://www.coincashew.com',
+        '',
+        '[Service]',
+        'User=mevboost',
+        'Group=mevboost',
+        'Type=simple',
+        'Restart=always',
+        'RestartSec=5',
+        'ExecStart=/usr/local/bin/mev-boost \\',
+        f'    -{eth_network} \\',
+        f'    -min-bid {MEV_MIN_BID} \\',
+        '    -relay-check \\',
+        ]
 
-    # Define the Github API endpoint to get the latest release
-    url = 'https://api.github.com/repos/NethermindEth/nethermind/releases/latest'
+        if eth_network == 'mainnet':
+            relay_options=mainnet_relay_options
+        elif eth_network == 'holesky':
+            relay_options=holesky_relay_options
+        else:
+            relay_options=sepolia_relay_options
 
-    # Send a GET request to the API endpoint
-    response = requests.get(url)
-    nethermind_version = response.json()['tag_name']
+        for relay in relay_options:
+            relay_line = f'    -relay {relay["url"]} \\'
+            mev_boost_service_file_lines.append(relay_line)
 
-    # Search for the asset with the name that ends in linux-x64.zip
-    assets = response.json()['assets']
-    download_url = None
-    zip_filename = None
-    for asset in assets:
-        if asset['name'].endswith('linux-x64.zip'):
-            download_url = asset['browser_download_url']
-            zip_filename = asset['name']
-            break
+        # Remove the trailing '\\' from the last relay line
+        mev_boost_service_file_lines[-1] = mev_boost_service_file_lines[-1].rstrip(' \\')
 
-    if download_url is None or zip_filename is None:
-        print("Error: Could not find the download URL for the latest release.")
-        exit(1)
+        mev_boost_service_file_lines.extend([
+            '',
+            '[Install]',
+            'WantedBy=multi-user.target',
+        ])
+        mev_boost_service_file = '\n'.join(mev_boost_service_file_lines)
 
-    # Download the latest release binary
-    print(f"Download URL: {download_url}")
-    response = requests.get(download_url)
+        mev_boost_temp_file = 'mev_boost_temp.service'
+        global mev_boost_service_file_path
+        mev_boost_service_file_path = '/etc/systemd/system/mevboost.service'
 
-    # Save the binary to a temporary file
-    with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temp_file:
-        temp_file.write(response.content)
-        temp_path = temp_file.name
+        with open(mev_boost_temp_file, 'w') as f:
+            f.write(mev_boost_service_file)
 
-    # Create a temporary directory for extraction
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Extract the binary to the temporary directory
-        with zipfile.ZipFile(temp_path, 'r') as zip_ref:
-            zip_ref.extractall(temp_dir)
+        os.system(f'sudo cp {mev_boost_temp_file} {mev_boost_service_file_path}')
+        os.remove(mev_boost_temp_file)
 
-        # Copy the contents of the temporary directory to /usr/local/bin/nethermind using sudo
-        subprocess.run(["sudo", "cp", "-a", f"{temp_dir}/.", "/usr/local/bin/nethermind"])
+def download_and_install_nethermind():
+    if execution_client == 'nethermind':
+        # Create User and directories
+        subprocess.run(["sudo", "useradd", "--no-create-home", "--shell", "/bin/false", "execution"])
+        subprocess.run(["sudo", "mkdir", "-p", "/var/lib/nethermind"])
+        subprocess.run(["sudo", "chown", "-R", "execution:execution", "/var/lib/nethermind"])
+        subprocess.run(["sudo", "apt-get", '-qq', "install", "libsnappy-dev", "libc6-dev", "libc6", "unzip", "-y"], check=True)
 
-    # chmod a+x /usr/local/bin/nethermind/nethermind and change ownership
-    subprocess.run(["sudo", "chmod", "a+x", "/usr/local/bin/nethermind/nethermind"])
-    subprocess.run(['sudo', 'chown', '-R', 'execution:execution', '/usr/local/bin/nethermind'])
+        # Define the Github API endpoint to get the latest release
+        url = 'https://api.github.com/repos/NethermindEth/nethermind/releases/latest'
 
-    # Remove the temporary zip file
-    os.remove(temp_path)
+        # Send a GET request to the API endpoint
+        response = requests.get(url)
+        global nethermind_version
+        nethermind_version = response.json()['tag_name']
 
-################ NIMBUS ##################
+        # Search for the asset with the name that ends in linux-x64.zip
+        assets = response.json()['assets']
+        download_url = None
+        zip_filename = None
+        for asset in assets:
+            if asset['name'].endswith('linux-x64.zip'):
+                download_url = asset['browser_download_url']
+                zip_filename = asset['name']
+                break
 
-if consensus_client == 'nimbus':
-    # Create data paths, service user, assign ownership permissions
-    subprocess.run(['sudo', 'mkdir', '-p', '/var/lib/nimbus'])
-    subprocess.run(['sudo', 'chmod', '700', '/var/lib/nimbus'])
-    subprocess.run(['sudo', 'useradd', '--no-create-home', '--shell', '/bin/false', 'consensus'])
-    subprocess.run(['sudo', 'chown', '-R', 'consensus:consensus', '/var/lib/nimbus'])
+        if download_url is None or zip_filename is None:
+            print("Error: Could not find the download URL for the latest release.")
+            exit(1)
 
-    # Change to the home folder
-    os.chdir(os.path.expanduser("~"))
+        # Download the latest release binary
+        print(f"Download URL: {download_url}")
+        response = requests.get(download_url)
 
-    # Define the Github API endpoint to get the latest release
-    url = 'https://api.github.com/repos/status-im/nimbus-eth2/releases/latest'
+        # Save the binary to a temporary file
+        with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temp_file:
+            temp_file.write(response.content)
+            temp_path = temp_file.name
 
-    # Send a GET request to the API endpoint
-    response = requests.get(url)
-    nimbus_version = response.json()['tag_name']
+        # Create a temporary directory for extraction
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Extract the binary to the temporary directory
+            with zipfile.ZipFile(temp_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
 
-    # Search for the asset with the name that ends in _Linux_amd64.tar.gz
-    assets = response.json()['assets']
-    download_url = None
-    for asset in assets:
-        if '_Linux_amd64' in asset['name'] and asset['name'].endswith('.tar.gz'):
-            download_url = asset['browser_download_url']
-            break
+            # Copy the contents of the temporary directory to /usr/local/bin/nethermind using sudo
+            subprocess.run(["sudo", "cp", "-a", f"{temp_dir}/.", "/usr/local/bin/nethermind"])
 
-    if download_url is None:
-        print("Error: Could not find the download URL for the latest release.")
-        exit(1)
+        # chmod a+x /usr/local/bin/nethermind/nethermind and change ownership
+        subprocess.run(["sudo", "chmod", "a+x", "/usr/local/bin/nethermind/nethermind"])
+        subprocess.run(['sudo', 'chown', '-R', 'execution:execution', '/usr/local/bin/nethermind'])
 
-    # Download the latest release binary
-    print(f"Download URL: {download_url}")
-    response = requests.get(download_url)
+        # Remove the temporary zip file
+        os.remove(temp_path)
 
-
-    # Save the binary to the home folder
-    with open('nimbus.tar.gz', 'wb') as f:
-        f.write(response.content)
-
-    # Extract the binary to the home folder
-    with tarfile.open('nimbus.tar.gz', 'r:gz') as tar:
-        tar.extractall()
-
-    # Find the extracted folder
-    extracted_folder = None
-    for item in os.listdir():
-        if item.startswith("nimbus-eth2_Linux_amd64"):
-            extracted_folder = item
-            break
-
-    if extracted_folder is None:
-        print("Error: Could not find the extracted folder.")
-        exit(1)
-
-    # Copy the binary to /usr/local/bin using sudo
-    os.system(f"sudo cp {extracted_folder}/build/nimbus_beacon_node /usr/local/bin")
-    os.system(f"sudo cp {extracted_folder}/build/nimbus_validator_client /usr/local/bin")
-
-    # Remove the nimbus.tar.gz file and extracted folder
-    os.remove('nimbus.tar.gz')
-    os.system(f"rm -r {extracted_folder}")
-
-##### NETHERMIND SERVICE FILE ###########
-
-if execution_client == 'nethermind':
-    nethermind_service_file = f'''[Unit]
+        ##### NETHERMIND SERVICE FILE ###########
+        nethermind_service_file = f'''[Unit]
 Description=Nethermind Execution Layer Client service for {eth_network.upper()}
 After=network-online.target
 Wants=network-online.target
@@ -396,31 +409,96 @@ ExecStart=/usr/local/bin/nethermind/nethermind --config {eth_network} --datadir=
 
 [Install]
 WantedBy=multi-user.target
-    '''
+'''
 
-    nethermind_temp_file = 'execution_temp.service'
-    nethermind_service_file_path = '/etc/systemd/system/execution.service'
+        nethermind_temp_file = 'execution_temp.service'
+        global nethermind_service_file_path
+        nethermind_service_file_path = '/etc/systemd/system/execution.service'
 
-    with open(nethermind_temp_file, 'w') as f:
-        f.write(nethermind_service_file)
+        with open(nethermind_temp_file, 'w') as f:
+            f.write(nethermind_service_file)
 
-    os.system(f'sudo cp {nethermind_temp_file} {nethermind_service_file_path}')
+        os.system(f'sudo cp {nethermind_temp_file} {nethermind_service_file_path}')
 
-    os.remove(nethermind_temp_file)
+        os.remove(nethermind_temp_file)
 
-########### NIMBUS SERVICE FILE #############
-if MEVBOOST_ENABLED == True:
-    _mevparameters='--payload-builder=true --payload-builder-url=http://127.0.0.1:18550'
-else:
-    _mevparameters=''
+def download_nimbus():
+    if consensus_client == 'nimbus':
+        # Change to the home folder
+        os.chdir(os.path.expanduser("~"))
 
-if VALIDATOR_ENABLED == True and FEE_RECIPIENT_ADDRESS:
-    _feeparameters=f'--suggested-fee-recipient={FEE_RECIPIENT_ADDRESS}'
-else:
-    _feeparameters=''
+        # Define the Github API endpoint to get the latest release
+        url = 'https://api.github.com/repos/status-im/nimbus-eth2/releases/latest'
 
-if consensus_client == 'nimbus':
-    nimbus_service_file = f'''[Unit]
+        # Send a GET request to the API endpoint
+        response = requests.get(url)
+        global nimbus_version
+        nimbus_version = response.json()['tag_name']
+
+        # Search for the asset with the name that ends in _Linux_amd64.tar.gz
+        assets = response.json()['assets']
+        download_url = None
+        for asset in assets:
+            if '_Linux_amd64' in asset['name'] and asset['name'].endswith('.tar.gz'):
+                download_url = asset['browser_download_url']
+                break
+
+        if download_url is None:
+            print("Error: Could not find the download URL for the latest release.")
+            exit(1)
+
+        # Download the latest release binary
+        print(f"Download URL: {download_url}")
+        response = requests.get(download_url)
+
+
+        # Save the binary to the home folder
+        with open('nimbus.tar.gz', 'wb') as f:
+            f.write(response.content)
+
+        # Extract the binary to the home folder
+        with tarfile.open('nimbus.tar.gz', 'r:gz') as tar:
+            tar.extractall()
+
+        # Find the extracted folder
+        extracted_folder = None
+        for item in os.listdir():
+            if item.startswith("nimbus-eth2_Linux_amd64"):
+                extracted_folder = item
+                break
+
+        if extracted_folder is None:
+            print("Error: Could not find the extracted folder.")
+            exit(1)
+
+        # Copy the binary to /usr/local/bin using sudo
+        os.system(f"sudo cp {extracted_folder}/build/nimbus_beacon_node /usr/local/bin")
+        os.system(f"sudo cp {extracted_folder}/build/nimbus_validator_client /usr/local/bin")
+
+        # Remove the nimbus.tar.gz file and extracted folder
+        os.remove('nimbus.tar.gz')
+        os.system(f"rm -r {extracted_folder}")
+
+def install_nimbus():
+    if consensus_client == 'nimbus':
+        # Create data paths, service user, assign ownership permissions
+        subprocess.run(['sudo', 'mkdir', '-p', '/var/lib/nimbus'])
+        subprocess.run(['sudo', 'chmod', '700', '/var/lib/nimbus'])
+        subprocess.run(['sudo', 'useradd', '--no-create-home', '--shell', '/bin/false', 'consensus'])
+        subprocess.run(['sudo', 'chown', '-R', 'consensus:consensus', '/var/lib/nimbus'])
+
+        if MEVBOOST_ENABLED == True:
+            _mevparameters='--payload-builder=true --payload-builder-url=http://127.0.0.1:18550'
+        else:
+            _mevparameters=''
+
+        if VALIDATOR_ENABLED == True and FEE_RECIPIENT_ADDRESS:
+            _feeparameters=f'--suggested-fee-recipient={FEE_RECIPIENT_ADDRESS}'
+        else:
+            _feeparameters=''
+
+        ########### NIMBUS SERVICE FILE #############
+        nimbus_service_file = f'''[Unit]
 Description=Nimbus Beacon Node Consensus Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
@@ -438,9 +516,18 @@ ExecStart=/usr/local/bin/nimbus_beacon_node --network={eth_network} --data-dir=/
 
 [Install]
 WantedBy=multi-user.target
-    '''
+'''
+        nimbus_temp_file = 'consensus_temp.service'
+        global nimbus_service_file_path
+        nimbus_service_file_path = '/etc/systemd/system/consensus.service'
 
-    # Checkpoint sync
+        with open(nimbus_temp_file, 'w') as f:
+            f.write(nimbus_service_file)
+
+        os.system(f'sudo cp {nimbus_temp_file} {nimbus_service_file_path}')
+        os.remove(nimbus_temp_file)
+
+def run_nimbus_checkpoint_sync():
     if sync_url is not None:
         print("Running Checkpoint Sync")
         db_path = "/var/lib/nimbus/db"
@@ -452,29 +539,25 @@ WantedBy=multi-user.target
         ])
         os.system(f'sudo chown -R consensus:consensus {db_path}')
 
-    nimbus_temp_file = 'consensus_temp.service'
-    nimbus_service_file_path = '/etc/systemd/system/consensus.service'
+def install_nimbus_validator():
+    if MEVBOOST_ENABLED == True:
+        _mevparameters='--payload-builder=true'
+    else:
+        _mevparameters=''
 
-    with open(nimbus_temp_file, 'w') as f:
-        f.write(nimbus_service_file)
+    if VALIDATOR_ENABLED == True and FEE_RECIPIENT_ADDRESS:
+        _feeparameters=f'--suggested-fee-recipient={FEE_RECIPIENT_ADDRESS}'
+    else:
+        _feeparameters=''
 
-    os.system(f'sudo cp {nimbus_temp_file} {nimbus_service_file_path}')
-    os.remove(nimbus_temp_file)
+    if consensus_client == 'nimbus' and VALIDATOR_ENABLED == True:
+        # Create data paths, service user, assign ownership permissions
+        subprocess.run(['sudo', 'mkdir', '-p', '/var/lib/nimbus_validator'])
+        subprocess.run(['sudo', 'chmod', '700', '/var/lib/nimbus_validator'])
+        subprocess.run(['sudo', 'useradd', '--no-create-home', '--shell', '/bin/false', 'validator'])
+        subprocess.run(['sudo', 'chown', '-R', 'validator:validator', '/var/lib/nimbus_validator'])
 
-########### NIMBUS VALIDATOR SERVICE FILE #############
-if MEVBOOST_ENABLED == True:
-    _mevparameters='--payload-builder=true'
-else:
-    _mevparameters=''
-
-if consensus_client == 'nimbus' and VALIDATOR_ENABLED == True:
-    # Create data paths, service user, assign ownership permissions
-    subprocess.run(['sudo', 'mkdir', '-p', '/var/lib/nimbus_validator'])
-    subprocess.run(['sudo', 'chmod', '700', '/var/lib/nimbus_validator'])
-    subprocess.run(['sudo', 'useradd', '--no-create-home', '--shell', '/bin/false', 'validator'])
-    subprocess.run(['sudo', 'chown', '-R', 'validator:validator', '/var/lib/nimbus_validator'])
-
-    nimbus_validator_file = f'''[Unit]
+        nimbus_validator_file = f'''[Unit]
 Description=Nimbus Validator Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
@@ -488,106 +571,83 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
-ExecStart=/usr/local/bin/nimbus_validator_client --data-dir=/var/lib/nimbus_validator --metrics --metrics-port=8009 --beacon-node=http://127.0.0.1:{CL_REST_PORT} --non-interactive --graffiti={GRAFFITI} {_feeparameters} {_mevparameters}
+ExecStart=/usr/local/bin/nimbus_validator_client --data-dir=/var/lib/nimbus_validator --metrics --metrics-port=8009 --beacon-node=http://127.0.0.1:{CL_REST_PORT} --non-interactive --doppelganger-detection=off --graffiti={GRAFFITI} {_feeparameters} {_mevparameters}
 
 [Install]
 WantedBy=multi-user.target
-    '''
+'''
+        nimbus_temp_file = 'validator_temp.service'
+        global nimbus_validator_file_path
+        nimbus_validator_file_path = '/etc/systemd/system/validator.service'
 
-    nimbus_temp_file = 'validator_temp.service'
-    nimbus_validator_file_path = '/etc/systemd/system/validator.service'
+        with open(nimbus_temp_file, 'w') as f:
+            f.write(nimbus_validator_file)
 
-    with open(nimbus_temp_file, 'w') as f:
-        f.write(nimbus_validator_file)
+        os.system(f'sudo cp {nimbus_temp_file} {nimbus_validator_file_path}')
+        os.remove(nimbus_temp_file)
 
-    os.system(f'sudo cp {nimbus_temp_file} {nimbus_validator_file_path}')
-    os.remove(nimbus_temp_file)
+def finish_install():
+    # Reload the systemd daemon
+    subprocess.run(['sudo', 'systemctl', 'daemon-reload'])
 
-##### MEV Boost Service File
-if MEVBOOST_ENABLED == True:
-    mev_boost_service_file_lines = [
-        '[Unit]',
-        f'Description=MEV-Boost Service for {eth_network.upper()}',
-        'Wants=network-online.target',
-        'After=network-online.target',
-        'Documentation=https://www.coincashew.com',
-        '',
-        '[Service]',
-        'User=mevboost',
-        'Group=mevboost',
-        'Type=simple',
-        'Restart=always',
-        'RestartSec=5',
-        'ExecStart=/usr/local/bin/mev-boost \\',
-        f'    -{eth_network} \\',
-        '    -min-bid 0.05 \\',
-        '    -relay-check \\',
-    ]
+    print(f'##########################\n')
+    print(f'## Installation Summary ##\n')
+    print(f'##########################\n')
 
-    if eth_network == 'mainnet':
-        relay_options=mainnet_relay_options
-    elif eth_network == 'holesky':
-        relay_options=holesky_relay_options
-    else:
-        relay_options=sepolia_relay_options
+    print(f'Installation Configuration: \n{install_config}\n')
 
-    for relay in relay_options:
-        relay_line = f'    -relay {relay["url"]} \\'
-        mev_boost_service_file_lines.append(relay_line)
+    if execution_client == 'nethermind':
+        print(f'Nethermind Version: \n{nethermind_version}\n')
 
-    # Remove the trailing '\\' from the last relay line
-    mev_boost_service_file_lines[-1] = mev_boost_service_file_lines[-1].rstrip(' \\')
+    if consensus_client == 'nimbus':
+        print(f'Nimbus Version: \n{nimbus_version}\n')
 
-    mev_boost_service_file_lines.extend([
-        '',
-        '[Install]',
-        'WantedBy=multi-user.target',
-    ])
-    mev_boost_service_file = '\n'.join(mev_boost_service_file_lines)
+    if MEVBOOST_ENABLED==True:
+        print(f'Mevboost Version: \n{mevboost_version}\n')
 
-    mev_boost_temp_file = 'mev_boost_temp.service'
-    mev_boost_service_file_path = '/etc/systemd/system/mevboost.service'
+    print(f'Network: {eth_network.upper()}\n')
+    print(f'CheckPointSyncURL: {sync_url}\n')
+    if NODE_ONLY == False:
+        print(f'Validator Fee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n')
+    print(f'Systemd service files created: \n{nimbus_service_file_path}\n{nethermind_service_file_path}')
+    if NODE_ONLY == False:
+        print(f'{nimbus_validator_file_path}\n{mev_boost_service_file_path}')
 
-    with open(mev_boost_temp_file, 'w') as f:
-        f.write(mev_boost_service_file)
+    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nInstallation successful!\nSyncing a Nimbus/Nethermind node for validator duties can be as quick as a few hours.\nWould you like to start syncing now?")
 
-    os.system(f'sudo cp {mev_boost_temp_file} {mev_boost_service_file_path}')
-    os.remove(mev_boost_temp_file)
+    if answer:
+        os.system(f'sudo systemctl start execution consensus')
 
-# Reload the systemd daemon
-subprocess.run(['sudo', 'systemctl', 'daemon-reload'])
+    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nConfigure node to autostart:\nWould you like this node to autostart when system boots up?")
 
-print(f'##########################\n')
-print(f'## Installation Summary ##\n')
-print(f'##########################\n')
+    if answer:
+        os.system(f'sudo systemctl enable execution consensus')
+        if VALIDATOR_ENABLED == True:
+            os.system(f'sudo systemctl enable validator')
+        if MEVBOOST_ENABLED == True:
+            os.system(f'sudo systemctl enable mevboost')
 
-if execution_client == 'nethermind':
-    print(f'Nethermind Version: \n{nethermind_version}\n')
+    # Ask CSM staker if they to manage validator keystores
+    if install_config == 'Lido CSM Staking Node':
+        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nWould you like to generate or import new Lido CSM validator keys now?\nReminder: Set the Lido withdrawal address to: {CSM_WITHDRAWAL_ADDRESS}")
+        if answer:
+            os.chdir(os.path.expanduser("~/git/ethpillar"))
+            command = './manage_validator_keys.sh'
+            subprocess.run(command)
 
-if consensus_client == 'nimbus':
-    print(f'Nimbus Version: \n{nimbus_version}\n')
+    # Ask solo staker if they to manage validator keystores
+    if install_config == 'Solo Staking Node':
+        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nWould you like to generate or import validator keys now?")
+        if answer:
+            os.chdir(os.path.expanduser("~/git/ethpillar"))
+            command = './manage_validator_keys.sh'
+            subprocess.run(command)
 
-if MEVBOOST_ENABLED==True:
-    print(f'Mevboost Version: \n{mevboost_version}\n')
-
-print(f'Network: {eth_network.upper()}\n')
-print(f'CheckPointSyncURL: {sync_url}\n')
-if NODE_ONLY == False:
-    print(f'Validator Fee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n')
-print(f'Systemd service files created: \n{nimbus_service_file_path}\n{nethermind_service_file_path}')
-if NODE_ONLY == False:
-    print(f'{nimbus_validator_file_path}\n{mev_boost_service_file_path}')
-
-answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nInstallation successful!\nSyncing a Nimbus/Nethermind node for validator duties can be as quick as a few hours.\nWould you like to start syncing now?")
-
-if answer:
-    os.system(f'sudo systemctl start execution consensus')
-
-answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nConfigure node to autostart:\nWould you like this node to autostart when system boots up?")
-
-if answer:
-    os.system(f'sudo systemctl enable execution consensus')
-    if VALIDATOR_ENABLED == True:
-        os.system(f'sudo systemctl enable validator')
-    if MEVBOOST_ENABLED == True:
-        os.system(f'sudo systemctl enable mevboost')
+setup_node()
+install_mevboost()
+download_and_install_nethermind()
+download_nimbus()
+install_nimbus()
+run_nimbus_checkpoint_sync()
+install_nimbus_validator()
+finish_install()

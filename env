@@ -12,12 +12,21 @@ CL_MAX_PEER_COUNT=100
 JWTSECRET_PATH="/secrets/jwtsecret"
 
 # Graffiti for validator. Maximum length is 16 characters.
-GRAFFITI='🏠🥩🪙🛡️'
+GRAFFITI="🏠🥩🪙🛡️EthPillar"
 
 # ETH address receiving priority fees (tips) and MEV rewards
 FEE_RECIPIENT_ADDRESS=
+
+# MEV must be greater than this value or a block is produced locally
+MEV_MIN_BID="0.05"
 
 # Ethereum Clients to be installed
 CONSENSUS_CLIENT=NIMBUS
 EXECUTION_CLIENT=NETHERMIND
 VALIDATOR_CLIENT=NIMBUS
+
+# LIDO Community Staking Module (CSM) settings
+CSM_FEE_RECIPIENT_ADDRESS="0xE73a3602b99f1f913e72F8bdcBC235e206794Ac8"
+CSM_GRAFFITI="🏠🥩🪙🛡️EthPillarCSM"
+CSM_MEV_MIN_BID="0"
+CSM_WITHDRAWAL_ADDRESS="0xF0179dEC45a37423EAD4FaD5fCb136197872EAd9"

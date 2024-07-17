@@ -12,11 +12,14 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-VERSION="1.7.7"
+VERSION="1.8.0"
 BASE_DIR=$HOME/git/ethpillar
 
 # Load functions
 source $BASE_DIR/functions.sh && cd $BASE_DIR
+
+# Load Lido CSM withdrawal address and fee recipient
+source $BASE_DIR/env
 
 menuMain(){
 
@@ -45,7 +48,7 @@ while true; do
     # Display the main menu and get the user's choice
     CHOICE=$(whiptail --clear --cancel-button "Quit"\
       --backtitle "$BACKTITLE" \
-      --title "EthPillar - Node Menu $VERSION" \
+      --title "EthPillar $VERSION | $NODE_MODE" \
       --menu "Choose a category:" \
       0 42 0 \
       "${OPTIONS[@]}" \
@@ -985,8 +988,24 @@ function applyPatches(){
   fi
 }
 
+# Determine node configuration
+function setNodeMode(){
+  if [[ -f /etc/systemd/system/execution.service && -f /etc/systemd/system/consensus.service && -f /etc/systemd/system/validator.service ]]; then
+     if [[ $(grep -oE "${CSM_FEE_RECIPIENT_ADDRESS}" /etc/systemd/system/validator.service) ]]; then
+        NODE_MODE="Lido CSM Staking Node"
+     else
+        NODE_MODE="Solo Staking Node"
+     fi
+  elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
+    NODE_MODE="Full Node Only"
+  else
+    NODE_MODE="Not Installed"
+  fi
+}
+
 checkV1StakingSetup
 setWhiptailColors
 askInstallNode
 applyPatches
+setNodeMode
 menuMain

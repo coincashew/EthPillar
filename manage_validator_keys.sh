@@ -16,6 +16,8 @@ OFFLINE_MODE=false
 BASE_DIR=$HOME/git/ethpillar
 # Load functions
 source $BASE_DIR/functions.sh
+# Load Lido CSM withdrawal address and fee recipient
+source $BASE_DIR/env
 
 function downloadStakingDepositCLI(){
     if [ -d $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli ]; then
@@ -92,6 +94,14 @@ function generateNewValidatorKeys(){
 function importValidatorKeys(){
     KEYPATH=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     if [ -d "$KEYPATH" ]; then
+        NETWORK=$(whiptail --title "Network" --radiolist \
+          "For which network are you importing validator keys?" 10 78 4 \
+          "mainnet" "Ethereum. Real ETH. Real staking rewards." ON \
+          "holesky" "Testnet. Practice your staking setup here." OFF \
+          3>&1 1>&2 2>&3)
+
+        if [ -z $NETWORK ]; then exit; fi # pressed cancel
+
         if whiptail --title "Important Information" --defaultno --yesno "$MSG_IMPORT" 20 78; then
             loadKeys
         fi
@@ -143,6 +153,19 @@ function addRestoreValidatorKeys(){
         ohai "Error with staking-deposit-cli. Try again."
         exit
     fi
+}
+
+function getLAUNCHPAD_URL(){
+    case $NETWORK in
+          mainnet)
+            LAUNCHPAD_URL="https://launchpad.ethereum.org"
+            LAUNCHPAD_URL_LIDO="https://csm.lidoTBD.fi"
+          ;;
+          holesky)
+            LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
+            LAUNCHPAD_URL_LIDO="https://csm.testnet.fi"
+          ;;
+    esac
 }
 
 # Load validator keys into validator client
@@ -212,7 +235,15 @@ function loadKeys(){
      mv $KEYPATH $KEYFOLDER
      getLAUNCHPAD_URL
      queryValidatorQueue
-     MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
+     setLaunchPadMessage
+     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 28 78
+     ohai "Finished loading keys. Press enter to continue."
+     read
+     promptViewLogs
+}
+
+function setLaunchPadMessage(){
+    MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
 \n2) Upload your deposit_data-#########.json found in the directory:
 \n$KEYFOLDER
 \n3) Connect the Launchpad with your wallet, review and accept terms.
@@ -221,11 +252,20 @@ function loadKeys(){
 \nTips:
 \n   - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
-     #generate listing from api, show output
-     whiptail --title "Next Steps: Upload Deposit Data File to Launchpad" --msgbox "$MSG_LAUNCHPAD" 28 78
-     ohai "Finished loading keys. Press enter to continue."
-     read
-     promptViewLogs
+
+    MSG_LAUNCHPAD_LIDO="1) Visit Lido CSM: $LAUNCHPAD_URL_LIDO
+\n2) Connect your wallet on the correct network, review and accept terms.
+\n3) Copy JSON from your deposit_data-#########.json found in the directory:
+\n$KEYFOLDER
+\n4) Provide the ~2 ETH/stETH bond per validator.
+\n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE
+\nTips:
+\n   - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
+\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
+    if [[ $(grep -oE "${CSM_FEE_RECIPIENT_ADDRESS}" /etc/systemd/system/validator.service) ]]; then
+       # Update message for Lido
+       MSG_LAUNCHPAD="${MSG_LAUNCHPAD_LIDO}"
+    fi
 }
 
 function queryValidatorQueue(){
@@ -256,21 +296,18 @@ function getClientVC(){
     VC=$(cat /etc/systemd/system/validator.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
 }
 
-function getLAUNCHPAD_URL(){
-    case $NETWORK in
-          mainnet)
-            LAUNCHPAD_URL="https://launchpad.ethereum.org"
-          ;;
-          holesky)
-            LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
-          ;;
-    esac
-}
-
 function promptViewLogs(){
     if whiptail --title "Validator Keys Imported - $VC" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
-        sudo bash -c 'journalctl -fu validator | ccze'
+        sudo bash -c 'journalctl -fu validator | ccze -A'
     fi
+}
+
+# Checks for LidoCSM's fee recipient address
+function checkIfLidoCSM(){
+  if [[ $(grep -oE "${CSM_FEE_RECIPIENT_ADDRESS}" /etc/systemd/system/validator.service) ]]; then
+    # Update message for Lido
+    MSG_ETHADDRESS="${MSG_ETHADDRESS_LIDO}"
+  fi
 }
 
 function setMessage(){
@@ -292,6 +329,9 @@ function setMessage(){
     MSG_ETHADDRESS="Ensure that you have control over this address.
 \nETH address secured by a hardware wallet is recommended.
 \nIn checksum format, enter your Withdrawal Address:"
+    MSG_ETHADDRESS_LIDO="Set this to Lido's CSM Withdrawal Vault Address.
+\nHolesky: ${CSM_WITHDRAWAL_ADDRESS}
+\nIn checksum format, ether the Withdrawal Address:"
     MSG_IMPORT="Importing validator keys:
 \n1) I acknowledge that if migrating from another node, I must wait for at least two epochs (12 mins 48 sec) before continuing.
 \n2) I acknowledge that if migrating from another node, I have deleted the keys from the previous machine. This ensures that the keys will NOT inadvertently restart and run in two places.
@@ -342,5 +382,6 @@ done
 
 setWhiptailColors
 setMessage
+checkIfLidoCSM
 downloadStakingDepositCLI
 menuMain
