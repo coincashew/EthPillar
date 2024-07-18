@@ -35,8 +35,8 @@ function promptYesNo(){
 
 function promptViewLogs(){
     if whiptail --title "Update complete - $CL" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
-  		sudo bash -c 'journalctl -fu consensus | ccze'
-	fi
+		sudo bash -c 'journalctl -fu consensus | ccze -A'
+    fi
 }
 
 function getLatestVersion(){

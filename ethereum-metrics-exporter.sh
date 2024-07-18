@@ -37,8 +37,8 @@ function upgradeBinaries(){
 # Asks to view logs
 function promptViewLogs(){
     if whiptail --title "View Logs" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
-  		sudo bash -c 'journalctl -fu ethereum-metrics-exporter | ccze'
-	fi
+      sudo bash -c 'journalctl -fu ethereum-metrics-exporter | ccze -A'
+    fi
 }
 
 # Gets latest tag of ethereum-metrics-exporter
