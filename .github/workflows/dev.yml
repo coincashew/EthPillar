@@ -1,7 +1,10 @@
 name: test_deployment_full_staking_node
 
-on: [push]
-pull_request:
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   run-lido-csm-staking-node:
