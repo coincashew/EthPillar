@@ -62,13 +62,13 @@ function generateNewValidatorKeys(){
           "holesky" "Testnet. Practice your staking setup here." OFF \
           3>&1 1>&2 2>&3)
 
-    if [ -z $NETWORK ]; then exit; fi # pressed cancel
+    if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
     if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then exit; fi
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
 
     while true; do
         ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-        if [ -z $ETHADDRESS ]; then exit; fi #pressed cancel
+        if [ -z "$ETHADDRESS" ]; then exit; fi #pressed cancel
         if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
             break
         else
@@ -100,7 +100,7 @@ function importValidatorKeys(){
           "holesky" "Testnet. Practice your staking setup here." OFF \
           3>&1 1>&2 2>&3)
 
-        if [ -z $NETWORK ]; then exit; fi # pressed cancel
+        if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
 
         if whiptail --title "Important Information" --defaultno --yesno "$MSG_IMPORT" 20 78; then
             loadKeys
@@ -123,13 +123,13 @@ function addRestoreValidatorKeys(){
           "holesky" "Testnet. Practice your staking setup here." OFF \
           3>&1 1>&2 2>&3)
 
-    if [ -z $NETWORK ]; then exit; fi # pressed cancel
+    if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
     if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then exit; fi
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
 
     while true; do
         ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-        if [ -z $ETHADDRESS ]; then exit; fi #pressed cancel
+        if [ -z "$ETHADDRESS" ]; then exit; fi #pressed cancel
         if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then 
             break
         else
@@ -231,12 +231,12 @@ function loadKeys(){
      sudo systemctl start validator
      ohai "Starting validator"
      #Rename Imported Keys Dir
-     KEYFOLDER=${KEYPATH}_$(date +%F_%H-%M-%S)
+     KEYFOLDER=${KEYPATH}$(date +%F-%H%M%S)
      mv $KEYPATH $KEYFOLDER
      getLAUNCHPAD_URL
      queryValidatorQueue
      setLaunchPadMessage
-     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 28 78
+     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 31 78
      ohai "Finished loading keys. Press enter to continue."
      read
      promptViewLogs
@@ -255,11 +255,13 @@ function setLaunchPadMessage(){
 
     MSG_LAUNCHPAD_LIDO="1) Visit Lido CSM: $LAUNCHPAD_URL_LIDO
 \n2) Connect your wallet on the correct network, review and accept terms.
-\n3) Copy JSON from your deposit_data-#########.json found in the directory:
-\n$KEYFOLDER
+\n3) Copy JSON from your deposit_data-#########.json
+\nTo view JSON, run command:
+cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/deposit*json
 \n4) Provide the ~2 ETH/stETH bond per validator.
 \n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE
 \nTips:
+\n   - DO NOT DEPOSIT 32ETH YOURSELF: Lido will handle the validator deposit for you.
 \n   - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
     if [[ $(grep -oE "${CSM_FEE_RECIPIENT_ADDRESS}" /etc/systemd/system/validator.service) ]]; then
@@ -329,7 +331,7 @@ function setMessage(){
     MSG_ETHADDRESS="Ensure that you have control over this address.
 \nETH address secured by a hardware wallet is recommended.
 \nIn checksum format, enter your Withdrawal Address:"
-    MSG_ETHADDRESS_LIDO="Set this to Lido's CSM Withdrawal Vault Address.
+    MSG_ETHADDRESS_LIDO="\nSet this to Lido's CSM Withdrawal Vault Address.
 \nHolesky: ${CSM_WITHDRAWAL_ADDRESS}
 \nIn checksum format, ether the Withdrawal Address:"
     MSG_IMPORT="Importing validator keys:

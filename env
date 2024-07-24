@@ -21,12 +21,6 @@ GRAFFITI="🏠🥩🪙🛡️EthPillar"
 # ETH address receiving priority fees (tips) and MEV rewards
 FEE_RECIPIENT_ADDRESS=
 
-# Validator Client Only Settings
-# Beacon node address for standalone validator only client. Example: http://192.168.1.234:5052
-VC_ONLY_API_BN_ENDPOINT=
-# Execution client address for standalone validator only client. Example: http://192.168.1.234:8545
-VC_ONLY_EL_RPC_ENDPOINT=
-
 # MEV must be greater than this value or a block is produced locally
 MEV_MIN_BID="0.05"
 
