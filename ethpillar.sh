@@ -12,14 +12,25 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-VERSION="1.8.0"
-BASE_DIR=$HOME/git/ethpillar
+EP_VERSION="1.9.0"
+
+# VARIABLES
+export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
 
 # Load functions
-source $BASE_DIR/functions.sh && cd $BASE_DIR
+source ./functions.sh
 
-# Load Lido CSM withdrawal address and fee recipient
-source $BASE_DIR/env
+# Load environment variables, Lido CSM withdrawal address and fee recipient
+source ./env
+
+# Load environment variables overrides
+[[ -f ./.env.overrides ]] && source ./.env.overrides
+
+# Consensus client or beacon node HTTP Endpoint
+API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
+
+# Execution layer RPC API
+EL_RPC_ENDPOINT="${EL_IP_ADDRESS}:${EL_RPC_PORT}"
 
 menuMain(){
 
@@ -27,9 +38,9 @@ menuMain(){
 OPTIONS=(
   1 "View Logs (Exit: CTRL+B D)"
   - ""
-  3 "Execution Client"
-  4 "Consensus Client"
 )
+test -f /etc/systemd/system/execution.service && OPTIONS+=(3 "Execution Client")
+test -f /etc/systemd/system/consensus.service && OPTIONS+=(4 "Consensus Client")
 test -f /etc/systemd/system/validator.service && OPTIONS+=(5 "Validator Client")
 test -f /etc/systemd/system/mevboost.service && OPTIONS+=(6 "MEV-Boost")
 OPTIONS+=(
@@ -48,7 +59,7 @@ while true; do
     # Display the main menu and get the user's choice
     CHOICE=$(whiptail --clear --cancel-button "Quit"\
       --backtitle "$BACKTITLE" \
-      --title "EthPillar $VERSION | $NODE_MODE" \
+      --title "EthPillar $EP_VERSION | $NODE_MODE" \
       --menu "Choose a category:" \
       0 42 0 \
       "${OPTIONS[@]}" \
@@ -75,20 +86,20 @@ while true; do
         submenuMEV-Boost
         ;;
       7)
-        sudo service execution start
-        sudo service consensus start
+        test -f /etc/systemd/system/execution.service && sudo service execution start
+        test -f /etc/systemd/system/consensus.service && sudo service consensus start
         test -f /etc/systemd/system/validator.service && sudo service validator start
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost start
         ;;
       8)
-        sudo service execution stop
-        sudo service consensus stop
+        test -f /etc/systemd/system/execution.service && sudo service execution stop
+        test -f /etc/systemd/system/consensus.service && sudo service consensus stop
         test -f /etc/systemd/system/validator.service && sudo service validator stop
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost stop
         ;;
       9)
-        sudo service execution restart
-        sudo service consensus restart
+        test -f /etc/systemd/system/execution.service && sudo service execution restart
+        test -f /etc/systemd/system/consensus.service && sudo service consensus restart
         test -f /etc/systemd/system/validator.service && sudo service validator restart
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost restart
         ;;
@@ -247,17 +258,20 @@ while true; do
       3 "Stop validator"
       4 "Restart validator"
       5 "Edit configuration"
+      )
+    [[ ${NODE_MODE} == "Validator Client Only" ]] && SUBOPTIONS+=(6 "Update to latest release")
+    SUBOPTIONS+=(
       - ""
-      6 "Generate / Import Validator Keys"
-      7 "View validator pubkeys and indices"
+      10 "Generate / Import Validator Keys"
+      11 "View validator pubkeys and indices"
       - ""
-      8 "Generate Voluntary Exit Messages (VEM)"
-      9 "Broadcast Voluntary Exit Messages (VEM)"
-      10 "Check validator status, balance"
-      11 "Check validator entry/exit queue with beaconcha.in"
-      12 "Attestation Performance: Obtain information about attester inclusion"
+      12 "Generate Voluntary Exit Messages (VEM)"
+      13 "Broadcast Voluntary Exit Messages (VEM)"
+      14 "Check validator status, balance"
+      15 "Check validator entry/exit queue with beaconcha.in"
+      16 "Attestation Performance: Obtain information about attester inclusion"
       - ""
-      13 "Back to main menu"
+      99 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -294,32 +308,35 @@ while true; do
         fi
         ;;
       6)
+        runScript update_consensus.sh
+        ;;
+      10)
         runScript manage_validator_keys.sh
         ;;
-      7)
+      11)
         getPubKeys && getIndices
         viewPubkeyAndIndices
         ;;
-      8)
+      12)
         installEthdo
         generateVoluntaryExitMessage
         ;;
-      9)
+      13)
         installEthdo
         broadcastVoluntaryExitMessageLocally
         ;;
-      10)
+      14)
         installEthdo
         checkValidatorStatus
         ;;
-      11)
+      15)
          checkValidatorQueue
          ;;
-      12)
+      16)
         installEthdo
         checkValidatorAttestationInclusion
         ;;
-      13)
+      99)
         break
         ;;
     esac
@@ -411,6 +428,7 @@ while true; do
       20 "Configure autostart"
       21 "Uninstall node"
       22 "Change Network: Switch between Testnet/Mainnet"
+      23 "Override environment variables"
       - ""
       99 "Back to main menu"
     )
@@ -440,16 +458,17 @@ while true; do
         if whiptail --title "Shutdown" --defaultno --yesno "Are you sure you want to shutdown?" 8 78; then sudo shutdown now; fi
         ;;
       4)
-        CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
-        EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-        MB=$(if systemctl is-active --quiet mevboost ; then printf "$(mev-boost --version | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')" ; elif [ -f /etc/systemd/system/mevboost.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
-        if [[ ! $CL ]] ; then
-          CL="Not running or still starting up."
+        test -f /etc/systemd/system/validator.service && getClient && getCurrentVersion && VC="Validator client: $CLIENT $VERSION"
+        test -f /etc/systemd/system/consensus.service && CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+        test -f /etc/systemd/system/execution.service && EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq -r '.result')
+        MB=$(if [[ -f /etc/systemd/system/mevboost.service ]]; then printf "Mev-boost: $(mev-boost --version | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')"; else printf "Mev-boost: Not Installed"; fi)
+        if [[ -z $CL ]] ; then
+          CL="Not installed or still starting up."
         fi
-        if [[ ! $EL ]] ; then
-          EL="Not running or still starting up."
+        if [[ -z $EL ]] ; then
+          EL="Not installed or still starting up."
         fi
-        whiptail --title "Installed versions" --msgbox "Consensus client: $CL\nExecution client: $EL\nMev-boost: $MB" 10 78
+        whiptail --title "Installed versions" --msgbox "Consensus client: ${CL}\nExecution client: ${EL}\n${VC}\n${MB}" 10 78
         ;;
       5)
         # Install btop process monitoring
@@ -486,6 +505,15 @@ while true; do
               whiptail --title "Switch Networks" --msgbox "Completed network switching process." 8 78
            fi
         fi
+        ;;
+      23)
+        if [[ ! -f ${BASE_DIR}/.env.overrides ]]; then
+           # Create from template
+           cp .env.overrides.example .env.overrides
+        fi
+        nano .env.overrides
+        # Reload environment variables overrides
+        [[ -f ./.env.overrides ]] && source ./.env.overrides
         ;;
       99)
         break
@@ -943,23 +971,27 @@ function getBackTitle(){
     getClient
     # Latest block
     latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    if [[ ! -z $latest_block_number ]]; then LB=$(printf 'Block %d' "$latest_block_number"); else LB="EL Syncing"; fi
+    if [[ -n "$latest_block_number" && "$latest_block_number" != "0x0" ]]; then LB=$(printf 'Block %d' "$latest_block_number"); else LB="EL Syncing"; fi
 
     # Latest slot
     LS=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot')
-    if [[ ! -z $LS ]]; then LS="Slot $LS"; else LS="CL Syncing"; fi
+    if [[ -n "$LS" ]]; then LS="Slot $LS"; else LS="CL Syncing"; fi
 
     # Format gas price
     latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    if [[ ! -z $latest_gas_price ]]; then WEI=$(printf '%d' "$latest_gas_price"); GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"; else GP="Gas N/A - Syncing"; fi
+    if [[ -n "$latest_gas_price" ]]; then WEI=$(printf '%d' "$latest_gas_price"); GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"; else GP="Gas N/A - Syncing"; fi
 
     # Format backtitle
-    EL_TEXT=$(if systemctl is-active --quiet execution ; then printf "$LB | $GP" ; else printf "Offline EL" ; fi)
-    CL_TEXT=$(if systemctl is-active --quiet consensus ; then printf "$LS" ; else printf "Offline CL" ; fi)
-    VC_TEXT=$(if systemctl is-active --quiet validator ; then printf " | VC $VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf " | Offline VC $VC"; fi)
+    EL_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ "$LB" != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]] ; then printf "$LB | $GP" ; elif [[ -f /etc/systemd/system/execution.service ]]; then printf "Offline EL" ; fi)
+    CL_TEXT=$(if [[ $(systemctl is-active --quiet consensus) ]] || [[ "$LS" != "CL Syncing" ]]; then printf "$LS" ; elif [[ -f /etc/systemd/system/consensus.service ]]; then printf "Offline CL" ; fi)
+    VC_TEXT=$(if systemctl is-active --quiet validator; then printf " | VC $VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf " | Offline VC $VC"; fi)
     HOSTNAME=$(hostname)
-    NETWORK_TEXT=$(if systemctl is-active --quiet execution ; then printf "$NETWORK on $HOSTNAME |" ; fi)
-    BACKTITLE="$NETWORK_TEXT $EL_TEXT | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
+    NETWORK_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ $LB != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf "$NETWORK on $HOSTNAME | "; else printf "$HOSTNAME | " ; fi)
+    if [[ $NODE_MODE == "Validator Client Only" ]]; then
+        BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT}${VC_TEXT} | Public Goods by CoinCashew.eth"
+    else
+        BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
+    fi
 }
 
 function checkV1StakingSetup(){
@@ -971,7 +1003,7 @@ function checkV1StakingSetup(){
 
 # If no consensus client service is installed, ask to install
 function askInstallNode(){
-  if [[ ! -f /etc/systemd/system/consensus.service ]]; then
+  if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service ]]; then
     if whiptail --title "Install Node" --yesno "Would you like to install an Ethereum node (Nimbus CL & Nethermind EL)?" 8 78; then
       runScript install-nimbus-nethermind.sh true
     fi
@@ -996,11 +1028,16 @@ function setNodeMode(){
      else
         NODE_MODE="Solo Staking Node"
      fi
+  elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ -f /etc/systemd/system/mevboost.service ]]; then
+    NODE_MODE="Failover Staking Node"
   elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
     NODE_MODE="Full Node Only"
+  elif [[ -f /etc/systemd/system/validator.service ]]; then
+    NODE_MODE="Validator Client Only"
   else
     NODE_MODE="Not Installed"
   fi
+  export NODE_MODE
 }
 
 checkV1StakingSetup
