@@ -32,97 +32,106 @@ function cleanupMisc(){
 	fi
 	if [[ -f /usr/local/bin/eth-duties ]]; then sudo rm /usr/local/bin/eth-duties; fi
 	if [[ -f /usr/local/bin/ethdo ]]; then sudo rm /usr/local/bin/ethdo; fi
+	if [[ -f $BASE_DIR/.env.overrides ]]; then sudo rm $BASE_DIR/.env.overrides; fi
 }
 
 function uninstallCL(){
-	sudo systemctl stop consensus
-	sudo systemctl disable consensus
-	sudo rm /etc/systemd/system/consensus.service
+	if [[ -f /etc/systemd/system/consensus.service ]]; then
+		sudo systemctl stop consensus
+		sudo systemctl disable consensus
+		sudo rm /etc/systemd/system/consensus.service
 
-	#Lighthouse
-	sudo rm -rf /usr/local/bin/lighthouse
-	sudo rm -rf /var/lib/lighthouse
+		#Lighthouse
+		sudo rm -rf /usr/local/bin/lighthouse
+		sudo rm -rf /var/lib/lighthouse
 
-	#Lodestar
-	sudo rm -rf /usr/local/bin/lodestar
-	sudo rm -rf /var/lib/lodestar
+		#Lodestar
+		sudo rm -rf /usr/local/bin/lodestar
+		sudo rm -rf /var/lib/lodestar
 
-	#Teku
-	sudo rm -rf /usr/local/bin/teku
-	sudo rm -rf /var/lib/teku
+		#Teku
+		sudo rm -rf /usr/local/bin/teku
+		sudo rm -rf /var/lib/teku
 
-	#Nimbus
-	sudo rm -rf /usr/local/bin/nimbus_beacon_node
-	sudo rm -rf /var/lib/nimbus
+		#Nimbus
+		sudo rm -rf /usr/local/bin/nimbus_beacon_node
+		sudo rm -rf /var/lib/nimbus
 
-	#Prysm from Binaries
-	sudo rm -rf /usr/local/bin/beacon-chain
-	#Prysm from Build from Source
-	sudo rm -rf /usr/local/bin/prysm
-	sudo rm -rf /var/lib/prysm
+		#Prysm from Binaries
+		sudo rm -rf /usr/local/bin/beacon-chain
+		#Prysm from Build from Source
+		sudo rm -rf /usr/local/bin/prysm
+		sudo rm -rf /var/lib/prysm
 
-	sudo userdel consensus
+		sudo userdel consensus
+	fi
 }
 
 function uninstallEL(){
-	sudo systemctl stop execution
-	sudo systemctl disable execution
-	sudo rm /etc/systemd/system/execution.service
+	if [[ -f /etc/systemd/system/execution.service ]]; then
+		sudo systemctl stop execution
+		sudo systemctl disable execution
+		sudo rm /etc/systemd/system/execution.service
 
-	#Nethermind
-	sudo rm -rf /usr/local/bin/nethermind
-	sudo rm -rf /var/lib/nethermind
+		#Nethermind
+		sudo rm -rf /usr/local/bin/nethermind
+		sudo rm -rf /var/lib/nethermind
 
-	#Besu
-	sudo rm -rf /usr/local/bin/besu
-	sudo rm -rf /var/lib/besu
+		#Besu
+		sudo rm -rf /usr/local/bin/besu
+		sudo rm -rf /var/lib/besu
 
-	#Geth
-	sudo rm -rf /usr/local/bin/geth
-	sudo rm -rf /var/lib/geth
+		#Geth
+		sudo rm -rf /usr/local/bin/geth
+		sudo rm -rf /var/lib/geth
 
-	#Erigon
-	sudo rm -rf /usr/local/bin/erigon
-	sudo rm -rf /var/lib/erigon
+		#Erigon
+		sudo rm -rf /usr/local/bin/erigon
+		sudo rm -rf /var/lib/erigon
 
-	#Reth
-	sudo rm -rf /usr/local/bin/reth
-	sudo rm -rf /var/lib/reth
+		#Reth
+		sudo rm -rf /usr/local/bin/reth
+		sudo rm -rf /var/lib/reth
 
-	sudo userdel execution
+		sudo userdel execution
+	fi
 }
 
 function uninstallVC(){
-	sudo systemctl stop validator
-	sudo systemctl disable validator
-	sudo rm /etc/systemd/system/validator.service
+	if [[ -f /etc/systemd/system/validator.service ]]; then
+		sudo systemctl stop validator
+		sudo systemctl disable validator
+		sudo rm /etc/systemd/system/validator.service
 
-	#Lighthouse
-	sudo rm -rf /var/lib/lighthouse/validators
+		#Lighthouse
+		sudo rm -rf /var/lib/lighthouse/validators
 
-	#Lodestar
-	sudo rm -rf /var/lib/lodestar/validators
+		#Lodestar
+		sudo rm -rf /var/lib/lodestar/validators
 
-	#Teku, if running Standalone Teku Validator
-	sudo rm -rf /var/lib/teku_validator
+		#Teku, if running Standalone Teku Validator
+		sudo rm -rf /var/lib/teku_validator
 
-	#Nimbus, if running standalone Nimbus Validator
-	sudo rm -rf /var/lib/nimbus_validator
-	sudo rm -rf /usr/local/bin/nimbus_validator_client
+		#Nimbus, if running standalone Nimbus Validator
+		sudo rm -rf /var/lib/nimbus_validator
+		sudo rm -rf /usr/local/bin/nimbus_validator_client
 
-	#Prysm from Binaries
-	sudo rm -rf /usr/local/bin/validator
-	sudo rm -rf /var/lib/prysm/validators
+		#Prysm from Binaries
+		sudo rm -rf /usr/local/bin/validator
+		sudo rm -rf /var/lib/prysm/validators
 
-	sudo userdel validator
+		sudo userdel validator
+	fi
 }
 
 function uninstallMevboost(){
-	sudo systemctl stop mevboost
-	sudo systemctl disable mevboost
-	sudo rm /etc/systemd/system/mevboost.service
-	sudo rm /usr/local/bin/mev-boost
-	sudo userdel mevboost
+	if [[ -f /etc/systemd/system/mevboost.service ]]; then
+		sudo systemctl stop mevboost
+		sudo systemctl disable mevboost
+		sudo rm /etc/systemd/system/mevboost.service
+		sudo rm /usr/local/bin/mev-boost
+		sudo userdel mevboost
+	fi
 }
 
 function setWhiptailColors(){

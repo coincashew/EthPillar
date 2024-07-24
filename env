@@ -1,14 +1,18 @@
-############################################
+##################################################
 #  CONFIGURATION OF INITIAL NODE INSTALL
-############################################
+#  DO NOT MODIFY BELOW
+#  To modify, go to Client > Edit configuration
+##################################################
 
-# Customize Default Values if desired
+# Default Values
 EL_P2P_PORT=30303
 EL_RPC_PORT=8545
 EL_MAX_PEER_COUNT=50
+EL_IP_ADDRESS=127.0.0.1
 CL_P2P_PORT=9000
 CL_REST_PORT=5052
 CL_MAX_PEER_COUNT=100
+CL_IP_ADDRESS=127.0.0.1
 JWTSECRET_PATH="/secrets/jwtsecret"
 
 # Graffiti for validator. Maximum length is 16 characters.
@@ -16,6 +20,12 @@ GRAFFITI="🏠🥩🪙🛡️EthPillar"
 
 # ETH address receiving priority fees (tips) and MEV rewards
 FEE_RECIPIENT_ADDRESS=
+
+# Validator Client Only Settings
+# Beacon node address for standalone validator only client. Example: http://192.168.1.234:5052
+VC_ONLY_API_BN_ENDPOINT=
+# Execution client address for standalone validator only client. Example: http://192.168.1.234:8545
+VC_ONLY_EL_RPC_ENDPOINT=
 
 # MEV must be greater than this value or a block is produced locally
 MEV_MIN_BID="0.05"

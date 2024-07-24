@@ -34,7 +34,7 @@ from dotenv import load_dotenv, dotenv_values
 valid_networks = ['MAINNET', 'HOLESKY', 'SEPOLIA']
 valid_exec_clients = ['NETHERMIND']
 valid_consensus_clients = ['NIMBUS']
-valid_install_configs = ['Solo Staking Node', 'Full Node Only', 'Lido CSM Staking Node']
+valid_install_configs = ['Solo Staking Node', 'Full Node Only', 'Lido CSM Staking Node', 'Validator Client Only', 'Failover Staking Node']
 
 # MEV Relay Data
 mainnet_relay_options = [
@@ -96,6 +96,7 @@ EL_MAX_PEER_COUNT=os.getenv('EL_MAX_PEER_COUNT')
 CL_P2P_PORT=os.getenv('CL_P2P_PORT')
 CL_REST_PORT=os.getenv('CL_REST_PORT')
 CL_MAX_PEER_COUNT=os.getenv('CL_MAX_PEER_COUNT')
+CL_IP_ADDRESS=os.getenv('CL_IP_ADDRESS')
 JWTSECRET_PATH=os.getenv('JWTSECRET_PATH')
 GRAFFITI=os.getenv('GRAFFITI')
 FEE_RECIPIENT_ADDRESS=os.getenv('FEE_RECIPIENT_ADDRESS')
@@ -107,7 +108,7 @@ CSM_WITHDRAWAL_ADDRESS=os.getenv('CSM_WITHDRAWAL_ADDRESS')
 
 # Create argparse options
 parser = argparse.ArgumentParser(description='Validator Install Options :: CoinCashew.com',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--network", type=str, help="Sets the Ethereum network", choices=valid_networks, default="MAINNET")
+parser.add_argument("--network", type=str, help="Sets the Ethereum network", choices=valid_networks, default="")
 parser.add_argument("--jwtsecret", type=str,help="Sets the jwtsecret file", default=JWTSECRET_PATH)
 parser.add_argument("--graffiti", type=str, help="Sets the validator graffiti message", default=GRAFFITI)
 parser.add_argument("--fee_address", type=str, help="Sets the fee recipient address", default="")
@@ -117,45 +118,41 @@ parser.add_argument("--el_max_peers", type=int, help="Sets the Execution Client'
 parser.add_argument("--cl_p2p_port", type=int, help="Sets the Consensus Client's P2P Port", default=CL_P2P_PORT)
 parser.add_argument("--cl_rest_port", type=int, help="Sets the Consensus Client's REST Port", default=CL_REST_PORT)
 parser.add_argument("--cl_max_peers", type=int, help="Sets the Consensus Client's max peer count", default=CL_MAX_PEER_COUNT)
+parser.add_argument("--vc_only_bn_address", type=str, help="Sets Validator Only configuration's (beacon node) IP address, e.g. http://192.168.1.123:5052")
+parser.add_argument("--skip_prompts", type=str, help="Performs non-interactive installation. Skips any interactive prompts if set to true", default="")
+parser.add_argument("--install_config", type=str, help="Sets the node installation configuration", choices=valid_install_configs, default="")
 parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0.0")
 args = parser.parse_args()
-print(args)
+#print(args)
 
 # Change to the home folder
 os.chdir(os.path.expanduser("~"))
 
-# Ask the user for Ethereum network
-index = SelectionMenu.get_selection(valid_networks,title='Validator Install Quickstart :: CoinCashew.com',subtitle='Installs Nethermind EL / Nimbus BN / Nimbus VC / MEVboost\nSelect Ethereum network:')
+if not args.network and not args.skip_prompts:
+    # Ask the user for Ethereum network
+    index = SelectionMenu.get_selection(valid_networks,title='Validator Install Quickstart :: CoinCashew.com',subtitle='Installs Nethermind EL / Nimbus BN / Nimbus VC / MEVboost\nSelect Ethereum network:')
 
-# Exit selected
-if index == 3:
-    exit(0)
-
-# Set network
-eth_network=valid_networks[index]
-
-# Set clients to nethermind and nimbus
-execution_client=valid_exec_clients[0]
-consensus_client=valid_consensus_clients[0]
-
-# Set to lowercase
-consensus_client = consensus_client.lower()
-execution_client = execution_client.lower()
-eth_network = eth_network.lower()
-
-# Sepolia can only be full node
-if eth_network == "sepolia":
-    install_config=valid_install_configs[1]
-else:
-    # Ask the user for installation config
-    index = SelectionMenu.get_selection(valid_install_configs,title='Validator Install Quickstart :: CoinCashew.com',subtitle='What type of installation would you like?\nSelect your type:',show_exit_option=False)
     # Exit selected
     if index == 3:
         exit(0)
-    # Set install configuration
-    install_config=valid_install_configs[index]
 
-Screen().clear()
+    # Set network
+    eth_network=valid_networks[index]
+    eth_network=eth_network.lower()
+else:
+    eth_network=args.network.lower()
+
+if not args.install_config and not args.skip_prompts:
+    # Sepolia can only be full node
+    if eth_network == "sepolia":
+        install_config=valid_install_configs[1]
+    else:
+        # Ask the user for installation config
+        index = SelectionMenu.get_selection(valid_install_configs,title='Validator Install Quickstart :: CoinCashew.com',subtitle='What type of installation would you like?\nSelect your type:',show_exit_option=False)
+        # Set install configuration
+        install_config=valid_install_configs[index]
+else:
+    install_config=args.install_config
 
 if eth_network == "mainnet" and install_config == "Lido CSM Staking Node":
     print("Lido CSM is only available on HOLESKY. Mainnet not yet available.")
@@ -166,29 +163,60 @@ if eth_network == "sepolia":
     NODE_ONLY=True
     MEVBOOST_ENABLED=False
     VALIDATOR_ENABLED=False
+    VALIDATOR_ONLY=False
 else:
-    if install_config == "Solo Staking Node":
-        NODE_ONLY=False
-        MEVBOOST_ENABLED=True
-        VALIDATOR_ENABLED=True
-    elif install_config == "Full Node Only":
-        NODE_ONLY=True
-        MEVBOOST_ENABLED=False
-        VALIDATOR_ENABLED=False
-    elif install_config == "Lido CSM Staking Node":
-        NODE_ONLY=False
-        MEVBOOST_ENABLED=True
-        VALIDATOR_ENABLED=True
-        FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS
-        GRAFFITI=CSM_GRAFFITI
-        MEV_MIN_BID=CSM_MEV_MIN_BID
+    match install_config:
+       case "Solo Staking Node":
+          NODE_ONLY=False
+          MEVBOOST_ENABLED=True
+          VALIDATOR_ENABLED=True
+          VALIDATOR_ONLY=False
+       case "Full Node Only":
+          NODE_ONLY=True
+          MEVBOOST_ENABLED=False
+          VALIDATOR_ENABLED=False
+          VALIDATOR_ONLY=False
+       case "Lido CSM Staking Node":
+          NODE_ONLY=False
+          MEVBOOST_ENABLED=True
+          VALIDATOR_ENABLED=True
+          VALIDATOR_ONLY=False
+          FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS
+          GRAFFITI=CSM_GRAFFITI
+          MEV_MIN_BID=CSM_MEV_MIN_BID
+       case "Validator Client Only":
+          NODE_ONLY=False
+          MEVBOOST_ENABLED=True
+          VALIDATOR_ENABLED=True
+          VALIDATOR_ONLY=True
+       case "Failover Staking Node":
+          NODE_ONLY=False
+          MEVBOOST_ENABLED=True
+          VALIDATOR_ENABLED=False
+          VALIDATOR_ONLY=False
+
+execution_client=""
+consensus_client=""
+
+if not VALIDATOR_ONLY:
+    # Set clients to nethermind
+    execution_client = valid_exec_clients[0]
+    execution_client = execution_client.lower()
+
+# Set clients to nimbus
+consensus_client = valid_consensus_clients[0]
+# Set to lowercase
+consensus_client = consensus_client.lower()
+
+Screen().clear()
 
 # Validates an eth address
 def is_valid_eth_address(address):
     pattern = re.compile("^0x[a-fA-F0-9]{40}$")
     return bool(pattern.match(address))
 
-if not NODE_ONLY and FEE_RECIPIENT_ADDRESS == "":
+# Set FEE_RECIPIENT_ADDRESS
+if not NODE_ONLY and FEE_RECIPIENT_ADDRESS == "" and not args.skip_prompts:
     # Prompt User for validator tips address
     while True:
         FEE_RECIPIENT_ADDRESS = Screen().input(f'Enter your Ethereum address (aka Fee Recipient Address)\n Hints: \n - Use ETH adddress from a hardware wallet.\n - Do not use an exchange address.\n > ')
@@ -199,15 +227,49 @@ if not NODE_ONLY and FEE_RECIPIENT_ADDRESS == "":
             print("Invalid Ethereum address. Try again.")
 
 Screen().clear()
-if NODE_ONLY == False:
-    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nIs this correct?")
-else:
-    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\n\nIs this correct?")
 
-if not answer:
-    file_name = os.path.basename(sys.argv[0])
-    print(f'\nInstall cancelled by user. \n\nWhen ready, re-run install command:\npython3 {file_name}')
-    exit(0)
+# Validates an CL beacon node address with port
+def validate_beacon_node_address(ip_port):
+    pattern = r"^(http|https|ws):\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:?\d{1,5})?$"
+    if re.match(pattern, ip_port):
+        return True
+    else:
+        return False
+
+BN_ADDRESS=""
+# Set BN_ADDRESS
+if VALIDATOR_ONLY and args.vc_only_bn_address is None and not args.skip_prompts:
+    # Prompt User for beacon node address
+    while True:
+        BN_ADDRESS = Screen().input(f'Enter your consensus client (beacon node) address.\nExample: http://192.168.1.123:5052\n > ')
+        if validate_beacon_node_address(BN_ADDRESS):
+            print("Valid beacon node address")
+            break
+        else:
+            print("Invalid beacon node address. Try again.")
+else:
+    BN_ADDRESS=args.vc_only_bn_address
+
+Screen().clear()
+
+if not args.skip_prompts:
+    # Format confirmation message
+    if install_config == "Solo Staking Node" or install_config == "Lido CSM Staking Node" or install_config == "Failover Staking Node":
+        message=f'Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nIs this correct?'
+    elif install_config == "Full Node Only":
+        message=f'Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\n\nIs this correct?'
+    elif install_config == "Validator Client Only":
+        message=f'Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nConsensus client (beacon node) address: {BN_ADDRESS}\n\nIs this correct?'
+    else:
+        print(f"\nError: Unknown install_config")
+        exit(1)
+
+    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f'{message}')
+
+    if not answer:
+        file_name = os.path.basename(sys.argv[0])
+        print(f'\nInstall cancelled by user. \n\nWhen ready, re-run install command:\npython3 {file_name}')
+        exit(0)
 
 # Initialize sync urls for selected network
 if eth_network == "mainnet":
@@ -219,15 +281,18 @@ elif eth_network == "sepolia":
 
 # Use a random sync url
 sync_url = random.choice(sync_urls)[1]
-print(f'Using Sync URL: {sync_url}')
+
+if not VALIDATOR_ONLY:
+    print(f'Using Sync URL: {sync_url}')
 
 def setup_node():
-    # Create JWT directory
-    subprocess.run([f'sudo mkdir -p $(dirname {JWTSECRET_PATH})'], shell=True)
+    if not VALIDATOR_ONLY:
+        # Create JWT directory
+        subprocess.run([f'sudo mkdir -p $(dirname {JWTSECRET_PATH})'], shell=True)
 
-    # Generate random hex string and save to file
-    rand_hex = subprocess.run(['openssl', 'rand', '-hex', '32'], stdout=subprocess.PIPE)
-    subprocess.run([f'sudo tee {JWTSECRET_PATH}'], input=rand_hex.stdout, stdout=subprocess.DEVNULL, shell=True)
+        # Generate random hex string and save to file
+        rand_hex = subprocess.run(['openssl', 'rand', '-hex', '32'], stdout=subprocess.PIPE)
+        subprocess.run([f'sudo tee {JWTSECRET_PATH}'], input=rand_hex.stdout, stdout=subprocess.DEVNULL, shell=True)
 
     # Update and upgrade packages
     subprocess.run(['sudo', 'apt', '-y', '-qq', 'update'])
@@ -240,7 +305,7 @@ def setup_node():
     subprocess.run(['sudo', 'apt', '-y', '-qq', 'install', 'chrony'])
 
 def install_mevboost():
-    if MEVBOOST_ENABLED == True:
+    if MEVBOOST_ENABLED == True and not VALIDATOR_ONLY:
         # Step 1: Create mevboost service account
         os.system("sudo useradd --no-create-home --shell /bin/false mevboost")
 
@@ -484,7 +549,7 @@ def download_nimbus():
         os.system(f"rm -r {extracted_folder}")
 
 def install_nimbus():
-    if consensus_client == 'nimbus':
+    if consensus_client == 'nimbus' and not VALIDATOR_ONLY:
         # Create data paths, service user, assign ownership permissions
         subprocess.run(['sudo', 'mkdir', '-p', '/var/lib/nimbus'])
         subprocess.run(['sudo', 'chmod', '700', '/var/lib/nimbus'])
@@ -532,7 +597,7 @@ WantedBy=multi-user.target
         os.remove(nimbus_temp_file)
 
 def run_nimbus_checkpoint_sync():
-    if sync_url is not None:
+    if sync_url is not None and not VALIDATOR_ONLY:
         print("Running Checkpoint Sync")
         db_path = "/var/lib/nimbus/db"
         os.system(f'sudo rm -rf {db_path}')
@@ -553,6 +618,11 @@ def install_nimbus_validator():
         _feeparameters=f'--suggested-fee-recipient={FEE_RECIPIENT_ADDRESS}'
     else:
         _feeparameters=''
+
+    if BN_ADDRESS:
+        _beaconnodeparameters=f'--beacon-node={BN_ADDRESS}'
+    else:
+        _beaconnodeparameters=f'--beacon-node=http://{CL_IP_ADDRESS}:{CL_REST_PORT}'
 
     if consensus_client == 'nimbus' and VALIDATOR_ENABLED == True:
         # Create data paths, service user, assign ownership permissions
@@ -575,7 +645,7 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
-ExecStart=/usr/local/bin/nimbus_validator_client --data-dir=/var/lib/nimbus_validator --metrics --metrics-port=8009 --beacon-node=http://127.0.0.1:{CL_REST_PORT} --non-interactive --doppelganger-detection=off --graffiti={GRAFFITI} {_feeparameters} {_mevparameters}
+ExecStart=/usr/local/bin/nimbus_validator_client --data-dir=/var/lib/nimbus_validator --metrics --metrics-port=8009 --non-interactive --doppelganger-detection=off --graffiti={GRAFFITI} {_beaconnodeparameters} {_feeparameters} {_mevparameters}
 
 [Install]
 WantedBy=multi-user.target
@@ -606,29 +676,51 @@ def finish_install():
     if consensus_client == 'nimbus':
         print(f'Nimbus Version: \n{nimbus_version}\n')
 
-    if MEVBOOST_ENABLED==True:
+    if MEVBOOST_ENABLED and not VALIDATOR_ONLY:
         print(f'Mevboost Version: \n{mevboost_version}\n')
 
     print(f'Network: {eth_network.upper()}\n')
-    print(f'CheckPointSyncURL: {sync_url}\n')
+
+    if not VALIDATOR_ONLY:
+        print(f'CheckPointSyncURL: {sync_url}\n')
+
+    if VALIDATOR_ONLY and BN_ADDRESS:
+        print(f'Beacon Node Address: {BN_ADDRESS}\n')
+        os.chdir(os.path.expanduser("~/git/ethpillar"))
+        os.system(f'cp .env.overrides.example .env.overrides')
+
     if NODE_ONLY == False:
         print(f'Validator Fee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n')
-    print(f'Systemd service files created: \n{nimbus_service_file_path}\n{nethermind_service_file_path}')
-    if NODE_ONLY == False:
-        print(f'{nimbus_validator_file_path}\n{mev_boost_service_file_path}')
 
-    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nInstallation successful!\nSyncing a Nimbus/Nethermind node for validator duties can be as quick as a few hours.\nWould you like to start syncing now?")
+    print(f'Systemd service files created:')
+    if not VALIDATOR_ONLY:
+        print(f'\n{nimbus_service_file_path}\n{nethermind_service_file_path}')
+    if VALIDATOR_ENABLED == True:
+        print(f'{nimbus_validator_file_path}')
+    if MEVBOOST_ENABLED == True and not VALIDATOR_ONLY:
+        print(f'{mev_boost_service_file_path}')
 
-    if answer:
-        os.system(f'sudo systemctl start execution consensus')
+    if args.skip_prompts:
+        print(f'\nNon-interactive install successful! Skipped prompts.')
+        exit(0)
+
+    # Prompt to start services
+    if not VALIDATOR_ONLY:
+        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nInstallation successful!\nSyncing a Nimbus/Nethermind node for validator duties can be as quick as a few hours.\nWould you like to start syncing now?")
+        if answer:
+            os.system(f'sudo systemctl start execution consensus')
+            if MEVBOOST_ENABLED == True:
+                os.system(f'sudo systemctl start mevboost')
 
     answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nConfigure node to autostart:\nWould you like this node to autostart when system boots up?")
 
+    # Prompt to enable autostart services
     if answer:
-        os.system(f'sudo systemctl enable execution consensus')
+        if not VALIDATOR_ONLY:
+            os.system(f'sudo systemctl enable execution consensus')
         if VALIDATOR_ENABLED == True:
             os.system(f'sudo systemctl enable validator')
-        if MEVBOOST_ENABLED == True:
+        if MEVBOOST_ENABLED == True and not VALIDATOR_ONLY:
             os.system(f'sudo systemctl enable mevboost')
 
     # Ask CSM staker if they to manage validator keystores
@@ -640,11 +732,22 @@ def finish_install():
             subprocess.run(command)
 
     # Ask solo staker if they to manage validator keystores
-    if install_config == 'Solo Staking Node':
-        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nWould you like to generate or import validator keys now?")
+    if install_config == 'Solo Staking Node' or install_config == 'Validator Client Only':
+        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nWould you like to generate or import validator keys now?\nIf not, resume at: ethpillar > Validator Client ")
         if answer:
             os.chdir(os.path.expanduser("~/git/ethpillar"))
             command = './manage_validator_keys.sh'
+            subprocess.run(command)
+
+    # Failover staking node reminders
+    if install_config == 'Failover Staking Node':
+        print(f'\nReminder for Failover Staking Node configurations:\n1. Consensus Client: Expose consensus client RPC port\n2. UFW Firewall: Update to allow incoming traffic on port {CL_REST_PORT}\n3. UFW firewall: Whitelist the validator(s) IP address.')
+
+    # Validator Client Only overrides
+    if install_config == 'Validator Client Only':
+        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Would you like update your EL/CL override settings now?\nYour validator client needs to know EL/CL settings.\nIf not, update later at\nEthPillar > System Administration > Override environment variables.")
+        if answer:
+            command = ['nano', '~/git/ethpillar/.env.overrides']
             subprocess.run(command)
 
 setup_node()

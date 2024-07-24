@@ -11,6 +11,11 @@ if ! command -v btop &> /dev/null; then
    sudo apt-get install btop -y
 fi
 
+# Install tmux
+if ! command -v tmux &> /dev/null; then
+   sudo apt-get install tmux -y
+fi
+
 # Check if the current user belongs to the systemd-journal group
 current_user=$(whoami)
 group_members=$(getent group systemd-journal | cut -d: -f2-)
@@ -25,14 +30,6 @@ if ! echo "$group_members" | grep -qE -o -- "$current_user"; then
   echo "Press ENTER to continue"
   read
   exit 0
-fi
-
-# Bool for validator
-hasValidator=false
-
-# Check for presence of validator
-if systemctl is-active --quiet validator; then
-   hasValidator=true
 fi
 
 # Enable truecolor logs for btop
@@ -50,16 +47,8 @@ cols=$(tput cols)
 
 # Portrait view for narrow terminals <= 80 col
 if [[ $cols -lt 81 ]]; then
-   if [ $hasValidator = false ]; then
-      # RPC Node
-      tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
-           split-window -h \; \
-           select-pane -t 1 \; \
-           send-keys 'journalctl -fu execution | ccze -A' C-m \; \
-           select-layout even-vertical \;
-   else
-      # Staking Node
+   if [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ -f /etc/systemd/system/validator.service ]]; then
+      # Solo Staking Node
       tmux new-session -d -s logs \; \
            send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
            split-window -v \; \
@@ -67,21 +56,28 @@ if [[ $cols -lt 81 ]]; then
            select-pane -t 0 \; \
            split-window -v \; \
            send-keys 'journalctl -fu execution | ccze -A' C-m \; \
+           select-layout even-vertical \;
+   elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
+      # Full Node Only
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
+           split-window -h \; \
+           select-pane -t 1 \; \
+           send-keys 'journalctl -fu execution | ccze -A' C-m \; \
+           select-layout even-vertical \;
+   elif [[ -f /etc/systemd/system/validator.service ]]; then
+      # Validator Client Only
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
+           split-window -h \; \
+           select-pane -t 1 \; \
+           send-keys 'btop --utf-force' C-m \; \
            select-layout even-vertical \;
    fi
 else
    # Create full screen panes for validator node or non-staking node
-   if [ $hasValidator = false ]; then
-      # RPC Node
-      tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
-           split-window -v \; \
-           split-window -h \; \
-           send-keys 'btop --utf-force' C-m \; \
-           select-pane -t 1 \; \
-           send-keys 'journalctl -fu execution | ccze -A' C-m \;
-   else
-      # Staking Node
+   if [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ -f /etc/systemd/system/validator.service ]]; then
+      # Solo Staking Node
       tmux new-session -d -s logs \; \
            send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
            split-window -h \; \
@@ -91,6 +87,23 @@ else
            select-pane -t 0 \; \
            split-window -v \; \
            send-keys 'journalctl -fu execution | ccze -A' C-m \;
+   elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
+      # Full Node Only
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
+           split-window -v \; \
+           split-window -h \; \
+           send-keys 'btop --utf-force' C-m \; \
+           select-pane -t 1 \; \
+           send-keys 'journalctl -fu execution | ccze -A' C-m \;
+   elif [[ -f /etc/systemd/system/validator.service ]]; then
+      # Validator Client Only
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
+           split-window -h \; \
+           select-pane -t 1 \; \
+           send-keys 'btop --utf-force' C-m \; \
+           select-layout even-vertical \;
    fi
 fi
 

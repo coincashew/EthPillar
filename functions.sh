@@ -12,12 +12,8 @@ set -u
 # enable command completion
 set -o history -o histexpand
 
-# VARIABLES
-BASE_DIR=$HOME/git/ethpillar
-# Consensus client or beacon node HTTP Endpoint
-API_BN_ENDPOINT=http://127.0.0.1:5052
-# Execution layer RPC API
-EL_RPC_ENDPOINT=localhost:8545
+# Load BN and EL ENDPOINTS
+source ./env
 
 # Stores validator index
 declare -a INDICES
@@ -86,12 +82,12 @@ print_node_info() {
   kernel_version=$(uname -r)
   system_uptime=$(uptime | sed 's/.*up \([^,]*\), .*/\1/')
   chrony_status=$(if systemctl is-active --quiet chronyd ; then printf "Online" ; else printf "Offline" ; fi)
-  consensus_status=$(if systemctl is-active --quiet consensus ; then printf "Online" ; else printf "Offline" ; fi)
-  execution_status=$(if systemctl is-active --quiet execution ; then printf "Online" ; else printf "Offline" ; fi)
+  consensus_status=$(if systemctl is-active --quiet consensus ; then printf "Online" ; elif [ -f /etc/systemd/system/consensus.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
+  execution_status=$(if systemctl is-active --quiet execution ; then printf "Online" ; elif [ -f /etc/systemd/system/execution.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   validator_status=$(if systemctl is-active --quiet validator ; then printf "Online" ; elif [ -f /etc/systemd/system/validator.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   mevboost_status=$(if systemctl is-active --quiet mevboost ; then printf "Online" ; elif [ -f /etc/systemd/system/mevboost.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   ethpillar_commit=$(git -C "${BASE_DIR}" rev-parse HEAD)
-  ethpillar_version=$(grep VERSION= $BASE_DIR/ethpillar.sh | sed 's/VERSION=//g')
+  ethpillar_version=$(grep EP_VERSION= $BASE_DIR/ethpillar.sh | sed 's/EP_VERSION=//g')
   SERVICES=(execution consensus validator mevboost)
   autostart_status=()
   for UNIT in ${SERVICES[@]}
@@ -177,11 +173,41 @@ getNetwork(){
     esac
 }
 
+# Gets software version from binary
+getCurrentVersion(){
+    case "$CLIENT" in
+      Lighthouse)
+        VERSION=$(/usr/local/bin/lighthouse --version | head -1 | grep -oE "v[0-9]+.[0-9]+.[0-9]+")
+        ;;
+      Lodestar)
+        VERSION=$(/usr/local/bin/lodestar/lodestar --version | grep -oE "v[0-9]+.[0-9]+.[0-9]+")
+        ;;
+      Teku)
+        VERSION=$(/usr/local/bin/teku/bin/teku --version | head -1 | grep -oE "v[0-9]+.[0-9]+.[0-9]+")
+        ;;
+      Nimbus)
+        test -f /usr/local/bin/nimbus_beacon_node && VERSION=$(nimbus_beacon_node --version | head -1 | grep -oE "v[0-9]+.[0-9]+.[0-9]+") || test -f /usr/local/bin/nimbus_validator_client && VERSION=$(nimbus_validator_client --version | head -1 | grep -oE "v[0-9]+.[0-9]+.[0-9]+")
+        ;;
+      Prysm)
+        test -f /usr/local/bin/beacon-chain && VERSION=$(beacon-chain --version | head -1 | grep -oE "v[0-9]+.[0-9]+.[0-9]+") || test -f /usr/local/bin/validator && VERSION=$(validator --version | head -1 | grep -oE "v[0-9]+.[0-9]+.[0-9]+")
+        ;;
+      *)
+        echo "ERROR: Unable to determine client."
+        exit 1
+        ;;
+      esac
+}
+
 # Read clients from systemd config files
 getClient(){
-    EL=$(test -f /etc/systemd/system/execution.service  && grep Description= /etc/systemd/system/execution.service | awk -F'=' '{print $2}' | awk '{print $1}')
-    CL=$(test -f /etc/systemd/system/consensus.service  && grep Description= /etc/systemd/system/consensus.service | awk -F'=' '{print $2}' | awk '{print $1}')
-    VC=$(test -f /etc/systemd/system/validator.service  && grep Description= /etc/systemd/system/validator.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    EL=$(test -f /etc/systemd/system/execution.service && grep Description= /etc/systemd/system/execution.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    CL=$(test -f /etc/systemd/system/consensus.service && grep Description= /etc/systemd/system/consensus.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    VC=$(test -f /etc/systemd/system/validator.service && grep Description= /etc/systemd/system/validator.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    if [[ -n $CL  ]]; then
+        CLIENT=$CL
+    elif [[ -n $VC ]]; then
+        CLIENT=$VC
+    fi
 }
 
 # Get list of validator public keys

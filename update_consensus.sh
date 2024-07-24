@@ -12,35 +12,25 @@ BASE_DIR=$HOME/git/ethpillar
 # Load functions
 source $BASE_DIR/functions.sh
 
-function getCurrentVersion(){
-    CL_INSTALLED=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq '.data.version')
-    #Find version in format #.#.#
-    if [[ $CL_INSTALLED ]] ; then
-        VERSION=$(echo $CL_INSTALLED | sed 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
-	else
-		VERSION="Client not running or still starting up. Unable to query version."
-	fi
-}
-
-function getClient(){
-    CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
-}
-
 function promptYesNo(){
-    if whiptail --title "Update Consensus Client - $CL" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update $CL to $TAG?" 15 78; then
+    if whiptail --title "Update ${CLIENT}" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update $CLIENT to $TAG?" 15 78; then
   		updateClient
   		promptViewLogs
 	fi
 }
 
 function promptViewLogs(){
-    if whiptail --title "Update complete - $CL" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
-		sudo bash -c 'journalctl -fu consensus | ccze -A'
+    if whiptail --title "Update complete" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
+		if [[ ${NODE_MODE} == "Validator Client Only" ]]; then
+			sudo bash -c 'journalctl -fu validator | ccze -A'
+		else
+			sudo bash -c 'journalctl -fu consensus | ccze -A'
+		fi
     fi
 }
 
 function getLatestVersion(){
-	case $CL in
+	case "$CLIENT" in
 	  Lighthouse)
 	    TAG_URL="https://api.github.com/repos/sigp/lighthouse/releases/latest"
 	    CHANGES_URL="https://github.com/sigp/lighthouse/releases"
@@ -57,17 +47,21 @@ function getLatestVersion(){
 		TAG_URL="https://api.github.com/repos/status-im/nimbus-eth2/releases/latest"
 		CHANGES_URL="https://github.com/status-im/nimbus-eth2/releases"
 		;;
-  	  Prysm)
+	  Prysm)
 	    TAG_URL="https://api.github.com/repos/prysmaticlabs/prysm/releases/latest"
 	    CHANGES_URL="https://github.com/prysmaticlabs/prysm/releases"
 	    ;;
+	  *)
+		echo "ERROR: Unable to determine client."
+		exit 1
+		;;
 	  esac
 	#Get tag name and remove leading 'v'
-	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
+	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*\(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
 }
 
 function updateClient(){
-	case $CL in
+	case "$CLIENT" in
 	  Lighthouse)
 		RELEASE_URL="https://api.github.com/repos/sigp/lighthouse/releases/latest"
 		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep x86_64-unknown-linux-gnu.tar.gz$)"
@@ -80,11 +74,11 @@ function updateClient(){
 		fi
 		tar -xzvf lighthouse.tar.gz -C $HOME
 		rm lighthouse.tar.gz
-		sudo systemctl stop consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
 		sudo rm /usr/local/bin/lighthouse
 		sudo mv $HOME/lighthouse /usr/local/bin/lighthouse
-		sudo systemctl start consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  Lodestar)
@@ -100,12 +94,12 @@ function updateClient(){
 		fi
 		tar -xzvf lodestar.tar.gz -C $HOME
 		rm lodestar.tar.gz
-		sudo systemctl stop consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
 		sudo rm -rf /usr/local/bin/lodestar
 		sudo mkdir -p /usr/local/bin/lodestar
 		sudo mv $HOME/lodestar /usr/local/bin/lodestar
-		sudo systemctl start consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  Teku)
@@ -122,11 +116,11 @@ function updateClient(){
 		tar -xzvf teku.tar.gz -C $HOME
 		mv teku-* teku
 		rm teku.tar.gz
-		sudo systemctl stop consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
 		sudo rm -rf /usr/local/bin/teku
 		sudo mv $HOME/teku /usr/local/bin/teku
-		sudo systemctl start consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 		;;
 	  Nimbus)
@@ -141,13 +135,13 @@ function updateClient(){
 		fi
 		tar -xzvf nimbus.tar.gz -C $HOME
 		mv nimbus-eth2_Linux_amd64_* nimbus
-		sudo systemctl stop consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
 		sudo rm /usr/local/bin/nimbus_beacon_node
 		sudo rm /usr/local/bin/nimbus_validator_client
 		sudo mv nimbus/build/nimbus_beacon_node /usr/local/bin
 		sudo mv nimbus/build/nimbus_validator_client /usr/local/bin
-		sudo systemctl start consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 		rm -r nimbus
 		rm nimbus.tar.gz
@@ -160,12 +154,12 @@ function updateClient(){
 		curl -f -L "https://prysmaticlabs.com/releases/${file_beacon}" -o beacon-chain
 		curl -f -L "https://prysmaticlabs.com/releases/${file_validator}" -o validator
 		chmod +x beacon-chain validator
-		sudo systemctl stop consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
 		sudo rm /usr/local/bin/beacon-chain
 		sudo rm /usr/local/bin/validator
 		sudo mv beacon-chain validator /usr/local/bin
-		sudo systemctl start consensus
+		test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  esac
