@@ -100,9 +100,9 @@ linux_install_pre() {
 
 linux_install_installer() {
     ohai "Cloning ethpillar into ~/git/ethpillar"
-    mkdir -p ~/git/ethpillar
-    git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar/ 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin main ; git checkout main ; git pull --ff-only ; git reset --hard)
-    chmod +x ~/git/ethpillar/*.sh
+    #mkdir -p ~/git/ethpillar
+    #git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar/ 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin main ; git checkout main ; git pull --ff-only ; git reset --hard)
+    #chmod +x ~/git/ethpillar/*.sh
     ohai "Installing ethpillar"
     if [ -f /usr/local/bin/ethpillar ]; then 
       sudo rm /usr/local/bin/ethpillar
