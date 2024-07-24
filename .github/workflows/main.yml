@@ -1,0 +1,11 @@
+name: test_deployment_full_staking_node
+
+on: [push]
+
+jobs:
+  run-lido-csm-staking-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy a Lido CSM Staking node, consisting of EL CL VC and mevboost
+        run: python3 ./deploy-nimbus-nethermind.py --skip_prompts="true" --network="HOLESKY" --install_config="Lido CSM Staking Node"
