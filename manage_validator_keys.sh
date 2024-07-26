@@ -19,6 +19,10 @@ source $BASE_DIR/functions.sh
 # Load Lido CSM withdrawal address and fee recipient
 source $BASE_DIR/env
 
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
 function downloadStakingDepositCLI(){
     if [ -d $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli ]; then
         ohai "staking-deposit-tool already downloaded."
@@ -30,9 +34,9 @@ function downloadStakingDepositCLI(){
 
     #Setup variables
     RELEASE_URL="https://api.github.com/repos/ethereum/staking-deposit-cli/releases/latest"
-    BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep linux-amd64.tar.gz$)"
+    BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}-${_arch}.tar.gz$)"
     BINARY_FILE="staking-deposit-cli.tar.gz"
-
+    [[ -z $BINARIES_URL ]] && echo "Error: Unable to determine BINARIES URL" && exit 1
     ohai "Downloading URL: $BINARIES_URL"
     # Dir to install staking-deposit-cli
     cd $STAKING_DEPOSIT_CLI_DIR
@@ -43,7 +47,7 @@ function downloadStakingDepositCLI(){
     # Cleanup
     rm staking-deposit-cli.tar.gz
     # Rename
-    mv staking_deposit-cli*amd64 staking-deposit-cli
+    mv staking_deposit-cli*${_arch} staking-deposit-cli
     cd staking-deposit-cli
 }
 
@@ -236,7 +240,7 @@ function loadKeys(){
      getLAUNCHPAD_URL
      queryValidatorQueue
      setLaunchPadMessage
-     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 31 78
+     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 40 78
      ohai "Finished loading keys. Press enter to continue."
      read
      promptViewLogs
@@ -251,7 +255,10 @@ function setLaunchPadMessage(){
 \n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE
 \nTips:
 \n   - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
-\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
+\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
+\n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
+\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)
+\n   - Cleanup Keystores: Delete keystore files from node after backup."
 
     MSG_LAUNCHPAD_LIDO="1) Visit Lido CSM: $LAUNCHPAD_URL_LIDO
 \n2) Connect your wallet on the correct network, review and accept terms.
@@ -263,7 +270,10 @@ cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/deposit*json
 \nTips:
 \n   - DO NOT DEPOSIT 32ETH YOURSELF: Lido will handle the validator deposit for you.
 \n   - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
-\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
+\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
+\n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
+\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)
+\n   - Cleanup Keystores: Delete keystore files from node after backup."
     if [[ $(grep -oE "${CSM_FEE_RECIPIENT_ADDRESS}" /etc/systemd/system/validator.service) ]]; then
        # Update message for Lido
        MSG_LAUNCHPAD="${MSG_LAUNCHPAD_LIDO}"

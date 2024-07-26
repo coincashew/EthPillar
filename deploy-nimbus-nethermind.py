@@ -25,6 +25,7 @@ import urllib.request
 import zipfile
 import random
 import sys
+import platform
 from consolemenu import *
 from consolemenu.items import *
 import argparse
@@ -124,6 +125,27 @@ parser.add_argument("--install_config", type=str, help="Sets the node installati
 parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0.0")
 args = parser.parse_args()
 #print(args)
+
+def get_machine_architecture():
+  machine_arch=platform.machine()
+  if machine_arch == "x86_64":
+    return "amd64"
+  elif machine_arch == "aarch64":
+    return "arm64"
+  else:
+    print(f'Unsupported machine architecture: {machine_arch}')
+    exit(1)
+
+def get_computer_platform():
+  platform_name=platform.system()
+  if platform_name == "Linux":
+    return platform_name
+  else:
+    print(f'Unsupported platform: {platform_name}')
+    exit(1)
+
+binary_arch=get_machine_architecture()
+platform_arch=get_computer_platform()
 
 # Change to the home folder
 os.chdir(os.path.expanduser("~"))
@@ -321,11 +343,11 @@ def install_mevboost():
         global mevboost_version
         mevboost_version = response.json()['tag_name']
 
-        # Search for the asset with the name that ends in linux_amd64.tar.gz
+        # Search for the asset with the name that ends in {platform_arch}_{binary_arch}.tar.gz
         assets = response.json()['assets']
         download_url = None
         for asset in assets:
-            if asset['name'].endswith('linux_amd64.tar.gz'):
+            if asset['name'].endswith(f'{platform_arch.lower()}_{binary_arch}.tar.gz'):
                 download_url = asset['browser_download_url']
                 break
 
@@ -418,12 +440,21 @@ def download_and_install_nethermind():
         global nethermind_version
         nethermind_version = response.json()['tag_name']
 
-        # Search for the asset with the name that ends in linux-x64.zip
+        # Adjust binary name
+        if binary_arch == "amd64":
+          _arch="x64"
+        elif binary_arch == "arm64":
+          _arch="arm64"
+        else:
+           print("Error: Unknown binary architecture.")
+           exit(1)
+
+        # Search for the asset with the name that ends in {platform_arch}-{_arch}.zip
         assets = response.json()['assets']
         download_url = None
         zip_filename = None
         for asset in assets:
-            if asset['name'].endswith('linux-x64.zip'):
+            if asset['name'].endswith(f'{platform_arch.lower()}-{_arch}.zip'):
                 download_url = asset['browser_download_url']
                 zip_filename = asset['name']
                 break
@@ -504,11 +535,20 @@ def download_nimbus():
         global nimbus_version
         nimbus_version = response.json()['tag_name']
 
-        # Search for the asset with the name that ends in _Linux_amd64.tar.gz
+        # Adjust binary name
+        if binary_arch == "amd64":
+          _arch="amd64"
+        elif binary_arch == "arm64":
+          _arch="arm64v8"
+        else:
+           print("Error: Unknown binary architecture.")
+           exit(1)
+
+        # Search for the asset appropriate for this system architecture and platform
         assets = response.json()['assets']
         download_url = None
         for asset in assets:
-            if '_Linux_amd64' in asset['name'] and asset['name'].endswith('.tar.gz'):
+            if f'_{platform_arch}_{_arch}' in asset['name'] and asset['name'].endswith('.tar.gz'):
                 download_url = asset['browser_download_url']
                 break
 
@@ -532,7 +572,7 @@ def download_nimbus():
         # Find the extracted folder
         extracted_folder = None
         for item in os.listdir():
-            if item.startswith("nimbus-eth2_Linux_amd64"):
+            if item.startswith(f'nimbus-eth2_{platform.system()}_{_arch}'):
                 extracted_folder = item
                 break
 

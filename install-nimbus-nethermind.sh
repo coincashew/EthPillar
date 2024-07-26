@@ -79,6 +79,22 @@ ohai() {
   printf "${tty_blue}==>${tty_bold} %s${tty_reset}\n" "$(shell_join "$@")"
 }
 
+requirements_check() {
+  # Check CPU architecture
+  if ! [[ $(lscpu | grep -oE 'x86') || $(lscpu | grep -oE 'aarch64') ]]; then
+    echo "This machine's CPU architecture is not yet unsuppported."
+    echo "Recommend using Intel-AMD x86 or arm64 systems for best experience."
+    exit 1
+  fi
+
+  # Check operating system
+  if ! [[ "$(uname)" == "Linux" ]]; then
+    echo "This operating system is not yet unsuppported."
+    echo "Recommend installing Ubuntu Desktop 24.04+ LTS or Ubuntu Server 24.04+ LTS for best experience."
+    exit 1
+  fi
+}
+
 linux_install_pre() {
     sudo apt-get update
     sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze jq tmux bc
@@ -122,6 +138,9 @@ linux_install_validator-install() {
     ohai "Install complete!"
     exit_on_error $?
 }
+
+# Check OS and CPU requirements
+requirements_check
 
 # Do install.
 OS="$(uname)"
