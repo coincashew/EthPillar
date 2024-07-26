@@ -78,9 +78,9 @@ ohai() {
 
 requirements_check() {
   # Check CPU architecture
-  if ! [[ $(lscpu | grep -oE 'x86') ]]; then
+  if ! [[ $(lscpu | grep -oE 'x86') || $(lscpu | grep -oE 'aarch64') ]]; then
     echo "This machine's CPU architecture is not yet unsuppported."
-    echo "Recommend using Intel or AMD x86 systems for best experience."
+    echo "Recommend using Intel-AMD x86 or arm64 systems for best experience."
     exit 1
   fi
 
@@ -94,7 +94,7 @@ requirements_check() {
 
 linux_install_pre() {
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq
+    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq nano btop
     exit_on_error $?
 }
 

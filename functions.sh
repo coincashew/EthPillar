@@ -75,6 +75,29 @@ network_isConnected() {
   sudo ip route get 1 2>/dev/null
 }
 
+get_arch(){
+  machine_arch="$(uname --machine)"
+  if [[ "${machine_arch}" = "x86_64" ]]; then
+    binary_arch="amd64"
+  elif [[ "${machine_arch}" = "aarch64" ]]; then
+    binary_arch="arm64"
+  else
+    echo "Unsupported architecture: ${machine_arch}"
+    exit 1
+  fi
+  echo "${binary_arch}"
+}
+
+get_platform(){
+  platform="$(uname)"
+  if [[ "${platform}" = "Linux" ]]; then
+    echo "${platform}"
+  else
+    echo "Unsupported platform: ${platform}"
+    exit 1
+  fi
+}
+
 print_node_info() {
   current_time=$(date)
   os_descrip=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g')

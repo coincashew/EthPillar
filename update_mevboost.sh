@@ -12,6 +12,10 @@ BASE_DIR=$HOME/git/ethpillar
 # Load functions
 source $BASE_DIR/functions.sh
 
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
 function getCurrentVersion(){
     INSTALLED=$(mev-boost --version)
     #Find version in format #.#.#
@@ -44,7 +48,7 @@ function getLatestVersion(){
 
 function updateClient(){
 	RELEASE_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
-	BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep linux_amd64.tar.gz$)"
+	BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}_${_arch}.tar.gz$)"
 
 	echo Downloading URL: $BINARIES_URL
 

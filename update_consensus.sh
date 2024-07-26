@@ -12,6 +12,10 @@ BASE_DIR=$HOME/git/ethpillar
 # Load functions
 source $BASE_DIR/functions.sh
 
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
 function promptYesNo(){
     if whiptail --title "Update ${CLIENT}" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update $CLIENT to $TAG?" 15 78; then
   		updateClient
@@ -63,8 +67,9 @@ function getLatestVersion(){
 function updateClient(){
 	case "$CLIENT" in
 	  Lighthouse)
+		[[ "${_arch}" == "amd64" ]] && _architecture="x86_64" || _architecture="aarch64"
 		RELEASE_URL="https://api.github.com/repos/sigp/lighthouse/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep x86_64-unknown-linux-gnu.tar.gz$)"
+		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_architecture}-unknown-${_platform}-gnu.tar.gz$)"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O lighthouse.tar.gz $BINARIES_URL
@@ -84,7 +89,7 @@ function updateClient(){
 	  Lodestar)
 		RELEASE_URL="https://api.github.com/repos/ChainSafe/lodestar/releases/latest"
 		LATEST_TAG="$(curl -s $RELEASE_URL | jq -r ".tag_name")"
-		BINARIES_URL="https://github.com/ChainSafe/lodestar/releases/download/${LATEST_TAG}/lodestar-${LATEST_TAG}-linux-amd64.tar.gz"
+		BINARIES_URL="https://github.com/ChainSafe/lodestar/releases/download/${LATEST_TAG}/lodestar-${LATEST_TAG}-${_platform}-${_arch}.tar.gz"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O lodestar.tar.gz $BINARIES_URL
@@ -103,6 +108,7 @@ function updateClient(){
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  Teku)
+		[[ "${_arch}" == "arm64" ]] && echo "Teku binaries not available for arm64. Press ENTER to continue." && read && break
 		RELEASE_URL="https://api.github.com/repos/ConsenSys/teku/releases/latest"
 		LATEST_TAG="$(curl -s $RELEASE_URL | jq -r ".tag_name")"
 		BINARIES_URL="https://artifacts.consensys.net/public/teku/raw/names/teku.tar.gz/versions/${LATEST_TAG}/teku-${LATEST_TAG}.tar.gz"
@@ -125,7 +131,7 @@ function updateClient(){
 		;;
 	  Nimbus)
 		RELEASE_URL="https://api.github.com/repos/status-im/nimbus-eth2/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep "_Linux_amd64.*.tar.gz$")"
+		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case "_${_platform}_${_arch}.*.tar.gz$")"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O nimbus.tar.gz $BINARIES_URL
@@ -134,7 +140,7 @@ function updateClient(){
 			exit 1
 		fi
 		tar -xzvf nimbus.tar.gz -C $HOME
-		mv nimbus-eth2_Linux_amd64_* nimbus
+		mv nimbus-eth2_${_platform}_${_arch}* nimbus
 		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
 		sudo rm /usr/local/bin/nimbus_beacon_node
@@ -149,8 +155,10 @@ function updateClient(){
   	  Prysm)
 		cd $HOME
 		prysm_version=$(curl -f -s https://prysmaticlabs.com/releases/latest)
-		file_beacon=beacon-chain-${prysm_version}-linux-amd64
-		file_validator=validator-${prysm_version}-linux-amd64
+		# Convert to lower case
+		_platform=$(echo ${_platform} | tr '[:upper:]' '[:lower:]')
+		file_beacon=beacon-chain-${prysm_version}-${_platform}-${_arch}
+		file_validator=validator-${prysm_version}-${_platform}-${_arch}
 		curl -f -L "https://prysmaticlabs.com/releases/${file_beacon}" -o beacon-chain
 		curl -f -L "https://prysmaticlabs.com/releases/${file_validator}" -o validator
 		chmod +x beacon-chain validator

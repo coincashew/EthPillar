@@ -7,6 +7,15 @@
 #
 # Made for home and solo stakers 🏠🥩
 
+BASE_DIR=$HOME/git/ethpillar
+
+# Load functions
+source $BASE_DIR/functions.sh
+
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
 # Variables
 GITHUB_URL=https://api.github.com/repos/ethpandaops/ethereum-metrics-exporter/releases/latest
 GITHUB_RELEASE_NODES=https://github.com/ethpandaops/ethereum-metrics-exporter/releases
@@ -17,12 +26,6 @@ ETHEREUM_METRICS_EXPORTER_OPTIONS=(
 )
 GRAFANA_DIR=/etc/grafana
 PROMETHEUS_DIR=/etc/prometheus
-
-function getNetworkConfig() {
-    ip_current=$(hostname --ip-address)
-    interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
-    network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
-}
 
 # Asks to update
 function upgradeBinaries(){
@@ -48,7 +51,7 @@ function getLatestVersion(){
 
 # Downloads latest release of ethereum-metrics-exporter
 function downloadClient(){
-	BINARIES_URL="$(curl -s $GITHUB_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep linux_amd64.tar.gz$)"
+	BINARIES_URL="$(curl -s $GITHUB_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}_${_arch}.tar.gz$)"
 	echo Downloading URL: $BINARIES_URL
 	cd $HOME
 	# Download
