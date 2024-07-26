@@ -7,10 +7,27 @@
 #
 # Made for home and solo stakers 🏠🥩
 
+# Base directory with scripts
+BASE_DIR=$HOME/git/ethpillar
+
+# Load functions
+source $BASE_DIR/functions.sh
+
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
+# Binaries only available for amd64
+if [[ ! "${_arch}" == "amd64" ]]; then
+	echo "eth-duties binaries are only available for amd64 architecture"
+	sleep 5
+	exit 1
+fi
+
 # Variables
 GITHUB_URL=https://api.github.com/repos/TobiWo/eth-duties/releases/latest
 GITHUB_RELEASE_NODES=https://github.com/TobiWo/eth-duties/releases
-RELEASE_SUFFIX="ubuntu2204-amd64.tar.gz"
+RELEASE_SUFFIX="ubuntu2204-${_arch}.tar.gz"
 DESCRIPTION="eth-duties logs upcoming validator duties to the console. Developed mainly for home stakers."
 DOCUMENTATION=https://tobiwo.github.io/eth-duties
 SOURCE_CODE=https://github.com/TobiWo/eth-duties

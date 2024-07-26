@@ -12,6 +12,10 @@ BASE_DIR=$HOME/git/ethpillar
 # Load functions
 source $BASE_DIR/functions.sh
 
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
 function getCurrentVersion(){
 	 EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
     #Find version in format #.#.#
@@ -69,8 +73,9 @@ function getLatestVersion(){
 function updateClient(){
 	case $EL in
 	  Nethermind)
+		[[ "${_arch}" == "amd64" ]] && _architecture="x64" || _architecture="arm64"
 	    RELEASE_URL="https://api.github.com/repos/NethermindEth/nethermind/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep linux-x64)"
+		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}-${_architecture})"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O nethermind.zip $BINARIES_URL
@@ -82,8 +87,9 @@ function updateClient(){
 		sudo systemctl start execution
 	    ;;
 	  Besu)
+		[[ "${_arch}" == "arm64" ]] && echo "Besu binaries not available for arm64. Press ENTER to continue." && read && break
 		updateBesuJRE
-	    RELEASE_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
+		RELEASE_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
 		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
 		BINARIES_URL="https://github.com/hyperledger/besu/releases/download/$TAG/besu-$TAG.tar.gz"
 		echo Downloading URL: $BINARIES_URL
@@ -99,7 +105,7 @@ function updateClient(){
 	    ;;
 	  Erigon)
 	    RELEASE_URL="https://api.github.com/repos/ledgerwatch/erigon/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep linux_amd64)"
+		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}_${_arch})"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O erigon.tar.gz $BINARIES_URL
@@ -110,8 +116,10 @@ function updateClient(){
 		rm erigon.tar.gz README.md
 		;;
 	  Geth)
+		# Convert to lower case
+		_platform=$(echo ${_platform} | tr '[:upper:]' '[:lower:]')
 		RELEASE_URL="https://geth.ethereum.org/downloads"
-		FILE="https://gethstore.blob.core.windows.net/builds/geth-linux-amd64[a-zA-Z0-9./?=_%:-]*.tar.gz"
+		FILE="https://gethstore.blob.core.windows.net/builds/geth-${_platform}-${_arch}[a-zA-Z0-9./?=_%:-]*.tar.gz"
 		BINARIES_URL="$(curl -s $RELEASE_URL | grep -Eo $FILE | head -1)"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
@@ -123,9 +131,12 @@ function updateClient(){
 		rm geth.tar.gz COPYING
 	    ;;
   	  Reth)
+		# Convert to lower case
+		_platform=$(echo ${_platform} | tr '[:upper:]' '[:lower:]')
+		[[ "${_arch}" == "amd64" ]] && _architecture="x86_64" || _architecture="aarch64"
 	    RELEASE_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
 		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
-		BINARIES_URL="https://github.com/paradigmxyz/reth/releases/download/$TAG/reth-$TAG-x86_64-unknown-linux-gnu.tar.gz"
+		BINARIES_URL="https://github.com/paradigmxyz/reth/releases/download/$TAG/reth-$TAG-${_architecture}-unknown-${_platform}-gnu.tar.gz"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O reth.tar.gz $BINARIES_URL

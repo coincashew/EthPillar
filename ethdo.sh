@@ -7,10 +7,20 @@
 #
 # Made for home and solo stakers 🏠🥩
 
+# Base directory with scripts
+BASE_DIR=$HOME/git/ethpillar
+
+# Load functions
+source $BASE_DIR/functions.sh
+
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
 # Variables
 GITHUB_URL=https://api.github.com/repos/wealdtech/ethdo/releases/latest
 GITHUB_RELEASE_NODES=https://github.com/wealdtech/ethdo/releases
-RELEASE_SUFFIX="linux-amd64.tar.gz$"
+RELEASE_SUFFIX="${_platform}-${_arch}.tar.gz$"
 DESCRIPTION="A command-line tool for managing common tasks in Ethereum"
 DOCUMENTATION=https://github.com/wealdtech/ethdo/blob/master/docs/howto.md
 SOURCE_CODE=https://github.com/wealdtech/ethdo
@@ -32,7 +42,7 @@ function getLatestVersion(){
 
 # Downloads latest release
 function downloadClient(){
-	BINARIES_URL="$(curl -s $GITHUB_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep ${RELEASE_SUFFIX})"
+	BINARIES_URL="$(curl -s $GITHUB_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${RELEASE_SUFFIX})"
 	echo Downloading URL: $BINARIES_URL
 	cd $HOME
 	# Download

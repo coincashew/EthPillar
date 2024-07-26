@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="1.9.1"
+EP_VERSION="2.0.0"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -32,6 +32,10 @@ API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
 # Execution layer RPC API
 EL_RPC_ENDPOINT="${EL_IP_ADDRESS}:${EL_RPC_PORT}"
 
+# Get machine info
+_platform=$(get_platform)
+_arch=$(get_arch)
+
 menuMain(){
 
 # Define the options for the main menu
@@ -50,7 +54,7 @@ OPTIONS+=(
   9 "Restart all clients"
   - ""
   10 "System Administration"
-  11 "Tools"
+  11 "Toolbox"
   99 "Quit"
 )
 
@@ -889,6 +893,8 @@ while true; do
       1)
         # Skip if no validators installed
         if [[ ! -f /etc/systemd/system/validator.service ]]; then echo "No validator(s) installed. Press ENTER to continue."; read; break; fi
+        # Skip if arm64
+        [[ "${_arch}" == "arm64" ]] && echo "eth-duties not available for arm64. Press ENTER to continue." && read && break
 
         # Install eth-duties if not yet installed
         if [[ ! -f /usr/local/bin/eth-duties ]]; then
@@ -927,6 +933,7 @@ while true; do
         checkValidatorQueue
         ;;
       9)
+        [[ "${_arch}" == "arm64" ]] && echo "EL Switcher not available for arm64. Press ENTER to continue." && read && break
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
         ;;
       10)
