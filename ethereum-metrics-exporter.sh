@@ -231,7 +231,7 @@ JSON_FILE=$GRAFANA_DIR/provisioning/dashboards/node-exporter-for-prometheus-dash
 sudo bash -c "wget -qO - $URL | jq 'walk(if . == \"\${DS__VICTORIAMETRICS}\" then \"Prometheus\" else . end)' > $JSON_FILE"
 
 # Delete any failed 0 size dashboards
-find $GRAFANA_PROVISION_DIR -type f -size 0 -delete
+find $GRAFANA_DIR/provisioning/dashboards -type f -size 0 -delete
 
 # Install default alert rules and restart prometheus
 sudo cp $(dirname $(realpath "${BASH_SOURCE[0]}"))/alert.rules.yml $PROMETHEUS_DIR

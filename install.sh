@@ -87,14 +87,14 @@ requirements_check() {
   # Check operating system
   if ! [[ "$(uname)" == "Linux" ]]; then
     echo "This operating system is not yet unsuppported."
-    echo "Recommend installing Ubuntu Desktop 22.04+ LTS or Ubuntu Server 22.04+ LTS for best experience."
+    echo "Recommend installing Ubuntu Desktop 24.04+ LTS or Ubuntu Server 24.04+ LTS for best experience."
     exit 1
   fi
 }
 
 linux_install_pre() {
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq nano btop
+    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq nano btop whiptail ufw
     exit_on_error $?
 }
 
