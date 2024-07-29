@@ -94,7 +94,7 @@ requirements_check() {
 
 linux_install_pre() {
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq nano btop whiptail
+    sudo apt-get install --no-install-recommends --no-install-suggests -y curl git ccze bc tmux jq nano btop whiptail ufw
     exit_on_error $?
 }
 
