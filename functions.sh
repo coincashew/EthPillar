@@ -672,6 +672,8 @@ installEthdo(){
     if [[ ! -f /usr/local/bin/ethdo ]]; then
       if whiptail --title "Install ethdo" --yesno "Do you want to install ethdo?\n\nethdo helps you check validator status, generate and broadcast exit messages." 10 78; then
         runScript ethdo.sh -i
+      else
+        break
       fi
     fi
 }
@@ -1014,7 +1016,7 @@ checkRelayLatency(){
     done
 
     # If any relays have high latency, warn user to consider removing distant relays
-    if (( _warn )); then
+    if [[ ${_warn} && ! ${NODE_MODE}=="Lido CSM Staking Node" ]]; then
       echo "${tty_bold}When relays are distant from your node, response times can be high. Consider removing relays with ⚠️ or ❌."
     fi
     ohai "Relay latency check complete."
