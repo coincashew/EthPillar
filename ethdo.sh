@@ -25,7 +25,8 @@ DESCRIPTION="A command-line tool for managing common tasks in Ethereum"
 DOCUMENTATION=https://github.com/wealdtech/ethdo/blob/master/docs/howto.md
 SOURCE_CODE=https://github.com/wealdtech/ethdo
 APP_NAME=ethdo
-VERSION=v$(ethdo version)
+APP_INSTALL_PATH="/usr/local/bin"
+VERSION=v$([[ -e ${APP_INSTALL_PATH}/ethdo ]] && ethdo version)
 
 # Asks to update
 function upgradeBinaries(){
@@ -52,13 +53,13 @@ function downloadClient(){
 	# Cleanup
 	rm $APP_NAME.tar.gz
 	# Install binary
-	sudo mv $HOME/$APP_NAME /usr/local/bin
+	sudo mv $HOME/$APP_NAME $APP_INSTALL_PATH
 }
 
 # Uninstall
 function removeAll() {
 	if whiptail --title "Uninstall $APP_NAME" --defaultno --yesno "Are you sure you want to remove $APP_NAME" 9 78; then
-	  sudo rm /usr/local/bin/$APP_NAME
+	  sudo rm $APP_INSTALL_PATH/$APP_NAME
   	whiptail --title "Uninstall finished" --msgbox "You have uninstalled $APP_NAME." 8 78
 	fi
 }
