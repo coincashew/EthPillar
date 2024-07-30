@@ -31,6 +31,16 @@ from consolemenu.items import *
 import argparse
 from dotenv import load_dotenv, dotenv_values
 
+import os
+
+def clear_screen():
+    if os.name == 'posix':  # Unix-based systems (e.g., Linux, macOS)
+        os.system('clear')
+    elif os.name == 'nt':   # Windows
+        os.system('cls')
+
+clear_screen()  # Call the function to clear the screen
+
 # Valid configurations
 valid_networks = ['MAINNET', 'HOLESKY', 'SEPOLIA']
 valid_exec_clients = ['NETHERMIND']
@@ -230,7 +240,6 @@ consensus_client = valid_consensus_clients[0]
 # Set to lowercase
 consensus_client = consensus_client.lower()
 
-Screen().clear()
 
 # Validates an eth address
 def is_valid_eth_address(address):
@@ -248,7 +257,6 @@ if not NODE_ONLY and FEE_RECIPIENT_ADDRESS == "" and not args.skip_prompts:
         else:
             print("Invalid Ethereum address. Try again.")
 
-Screen().clear()
 
 # Validates an CL beacon node address with port
 def validate_beacon_node_address(ip_port):
@@ -272,7 +280,7 @@ if VALIDATOR_ONLY and args.vc_only_bn_address is None and not args.skip_prompts:
 else:
     BN_ADDRESS=args.vc_only_bn_address
 
-Screen().clear()
+
 
 if not args.skip_prompts:
     # Format confirmation message
