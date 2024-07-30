@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.0.1"
+EP_VERSION="2.0.2"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -900,6 +900,8 @@ while true; do
         if [[ ! -f /usr/local/bin/eth-duties ]]; then
           if whiptail --title "Install eth-duties" --yesno "Do you want to install eth-duties?\n\neth-duties shows upcoming validator duties." 8 78; then
             runScript eth-duties.sh -i
+          else
+            break
           fi
         fi
         submenuEthduties
@@ -909,6 +911,8 @@ while true; do
         if [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]]; then
           if whiptail --title "Install Monitoring" --yesno "Do you want to install Monitoring?\nIncludes: Ethereum Metrics Exporter, grafana, prometheus" 8 78; then
             runScript ethereum-metrics-exporter.sh -i
+          else
+            break
           fi
         fi
         submenuMonitoring
