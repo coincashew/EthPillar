@@ -271,7 +271,7 @@ BN_ADDRESS=""
 if VALIDATOR_ONLY and args.vc_only_bn_address is None and not args.skip_prompts:
     # Prompt User for beacon node address
     while True:
-        BN_ADDRESS = Screen().input(f'Enter your consensus client (beacon node) address.\nExample: http://192.168.1.123:5052\n > ')
+        BN_ADDRESS = Screen().input(f'\nEnter your consensus client (beacon node) address.\nExample: http://192.168.1.123:5052\n > ')
         if validate_beacon_node_address(BN_ADDRESS):
             print("Valid beacon node address")
             break
@@ -285,11 +285,11 @@ else:
 if not args.skip_prompts:
     # Format confirmation message
     if install_config == "Solo Staking Node" or install_config == "Lido CSM Staking Node" or install_config == "Failover Staking Node":
-        message=f'Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nIs this correct?'
+        message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nIs this correct?'
     elif install_config == "Full Node Only":
-        message=f'Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\n\nIs this correct?'
+        message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\n\nIs this correct?'
     elif install_config == "Validator Client Only":
-        message=f'Confirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nConsensus client (beacon node) address: {BN_ADDRESS}\n\nIs this correct?'
+        message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nConsensus client (beacon node) address: {BN_ADDRESS}\n\nIs this correct?'
     else:
         print(f"\nError: Unknown install_config")
         exit(1)
@@ -363,13 +363,22 @@ def install_mevboost():
             print("Error: Could not find the download URL for the latest release.")
             exit(1)
 
-        # Download the latest release binary
-        print(f"Download URL: {download_url}")
-        response = requests.get(download_url)
+        try:
+            # Download the file
+            response = requests.get(download_url, stream=True)
+            response.raise_for_status()  # Raise an exception for HTTP errors
 
-        # Save the binary to the home folder
-        with open('mev-boost.tar.gz', 'wb') as f:
-            f.write(response.content)
+            # Save the binary to the home folder
+            with open("mev-boost.tar.gz", "wb") as f:
+                for chunk in response.iter_content(1024):
+                    if chunk:
+                        f.write(chunk)
+
+            print(f">> Successfully downloaded: {asset['name']}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error: Unable to download file. Try again later. {e}")
+            exit(1)
 
         # Extract the binary to the home folder
         with tarfile.open('mev-boost.tar.gz', 'r:gz') as tar:
@@ -473,12 +482,24 @@ def download_and_install_nethermind():
 
         # Download the latest release binary
         print(f"Download URL: {download_url}")
-        response = requests.get(download_url)
 
-        # Save the binary to a temporary file
-        with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temp_file:
-            temp_file.write(response.content)
-            temp_path = temp_file.name
+        try:
+            # Download the file
+            response = requests.get(download_url, stream=True)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+
+            # Save the binary to a temporary file
+            with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temp_file:
+                for chunk in response.iter_content(1024):
+                    if chunk:
+                        temp_file.write(chunk)
+                temp_path = temp_file.name
+
+            print(f">> Successfully downloaded: {zip_filename}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error: Unable to download file. Try again later. {e}")
+            exit(1)
 
         # Create a temporary directory for extraction
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -566,12 +587,23 @@ def download_nimbus():
 
         # Download the latest release binary
         print(f"Download URL: {download_url}")
-        response = requests.get(download_url)
 
+        try:
+            # Download the file
+            response = requests.get(download_url, stream=True)
+            response.raise_for_status()  # Raise an exception for HTTP errors
 
-        # Save the binary to the home folder
-        with open('nimbus.tar.gz', 'wb') as f:
-            f.write(response.content)
+            # Save the binary to the home folder
+            with open("nimbus.tar.gz", "wb") as f:
+                for chunk in response.iter_content(1024):
+                    if chunk:
+                        f.write(chunk)
+
+            print(f">> Successfully downloaded: {asset['name']}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error: Unable to download file. Try again later. {e}")
+            exit(1)
 
         # Extract the binary to the home folder
         with tarfile.open('nimbus.tar.gz', 'r:gz') as tar:
