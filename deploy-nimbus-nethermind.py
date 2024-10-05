@@ -112,10 +112,12 @@ JWTSECRET_PATH=os.getenv('JWTSECRET_PATH')
 GRAFFITI=os.getenv('GRAFFITI')
 FEE_RECIPIENT_ADDRESS=os.getenv('FEE_RECIPIENT_ADDRESS')
 MEV_MIN_BID=os.getenv('MEV_MIN_BID')
-CSM_FEE_RECIPIENT_ADDRESS=os.getenv('CSM_FEE_RECIPIENT_ADDRESS')
+CSM_FEE_RECIPIENT_ADDRESS_MAINNET=os.getenv('CSM_FEE_RECIPIENT_ADDRESS_MAINNET')
+CSM_FEE_RECIPIENT_ADDRESS_HOLESKY=os.getenv('CSM_FEE_RECIPIENT_ADDRESS_HOLESKY')
 CSM_GRAFFITI=os.getenv('CSM_GRAFFITI')
 CSM_MEV_MIN_BID=os.getenv('CSM_MEV_MIN_BID')
-CSM_WITHDRAWAL_ADDRESS=os.getenv('CSM_WITHDRAWAL_ADDRESS')
+CSM_WITHDRAWAL_ADDRESS_MAINNET=os.getenv('CSM_WITHDRAWAL_ADDRESS_MAINNET')
+CSM_WITHDRAWAL_ADDRESS_HOLESKY=os.getenv('CSM_WITHDRAWAL_ADDRESS_HOLESKY')
 
 # Create argparse options
 parser = argparse.ArgumentParser(description='Validator Install Options :: CoinCashew.com',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -186,10 +188,6 @@ if not args.install_config and not args.skip_prompts:
 else:
     install_config=args.install_config
 
-if eth_network == "mainnet" and install_config == "Lido CSM Staking Node":
-    print("Lido CSM is only available on HOLESKY. Mainnet not yet available.")
-    exit(0)
-
 # Sepolia is a permissioned validator set, default to NODE_ONLY
 if eth_network == "sepolia":
     NODE_ONLY=True
@@ -213,7 +211,15 @@ else:
           MEVBOOST_ENABLED=True
           VALIDATOR_ENABLED=True
           VALIDATOR_ONLY=False
-          FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS
+          if eth_network == "mainnet":
+              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_MAINNET
+              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_MAINNET
+          elif eth_network == "holesky":
+              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
+              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
+          else:
+            print(f'Unsupported Lido CSM Staking Node network: {eth_network}')
+            exit(1)
           GRAFFITI=CSM_GRAFFITI
           MEV_MIN_BID=CSM_MEV_MIN_BID
        case "Validator Client Only":

@@ -67,8 +67,9 @@ function generateNewValidatorKeys(){
           3>&1 1>&2 2>&3)
 
     if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
-    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then exit; fi
+    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 24 78; then exit; fi
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
+    setConfig
 
     while true; do
         ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
@@ -105,6 +106,7 @@ function importValidatorKeys(){
           3>&1 1>&2 2>&3)
 
         if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
+        setConfig
 
         if whiptail --title "Important Information" --defaultno --yesno "$MSG_IMPORT" 20 78; then
             loadKeys
@@ -128,8 +130,9 @@ function addRestoreValidatorKeys(){
           3>&1 1>&2 2>&3)
 
     if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
-    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 25 78; then exit; fi
+    if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 24 78; then exit; fi
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
+    setConfig
 
     while true; do
         ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
@@ -159,17 +162,29 @@ function addRestoreValidatorKeys(){
     fi
 }
 
-function getLAUNCHPAD_URL(){
+function setConfig(){
     case $NETWORK in
           mainnet)
             LAUNCHPAD_URL="https://launchpad.ethereum.org"
-            LAUNCHPAD_URL_LIDO="https://csm.lidoTBD.fi"
+            LAUNCHPAD_URL_LIDO="https://csm.lido.fi"
+            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}
+            CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_MAINNET}
           ;;
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
             LAUNCHPAD_URL_LIDO="https://csm.testnet.fi"
+            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
+            CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
           ;;
     esac
+
+    # Check if Lido CSM Validator
+    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ]]; then
+        # Update message for Lido
+        MSG_ETHADDRESS="\nSet this to Lido's CSM Withdrawal Vault Address.
+\n${NETWORK}: ${CSM_WITHDRAWAL_ADDRESS}
+\nIn checksum format, ether the Withdrawal Address:"
+    fi
 }
 
 # Load validator keys into validator client
@@ -237,10 +252,10 @@ function loadKeys(){
      #Rename Imported Keys Dir
      KEYFOLDER=${KEYPATH}$(date +%F-%H%M%S)
      mv $KEYPATH $KEYFOLDER
-     getLAUNCHPAD_URL
      queryValidatorQueue
      setLaunchPadMessage
-     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 40 78
+     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 20 78
+     whiptail --title "Tips: Things to Know" --msgbox "$MSG_TIPS" 24 78
      ohai "Finished loading keys. Press enter to continue."
      read
      promptViewLogs
@@ -252,8 +267,9 @@ function setLaunchPadMessage(){
 \n$KEYFOLDER
 \n3) Connect the Launchpad with your wallet, review and accept terms.
 \n4) Complete the 32 ETH deposit transaction(s). One transaction per validator.
-\n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE
-\nTips:
+\n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE"
+
+    MSG_TIPS="Tips:
 \n   - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
 \n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
@@ -266,17 +282,20 @@ function setLaunchPadMessage(){
 \nTo view JSON, run command:
 cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/deposit*json
 \n4) Provide the ~2 ETH/stETH bond per validator.
-\n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE
-\nTips:
+\n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE"
+
+    MSG_TIPS_LIDO="Tips:
 \n   - DO NOT DEPOSIT 32ETH YOURSELF: Lido will handle the validator deposit for you.
 \n   - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
 \n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
 \n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)
 \n   - Cleanup Keystores: Delete keystore files from node after backup."
-    if [[ $(grep -oE "${CSM_FEE_RECIPIENT_ADDRESS}" /etc/systemd/system/validator.service) ]]; then
+
+    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ]]; then
        # Update message for Lido
        MSG_LAUNCHPAD="${MSG_LAUNCHPAD_LIDO}"
+       MSG_TIPS="$MSG_TIPS_LIDO"
     fi
 }
 
@@ -314,19 +333,10 @@ function promptViewLogs(){
     fi
 }
 
-# Checks for LidoCSM's fee recipient address
-function checkIfLidoCSM(){
-  if [[ $(grep -oE "${CSM_FEE_RECIPIENT_ADDRESS}" /etc/systemd/system/validator.service) ]]; then
-    # Update message for Lido
-    MSG_ETHADDRESS="${MSG_ETHADDRESS_LIDO}"
-  fi
-}
-
 function setMessage(){
     MSG_INTRO="During this step, your Secret Recovery Phrase (also known as a "mnemonic") and an accompanying set of validator keys will be generated specifically for you. For comprehensive information regarding these keys, please refer to: https://kb.beaconcha.in/ethereum-staking/ethereum-2-keys
 \nThe importance of safeguarding both the Secret Recovery Phrase and the validator keys cannot be overstated, as they are essential for accessing your funds. Exposure of these keys may lead to theft. To learn how to securely store them, visit: https://www.ledger.com/blog/how-to-protect-your-seed-phrase
-\nFor enhanced security, it is strongly recommended that you create the Wagyu Key Gen (https://wagyu.gg) application on an entirely disconnected offline machine. A viable approach to this includes transferring the application onto a USB stick, connecting it to an isolated offline computer, and running it from there. Afterwards, copy your keys back to this machine and import.
-\nContinue?"
+\nFor enhanced security, it is strongly recommended that you create the Wagyu Key Gen (https://wagyu.gg) application on an entirely disconnected offline machine. A viable approach to this includes transferring the application onto a USB stick, connecting it to an isolated offline computer, and running it from there. Afterwards, copy your keys back to this machine and import. Continue?"
     MSG_OFFLINE="To ensure maximum security of your secret recovery phrase, it's important to operate this tool in an offline environment.
 \nBe certain that your secret recovery phrase remains offline from the internet throughout the process.
 \nDisconnecting from the internet might cut off computer access. Ensure you can recover access to this machine or VPS.
@@ -341,9 +351,6 @@ function setMessage(){
     MSG_ETHADDRESS="Ensure that you have control over this address.
 \nETH address secured by a hardware wallet is recommended.
 \nIn checksum format, enter your Withdrawal Address:"
-    MSG_ETHADDRESS_LIDO="\nSet this to Lido's CSM Withdrawal Vault Address.
-\nHolesky: ${CSM_WITHDRAWAL_ADDRESS}
-\nIn checksum format, ether the Withdrawal Address:"
     MSG_IMPORT="Importing validator keys:
 \n1) I acknowledge that if migrating from another node, I must wait for at least two epochs (12 mins 48 sec) before continuing.
 \n2) I acknowledge that if migrating from another node, I have deleted the keys from the previous machine. This ensures that the keys will NOT inadvertently restart and run in two places.
@@ -394,6 +401,5 @@ done
 
 setWhiptailColors
 setMessage
-checkIfLidoCSM
 downloadStakingDepositCLI
 menuMain
