@@ -108,7 +108,7 @@ linux_install_python() {
         sudo apt-get install --no-install-recommends --no-install-suggests -y $python
     else
         ohai "Updating python"
-        sudo apt-get install --only-upgrade $python
+        sudo apt-get install --only-upgrade -y $python
     fi
     exit_on_error $?
     ohai "Installing python tools"
