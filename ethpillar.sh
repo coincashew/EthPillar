@@ -990,7 +990,7 @@ function getBackTitle(){
 
     # Format gas price
     latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    if [[ -n "$latest_gas_price" ]]; then WEI=$(printf '%d' "$latest_gas_price"); [[ $WEI -le "1000000000" ]] && GP="$(echo "scale=1; $WEI / 1000000" | bc) wei" || GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"; else GP="Gas N/A - Syncing"; fi
+    if [[ -n "$latest_gas_price" ]]; then WEI=$(printf '%d' "$latest_gas_price"); [[ $WEI -le "1000000000" ]] && GP="$(echo "scale=1; $WEI / 1000000" | bc) Mwei" || GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"; else GP="Gas N/A - Syncing"; fi
 
     # Format backtitle
     EL_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ "$LB" != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]] ; then printf "$LB | $GP" ; elif [[ -f /etc/systemd/system/execution.service ]]; then printf "Offline EL" ; fi)
