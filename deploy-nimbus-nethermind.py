@@ -318,9 +318,6 @@ elif eth_network == "sepolia":
 # Use a random sync url
 sync_url = random.choice(sync_urls)[1]
 
-if not VALIDATOR_ONLY:
-    print(f'Using Sync URL: {sync_url}')
-
 def setup_node():
     if not VALIDATOR_ONLY:
         # Create JWT directory
@@ -368,6 +365,9 @@ def install_mevboost():
         if download_url is None:
             print("Error: Could not find the download URL for the latest release.")
             exit(1)
+
+        # Download the latest release binary
+        print(f"Download URL: {download_url}")
 
         try:
             # Download the file
@@ -684,7 +684,7 @@ WantedBy=multi-user.target
 
 def run_nimbus_checkpoint_sync():
     if sync_url is not None and not VALIDATOR_ONLY:
-        print("Running Checkpoint Sync")
+        print(f'>> Running Checkpoint Sync. Using Sync URL: {sync_url}')
         db_path = "/var/lib/nimbus/db"
         os.system(f'sudo rm -rf {db_path}')
         subprocess.run([
