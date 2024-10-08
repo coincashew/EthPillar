@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.1.0"
+EP_VERSION="2.1.1"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -1012,12 +1012,10 @@ function checkV1StakingSetup(){
   fi
 }
 
-# If no consensus client service is installed, ask to install
-function askInstallNode(){
+# If no consensus or validator client service is installed, start install workflow
+function installNode(){
   if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service ]]; then
-    if whiptail --title "Install Node" --yesno "Would you like to install an Ethereum node (Nimbus CL & Nethermind EL)?" 8 78; then
       runScript install-nimbus-nethermind.sh true
-    fi
   fi
 }
 
@@ -1053,7 +1051,7 @@ function setNodeMode(){
 
 checkV1StakingSetup
 setWhiptailColors
-askInstallNode
+installNode
 applyPatches
 setNodeMode
 menuMain
