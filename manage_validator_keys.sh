@@ -60,11 +60,7 @@ function generateNewValidatorKeys(){
         fi
     fi
 
-    NETWORK=$(whiptail --title "Network" --radiolist \
-          "For which network are you generating validator keys?" 10 78 4 \
-          "mainnet" "Ethereum. Real ETH. Real staking rewards." ON \
-          "holesky" "Testnet. Practice your staking setup here." OFF \
-          3>&1 1>&2 2>&3)
+    _getNetwork
 
     if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
     if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 24 78; then exit; fi
@@ -96,14 +92,18 @@ function generateNewValidatorKeys(){
 
 }
 
+function _getNetwork(){
+    NETWORK=$(whiptail --title "Network" --menu \
+          "For which network are you generating validator keys?" 10 78 2 \
+          "mainnet" "Ethereum - Real ETH. Real staking rewards." \
+          "holesky" "Testnet  - Practice your staking setup here." \
+          3>&1 1>&2 2>&3)
+}
+
 function importValidatorKeys(){
     KEYPATH=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     if [ -d "$KEYPATH" ]; then
-        NETWORK=$(whiptail --title "Network" --radiolist \
-          "For which network are you importing validator keys?" 10 78 4 \
-          "mainnet" "Ethereum. Real ETH. Real staking rewards." ON \
-          "holesky" "Testnet. Practice your staking setup here." OFF \
-          3>&1 1>&2 2>&3)
+        _getNetwork
 
         if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
         setConfig
@@ -123,11 +123,7 @@ function addRestoreValidatorKeys(){
         OFFLINE_MODE=true
         ohai "Network is down"
     fi
-    NETWORK=$(whiptail --title "Choose the Network" --radiolist \
-          "What network are you generating validator keys for?" 10 78 4 \
-          "mainnet" "Real ETH. Real staking rewards." ON \
-          "holesky" "Testnet. Practice your staking setup here." OFF \
-          3>&1 1>&2 2>&3)
+    _getNetwork
 
     if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
     if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 24 78; then exit; fi
