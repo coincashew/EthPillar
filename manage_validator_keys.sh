@@ -185,12 +185,14 @@ function setConfig(){
             LAUNCHPAD_URL_LIDO="https://csm.lido.fi"
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_MAINNET}
+            CSM_SENTINEL_URL="https://t.me/CSMSentinel_bot"
           ;;
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
             LAUNCHPAD_URL_LIDO="https://csm.testnet.fi"
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
+            CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"
           ;;
     esac
 
@@ -282,12 +284,11 @@ function setLaunchPadMessage(){
 \n4) Complete the 32 ETH deposit transaction(s). One transaction per validator.
 \n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE"
 
-    MSG_TIPS="Tips:
-\n   - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
-\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
-\n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
-\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
-\n   - Cleanup Keystores: Delete keystore files from node after backup."
+    MSG_TIPS=" - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
+\n - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
+\n - Backup Keystore Files: Keep copies on offline USB storage.
+   Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
+\n - Generate Voluntary Exit Message: Once active and assigned an index #, generate your validator's VEM. To stop validator duties, broadcast VEM."
 
     MSG_LAUNCHPAD_LIDO="1) Visit Lido CSM: $LAUNCHPAD_URL_LIDO
 \n2) Connect your wallet on the correct network, review and accept terms.
@@ -297,13 +298,13 @@ cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys/deposit*json
 \n4) Provide the ~2 ETH/stETH bond per validator.
 \n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE"
 
-    MSG_TIPS_LIDO="Tips:
-\n   - DO NOT DEPOSIT 32ETH YOURSELF: Lido will handle the validator deposit for you.
-\n   - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
-\n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
-\n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
-\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
-\n   - Cleanup Keystores: Delete keystore files from node after backup."
+    MSG_TIPS_LIDO=" - DO NOT DEPOSIT 32ETH YOURSELF: Lido will deposit for you.
+\n - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
+\n - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
+\n - Backup Keystore Files: Keep copies on offline USB storage.
+   Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
+\n - Subscribe to CSM Sentinel Bot: Provides your CSM Node Operator events via telegram $CSM_SENTINEL_URL
+\n - Generate Voluntary Exit Message: Once active and assigned an index #, generate your validator's VEM. To stop validator duties, broadcast VEM."
 
     if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ]]; then
        # Update message for Lido
