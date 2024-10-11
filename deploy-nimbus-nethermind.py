@@ -367,7 +367,7 @@ def install_mevboost():
             exit(1)
 
         # Download the latest release binary
-        print(f"Download URL: {download_url}")
+        print(f">> Downloading mevboost > URL: {download_url}")
 
         try:
             # Download the file
@@ -487,7 +487,7 @@ def download_and_install_nethermind():
             exit(1)
 
         # Download the latest release binary
-        print(f"Download URL: {download_url}")
+        print(f">> Downloading Nethermind > URL: {download_url}")
 
         try:
             # Download the file
@@ -592,7 +592,7 @@ def download_nimbus():
             exit(1)
 
         # Download the latest release binary
-        print(f"Download URL: {download_url}")
+        print(f">> Downloading Nimbus > URL: {download_url}")
 
         try:
             # Download the file
