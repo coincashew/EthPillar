@@ -9,7 +9,7 @@
 # Dir to install staking-deposit-cli
 STAKING_DEPOSIT_CLI_DIR=$HOME
 # Path to validator_keys, contains validator_key folder with keystore*.json files
-KEYPATH=$STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli/validator_keys
+KEYPATH=$STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli
 # Initialize variable
 OFFLINE_MODE=false
 # Base directory with scripts
@@ -66,19 +66,15 @@ function generateNewValidatorKeys(){
     if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 24 78; then exit; fi
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
     setConfig
+    _getEthAddy
 
-    while true; do
-        ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-        if [ -z "$ETHADDRESS" ]; then exit; fi #pressed cancel
-        if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
-            break
-        else
-            whiptail --title "Error" --msgbox "Invalid ETH address. Try again." 8 78
-        fi
-    done
+    NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+    _setKeystorePassword
 
     cd $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli
-    ./deposit new-mnemonic --chain $NETWORK --execution_address $ETHADDRESS
+    KEYFOLDER="${KEYPATH}/$(date +%F-%H%M%S)"
+    mkdir -p "$KEYFOLDER"
+    ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER"
     if [ $? -eq 0 ]; then
         loadKeys
         if [ $OFFLINE_MODE == true ]; then
@@ -90,6 +86,18 @@ function generateNewValidatorKeys(){
         exit
     fi
 
+}
+
+function _getEthAddy(){
+    while true; do
+        ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+        if [ -z "$ETHADDRESS" ]; then exit; fi #pressed cancel
+        if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+            break
+        else
+            whiptail --title "Error" --msgbox "Invalid ETH address. Try again." 8 78
+        fi
+    done
 }
 
 function _getNetwork(){
@@ -129,23 +137,17 @@ function addRestoreValidatorKeys(){
     if ! whiptail --title "Information on Secret Recovery Phrase Mnemonic" --yesno "$MSG_INTRO" 24 78; then exit; fi
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
     setConfig
-
-    while true; do
-        ETHADDRESS=$(whiptail --title "Ethereum Withdrawal Address" --inputbox "$MSG_ETHADDRESS" 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-        if [ -z "$ETHADDRESS" ]; then exit; fi #pressed cancel
-        if [[ "${ETHADDRESS}" =~ ^0x[a-fA-F0-9]{40}$ ]]; then 
-            break
-        else
-            whiptail --title "Error" --msgbox "Invalid ETH address. Try again." 8 78
-        fi
-    done
+    _getEthAddy
 
     NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     START_INDEX=$(whiptail --title "# of Existing Keys" --inputbox "How many validator keys were previously made? Also known as the starting index." 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-
     whiptail --title "Keystore Password" --msgbox "Reminder to use the same keystore password as existing validators." 10 78
+    _setKeystorePassword
+
     cd $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli
-    ./deposit existing-mnemonic --chain $NETWORK --execution_address $ETHADDRESS --folder $(dirname $KEYPATH) --validator_start_index $START_INDEX --num_validators $NUMBER_NEW_KEYS
+    KEYFOLDER="${KEYPATH}/$(date +%F-%H%M%S)"
+    mkdir -p "$KEYFOLDER"
+    ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS"
     if [ $? -eq 0 ]; then
         loadKeys
         if [ $OFFLINE_MODE == true ]; then
@@ -156,6 +158,24 @@ function addRestoreValidatorKeys(){
         ohai "Error with staking-deposit-cli. Try again."
         exit
     fi
+}
+
+function _setKeystorePassword(){
+    while true; do
+        # Get keystore password
+        _KEYSTOREPASSWORD=$(whiptail --title "Keystore Password" --inputbox "Enter your validator's keystore password, must be at least 8 chars. " 12 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+        if [[ ${#_KEYSTOREPASSWORD} -ge 8 ]]; then
+            _VERIFY_PASS=$(whiptail --title "Verify Password" --inputbox "Confirm your keystore password" 12 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+            if [[ "${_KEYSTOREPASSWORD}" = "${_VERIFY_PASS}" ]]; then
+                ohai "Password is same."
+                break
+            else
+                whiptail --title "Error" --msgbox "Passwords not the same. Try again." 8 78
+            fi
+        else
+            whiptail --msgbox "The keystore password must be at least 8 characters long." 8 78
+        fi
+    done
 }
 
 function setConfig(){
@@ -212,7 +232,7 @@ function loadKeys(){
             # Get keystore password
             TEKU_PASS=$(whiptail --title "Teku Keystore Password" --inputbox "Enter your keystore password" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
             VERIFY_PASS=$(whiptail --title "Verify Password" --inputbox "Confirm your keystore password" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-            if [[ "${TEKU_PASS}" = $VERIFY_PASS ]]; then
+            if [[ "${TEKU_PASS}" = "${VERIFY_PASS}" ]]; then
                 ohai "Password is same."
                 break
             else
@@ -245,9 +265,6 @@ function loadKeys(){
      esac
      sudo systemctl start validator
      ohai "Starting validator"
-     #Rename Imported Keys Dir
-     KEYFOLDER=${KEYPATH}$(date +%F-%H%M%S)
-     mv $KEYPATH $KEYFOLDER
      queryValidatorQueue
      setLaunchPadMessage
      whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 20 78
@@ -260,7 +277,7 @@ function loadKeys(){
 function setLaunchPadMessage(){
     MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
 \n2) Upload your deposit_data-#########.json found in the directory:
-\n$KEYFOLDER
+\n$KEYFOLDER/validator_keys
 \n3) Connect the Launchpad with your wallet, review and accept terms.
 \n4) Complete the 32 ETH deposit transaction(s). One transaction per validator.
 \n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE"
@@ -269,14 +286,14 @@ function setLaunchPadMessage(){
 \n   - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
 \n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
-\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)
+\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
 \n   - Cleanup Keystores: Delete keystore files from node after backup."
 
     MSG_LAUNCHPAD_LIDO="1) Visit Lido CSM: $LAUNCHPAD_URL_LIDO
 \n2) Connect your wallet on the correct network, review and accept terms.
 \n3) Copy JSON from your deposit_data-#########.json
 \nTo view JSON, run command:
-cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/deposit*json
+cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys/deposit*json
 \n4) Provide the ~2 ETH/stETH bond per validator.
 \n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE"
 
@@ -285,7 +302,7 @@ cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/deposit*json
 \n   - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n   - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
 \n   - Backup Keystores: For faster recovery, keep copies of the keystore files on offline USB storage.
-\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)
+\n Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
 \n   - Cleanup Keystores: Delete keystore files from node after backup."
 
     if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ]]; then
@@ -343,7 +360,7 @@ function setMessage(){
 \nIf you have any questions you can get help at https://dsc.gg/ethstaker"
     MSG_PATH="Enter the path to your keystore files.
 \nDirectory contains keystore-m.json file(s).
-\nExample: $KEYPATH"
+\nExample: $KEYPATH/YYYY-MM-DD-NNNNNN/validator_keys"
     MSG_ETHADDRESS="Ensure that you have control over this address.
 \nETH address secured by a hardware wallet is recommended.
 \nIn checksum format, enter your Withdrawal Address:"
