@@ -182,14 +182,14 @@ function setConfig(){
     case $NETWORK in
           mainnet)
             LAUNCHPAD_URL="https://launchpad.ethereum.org"
-            LAUNCHPAD_URL_LIDO="https://csm.lido.fi"
+            LAUNCHPAD_URL_LIDO="https://csm.lido.fi/?ref=ethpillar"
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_MAINNET}
             CSM_SENTINEL_URL="https://t.me/CSMSentinel_bot"
           ;;
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
-            LAUNCHPAD_URL_LIDO="https://csm.testnet.fi"
+            LAUNCHPAD_URL_LIDO="https://csm.testnet.fi/?ref=ethpillar"
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"
