@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.1.2"
+EP_VERSION="2.1.3"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -271,9 +271,10 @@ while true; do
       - ""
       12 "Generate Voluntary Exit Messages (VEM)"
       13 "Broadcast Voluntary Exit Messages (VEM)"
-      14 "Check validator status, balance"
-      15 "Check validator entry/exit queue with beaconcha.in"
-      16 "Attestation Performance: Obtain information about attester inclusion"
+      14 "Next withdrawal: See expected time, blocks to go"
+      15 "Check validator status, balance"
+      16 "Check validator entry/exit queue with beaconcha.in"
+      17 "Attestation Performance: Obtain information about attester inclusion"
       - ""
       99 "Back to main menu"
     )
@@ -331,12 +332,16 @@ while true; do
         ;;
       14)
         installEthdo
-        checkValidatorStatus
+        ethdoNextWithdrawalSweep
         ;;
       15)
+        installEthdo
+        checkValidatorStatus
+        ;;
+      16)
          checkValidatorQueue
          ;;
-      16)
+      17)
         installEthdo
         checkValidatorAttestationInclusion
         ;;
@@ -668,9 +673,9 @@ while true; do
       1 "Status: Check validator status, balance"
       2 "VEM: Generate Voluntary Exit Messages"
       3 "VEM: Broadcast Voluntary Exit Messages"
-      4 "Earnings: Show expected yield (APY)"
-      5 "Next duties: Show expected time between block proposals, sync comm"
-      6 "Sweep delay: Show time until next withdrawal"
+      4 "Next withdrawal: See expected time, blocks to go"
+      5 "Earnings: Show expected yield (APY)"
+      6 "Next duties: Show expected time between block proposals, sync comm"
       7 "Credentials: Show withdrawal address"
       8 "Attestation Performance: Obtain information about attester inclusion"
       9 "Update to latest release"
@@ -704,13 +709,13 @@ while true; do
         broadcastVoluntaryExitMessageLocally
         ;;
       4)
-        ethdoYield
+        ethdoNextWithdrawalSweep
         ;;
       5)
-        ethdoExpectation
+        ethdoYield
         ;;
       6)
-        ethdoNextWithdrawalSweep
+        ethdoExpectation
         ;;
       7)
         ethdoWithdrawalAddress

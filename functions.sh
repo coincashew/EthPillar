@@ -914,6 +914,13 @@ ethdoExpectation(){
 
 # Returns time until next withdrawal sweep for given validator
 ethdoNextWithdrawalSweep(){
+    clear
+    echo "########################################################################################"
+    ohai "Next Withdrawal: Obtains when next withdrawal occurs"
+    echo "########################################################################################"
+    ohai "Key Points:"
+    echo "* Withdrawals: Every block, 16 withdrawals are processed."
+    echo "* Withdrawal Cycle: The order of withdrawals happens in a cycle, ordered by validator index"
     read -r -p "${tty_blue}Enter your Validator's Index or pubkey: (Press enter for example)${tty_reset} " _INDEX
     _INDEX=${_INDEX:-1337}
     ethdo validator --connection ${API_BN_ENDPOINT} withdrawal --validator=${_INDEX}
