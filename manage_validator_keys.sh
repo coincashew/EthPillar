@@ -76,6 +76,8 @@ function generateNewValidatorKeys(){
     mkdir -p "$KEYFOLDER"
     ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER"
     if [ $? -eq 0 ]; then
+        #Update path
+        KEYFOLDER="$KEYFOLDER/validator_keys"
         loadKeys
         if [ $OFFLINE_MODE == true ]; then
             network_up
@@ -85,7 +87,6 @@ function generateNewValidatorKeys(){
         ohai "Error with staking-deposit-cli. Try again."
         exit
     fi
-
 }
 
 function _getEthAddy(){
@@ -109,18 +110,19 @@ function _getNetwork(){
 }
 
 function importValidatorKeys(){
-    KEYPATH=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-    if [ -d "$KEYPATH" ]; then
+    KEYFOLDER=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+    if [ -d "$KEYFOLDER" ]; then
         _getNetwork
 
         if [ -z "$NETWORK" ]; then exit; fi # pressed cancel
         setConfig
 
         if whiptail --title "Important Information" --defaultno --yesno "$MSG_IMPORT" 20 78; then
+            _KEYSTOREPASSWORD=""
             loadKeys
         fi
     else
-        ohai "$KEYPATH does not exist. Try again."
+        ohai "$KEYFOLDER does not exist. Try again."
         exit
     fi
 }
@@ -149,6 +151,8 @@ function addRestoreValidatorKeys(){
     mkdir -p "$KEYFOLDER"
     ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS"
     if [ $? -eq 0 ]; then
+        #Update path
+        KEYFOLDER="$KEYFOLDER/validator_keys"
         loadKeys
         if [ $OFFLINE_MODE == true ]; then
             network_up
@@ -215,7 +219,7 @@ function loadKeys(){
       Lighthouse)
         sudo lighthouse account validator import \
           --datadir /var/lib/lighthouse \
-          --directory=$KEYPATH \
+          --directory=$KEYFOLDER \
           --reuse-password
         sudo chown -R validator:validator /var/lib/lighthouse/validators
         sudo chmod 700 /var/lib/lighthouse/validators
@@ -225,34 +229,36 @@ function loadKeys(){
         cd /usr/local/bin/lodestar
         sudo ./lodestar validator import \
           --dataDir="/var/lib/lodestar/validators" \
-          --keystore=$KEYPATH
+          --keystore=$KEYFOLDER
         sudo chown -R validator:validator /var/lib/lodestar/validators
         sudo chmod 700 /var/lib/lodestar/validators
       ;;
      Teku)
-        while true; do
-            # Get keystore password
-            TEKU_PASS=$(whiptail --title "Teku Keystore Password" --inputbox "Enter your keystore password" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-            VERIFY_PASS=$(whiptail --title "Verify Password" --inputbox "Confirm your keystore password" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-            if [[ "${TEKU_PASS}" = "${VERIFY_PASS}" ]]; then
-                ohai "Password is same."
-                break
-            else
-                whiptail --title "Error" --msgbox "Passwords not the same. Try again." 8 78
-            fi
-        done
-        echo $TEKU_PASS > $HOME/validators-password.txt
+        if [[ -z $_KEYSTOREPASSWORD ]]; then
+            while true; do
+                # Get keystore password
+                _KEYSTOREPASSWORD=$(whiptail --title "Teku Keystore Password" --inputbox "Enter your keystore password" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+                VERIFY_PASS=$(whiptail --title "Verify Password" --inputbox "Confirm your keystore password" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+                if [[ "${_KEYSTOREPASSWORD}" = "${VERIFY_PASS}" ]]; then
+                    ohai "Password is same."
+                    break
+                else
+                    whiptail --title "Error" --msgbox "Passwords not the same. Try again." 8 78
+                fi
+            done
+        fi
+        echo $_KEYSTOREPASSWORD > $HOME/validators-password.txt
         # Create password file for each keystore
-        for f in $KEYPATH/keystore*.json; do sudo cp $HOME/validators-password.txt $KEYPATH/$(basename $f .json).txt; done
+        for f in $KEYFOLDER/keystore*.json; do sudo cp $HOME/validators-password.txt $KEYFOLDER/$(basename $f .json).txt; done
         sudo mkdir -p /var/lib/teku_validator/validator_keys
-        sudo cp $KEYPATH/keystore* /var/lib/teku_validator/validator_keys
+        sudo cp $KEYFOLDER/keystore* /var/lib/teku_validator/validator_keys
         sudo chown -R validator:validator /var/lib/teku_validator
         sudo chmod -R 700 /var/lib/teku_validator
         rm $HOME/validators-password.txt
       ;;
      Nimbus)
         sudo /usr/local/bin/nimbus_beacon_node deposits import \
-            --data-dir=/var/lib/nimbus_validator $KEYPATH
+            --data-dir=/var/lib/nimbus_validator $KEYFOLDER
         sudo chown -R validator:validator /var/lib/nimbus_validator
         sudo chmod -R 700 /var/lib/nimbus_validator
       ;;
@@ -260,7 +266,7 @@ function loadKeys(){
         sudo /usr/local/bin/validator accounts import \
           --accept-terms-of-use \
           --wallet-dir=/var/lib/prysm/validators \
-          --keys-dir=$KEYPATH
+          --keys-dir=$KEYFOLDER
         sudo chown -R validator:validator /var/lib/prysm/validators
         sudo chmod 700 /var/lib/prysm/validators
       ;;
