@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.1.3"
+EP_VERSION="2.1.4"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -27,10 +27,10 @@ source ./env
 [[ -f ./.env.overrides ]] && source ./.env.overrides
 
 # Consensus client or beacon node HTTP Endpoint
-API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
+export API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
 
 # Execution layer RPC API
-EL_RPC_ENDPOINT="${EL_IP_ADDRESS}:${EL_RPC_PORT}"
+export EL_RPC_ENDPOINT="${EL_IP_ADDRESS}:${EL_RPC_PORT}"
 
 # Get machine info
 _platform=$(get_platform)
@@ -1058,5 +1058,6 @@ checkV1StakingSetup
 setWhiptailColors
 installNode
 applyPatches
+checkDiskSpace
 setNodeMode
 menuMain

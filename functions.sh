@@ -1030,3 +1030,36 @@ checkRelayLatency(){
     ohai "Press ENTER to continue"
     read
 }
+
+# Checks disk space. Offers to run checkpoint sync. THRESHOLD and MOUNT_POINTS and ALERT_FILE set in env or .env.overrides file
+checkDiskSpace(){
+    # Clear the alert file at the beginning
+    > "$ALERT_FILE"
+
+    for MOUNT in "${MOUNT_POINTS[@]}"; do
+        if df -h "$MOUNT" &> /dev/null; then
+            FREE_GB=$(df -h "$MOUNT" | awk 'NR==2 {print $4}')
+            FREE_PERCENT=$(df -h "$MOUNT" | awk 'NR==2 {print $5}' | sed 's/%//')
+            if [ "$FREE_PERCENT" -ge $((100 - THRESHOLD)) ]; then
+                echo -e "WARNING: $MOUNT has only $((100 - FREE_PERCENT))% free space left ($FREE_GB)." >> "$ALERT_FILE"
+            else
+                echo -e "\e[32mINFO: $MOUNT has sufficient free space: $FREE_GB ($((100 - FREE_PERCENT))% free).\e[0m" >> "$ALERT_FILE"
+            fi
+        else
+            echo -e "\e[31mERROR: $MOUNT is not mounted.\e[0m" >> "$ALERT_FILE"
+        fi
+    done
+
+    if [[ $(grep --ignore-case -oE "WARNING" "$ALERT_FILE") ]]; then
+        if whiptail --title "Low Disk Space Detected" --yesno "$(cat "$ALERT_FILE")\n\nRecommend to resync consensus client. Proceed?" 10 78; then
+            runScript resync_consensus.sh
+            MSG_TIPS=" - Resync Execution Client: This can take a few hours, up to a few days. Command is found under execution client menu.
+\n - Upgrade Storage: Until portal clients are available, upgrading to 4TB NVME is the best option for the foreseeable future."
+            whiptail --title "Tips: Disk Space" --msgbox "$MSG_TIPS" 12 78
+        fi
+    else
+        # Notify completion
+        echo "Free space check completed. Results:"
+        cat "$ALERT_FILE"
+    fi
+}
