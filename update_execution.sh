@@ -87,8 +87,7 @@ function updateClient(){
 		sudo systemctl start execution
 	    ;;
 	  Besu)
-		[[ "${_arch}" == "arm64" ]] && echo "Besu binaries not available for arm64. Press ENTER to continue." && read && break
-		updateBesuJRE
+		updateJRE
 		RELEASE_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
 		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
 		BINARIES_URL="https://github.com/hyperledger/besu/releases/download/$TAG/besu-$TAG.tar.gz"
@@ -149,7 +148,7 @@ function updateClient(){
 	  esac
 }
 
-function updateBesuJRE(){
+function updateJRE(){
 	# Check if OpenJDK-21-JRE or OpenJDK-21-JDK is already installed
 	if dpkg --list | grep -q -E "openjdk-21-jre|openjdk-21-jdk"; then
 	   echo "OpenJDK-21-JRE or OpenJDK-21-JDK is already installed. Skipping installation."

@@ -108,7 +108,7 @@ function updateClient(){
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  Teku)
-		[[ "${_arch}" == "arm64" ]] && echo "Teku binaries not available for arm64. Press ENTER to continue." && read && break
+		updateJRE
 		RELEASE_URL="https://api.github.com/repos/ConsenSys/teku/releases/latest"
 		LATEST_TAG="$(curl -s $RELEASE_URL | jq -r ".tag_name")"
 		BINARIES_URL="https://artifacts.consensys.net/public/teku/raw/names/teku.tar.gz/versions/${LATEST_TAG}/teku-${LATEST_TAG}.tar.gz"
@@ -171,6 +171,24 @@ function updateClient(){
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  esac
+}
+
+function updateJRE(){
+	# Check if OpenJDK-21-JRE or OpenJDK-21-JDK is already installed
+	if dpkg --list | grep -q -E "openjdk-21-jre|openjdk-21-jdk"; then
+	   echo "OpenJDK-21-JRE or OpenJDK-21-JDK is already installed. Skipping installation."
+	else
+	   # Install OpenJDK-21-JRE
+	   sudo apt-get update
+	   sudo apt-get install -y openjdk-21-jre
+
+       # Check if the installation was successful
+       if [ $? -eq 0 ]; then
+	      echo "OpenJDK-21-JRE installed successfully!"
+	   else
+	      echo "Error installing OpenJDK-21-JRE. Please check the error log."
+	   fi
+	fi
 }
 
 setWhiptailColors
