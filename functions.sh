@@ -177,6 +177,18 @@ runScript() {
     fi
 }
 
+# Calculates Ephemery ChainID
+getEphemeryChainID(){
+    _dateToIteration(){
+        printf %.f $(echo "($1 - 1393527600 ) / $GENESIS_INTERVAL" | bc -l)
+    }
+
+    GENESIS_INTERVAL="2419200"
+    ITERATION_NUMBER=$(_dateToIteration $(date +%s))
+    #Subtract 1 for current ChainID
+    EPH_CHAIN_ID=$(expr 39438000 + "$ITERATION_NUMBER" - 1)
+}
+
 getNetwork(){
     # Get network name from execution client
     result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' ${EL_RPC_ENDPOINT} | jq -r '.result')
@@ -191,11 +203,13 @@ getNetwork(){
     11155111)
       NETWORK="Sepolia"
       ;;
-    39438138)
-      NETWORK="Ephemery"
-      ;;
     *)
-      NETWORK="Custom Network"
+      getEphemeryChainID
+      if [[ "$result" = "$EPH_CHAIN_ID" ]]; then
+        NETWORK="Ephemery"
+      else
+        NETWORK="Custom Network"
+      fi
     esac
 }
 

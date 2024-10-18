@@ -27,26 +27,6 @@ function promptViewLogs(){
 	fi
 }
 
-function getNetwork(){
-    # Get network name from execution client
-    result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    if [[ -z $result ]]; then echo "Unable to determine network. Ensure EL is running."; exit 1; fi
-    case $result in
-    1)
-      NETWORK="Mainnet"
-      ;;
-    17000)
-      NETWORK="Holesky"
-      ;;
-    11155111)
-      NETWORK="Sepolia"
-      ;;
-    39438138)
-      NETWORK="Ephemery"
-      ;;
-    esac
-}
-
 function resyncClient(){
 	case $CL in
 	  Lighthouse)
