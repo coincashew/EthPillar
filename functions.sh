@@ -180,13 +180,12 @@ runScript() {
 # Calculates Ephemery ChainID
 getEphemeryChainID(){
     _dateToIteration(){
-        printf %.f $(echo "($1 - 1393527600 ) / $GENESIS_INTERVAL" | bc -l)
+        echo "$(( ($1 - 1393527600) / $GENESIS_INTERVAL ))"
     }
 
     GENESIS_INTERVAL="2419200"
     ITERATION_NUMBER=$(_dateToIteration $(date +%s))
-    #Subtract 1 for current ChainID
-    EPH_CHAIN_ID=$(expr 39438000 + "$ITERATION_NUMBER" - 1)
+    EPH_CHAIN_ID=$(expr 39438000 + "$ITERATION_NUMBER")
 }
 
 getNetwork(){
