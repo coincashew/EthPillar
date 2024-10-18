@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.1.4"
+EP_VERSION="2.2.0"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -510,7 +510,7 @@ while true; do
       22)
         if whiptail --title "Switch Networks" --defaultno --yesno "Are you sure you want to switch networks?\nAll current node data will be removed." 9 78; then
            if runScript uninstall.sh; then
-              runScript install-nimbus-nethermind.sh true
+              installNode
               whiptail --title "Switch Networks" --msgbox "Completed network switching process." 8 78
            fi
         fi
@@ -1020,7 +1020,19 @@ function checkV1StakingSetup(){
 # If no consensus or validator client service is installed, start install workflow
 function installNode(){
   if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service ]]; then
-      runScript install-nimbus-nethermind.sh true
+          _CLIENTCOMBO=$(whiptail --title "Choose your consensus and execution clients" --menu \
+          "Pick your combination:" 10 78 2 \
+          "Nimbus-Nethermind" "lightweight. secure. easy to use. nim and .net" \
+          "Teku-Besu" "ephemery testnet ready. enterprise grade. java" \
+          3>&1 1>&2 2>&3)
+          case $_CLIENTCOMBO in
+          Nimbus-Nethermind)
+            runScript install-nimbus-nethermind.sh true
+            ;;
+          Teku-Besu)
+            runScript install-teku-besu.sh true
+            ;;
+          esac
   fi
 }
 

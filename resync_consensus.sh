@@ -41,6 +41,9 @@ function getNetwork(){
     11155111)
       NETWORK="Sepolia"
       ;;
+    39438138)
+      NETWORK="Ephemery"
+      ;;
     esac
 }
 
@@ -72,6 +75,9 @@ function resyncClient(){
 			;;
 		Sepolia)
 			URL="https://sepolia.beaconstate.info"
+			;;
+		Ephemery)
+			URL="https://ephemery.beaconstate.ethstaker.cc"
 			;;
 		esac
 

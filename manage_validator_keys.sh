@@ -8,8 +8,8 @@
 
 # Dir to install staking-deposit-cli
 STAKING_DEPOSIT_CLI_DIR=$HOME
-# Path to validator_keys, contains validator_key folder with keystore*.json files
-KEYPATH=$STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli
+# Path to deposit cli tool
+DEPOSIT_CLI_PATH=$STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli
 # Initialize variable
 OFFLINE_MODE=false
 # Base directory with scripts
@@ -23,32 +23,33 @@ source $BASE_DIR/env
 _platform=$(get_platform)
 _arch=$(get_arch)
 
-function downloadStakingDepositCLI(){
-    if [ -d $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli ]; then
-        ohai "staking-deposit-tool already downloaded."
+function downloadEthstakerDepositCli(){
+    if [ -d $STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli ]; then
+        ohai "ethstaker_deposit-cli already downloaded."
         return
     fi
-    ohai "Installing staking-deposit-tool"
+    ohai "Installing ethstaker_deposit-cli"
     #Install dependencies
     sudo apt install jq curl -y
 
     #Setup variables
-    RELEASE_URL="https://api.github.com/repos/ethereum/staking-deposit-cli/releases/latest"
-    BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}-${_arch}.tar.gz$)"
-    BINARY_FILE="staking-deposit-cli.tar.gz"
+    RELEASE_URL="https://api.github.com/repos/eth-educators/ethstaker-deposit-cli/releases/latest"
+    #BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}-${_arch}.tar.gz$)"
+    BINARIES_URL="https://github.com/eth-educators/ethstaker-deposit-cli/releases/download/v0.2.1/ethstaker_deposit-cli-66054f5-${_platform}-${_arch}.tar.gz"
+    BINARY_FILE="ethstaker_deposit-cli.tar.gz"
+
     [[ -z $BINARIES_URL ]] && echo "Error: Unable to determine BINARIES URL" && exit 1
     ohai "Downloading URL: $BINARIES_URL"
-    # Dir to install staking-deposit-cli
+    # Dir to install ethstaker_deposit-cli
     cd $STAKING_DEPOSIT_CLI_DIR
     # Download binary
     wget -O $BINARY_FILE $BINARIES_URL
     # Extract archive
     tar -xzvf $BINARY_FILE -C $STAKING_DEPOSIT_CLI_DIR
     # Cleanup
-    rm staking-deposit-cli.tar.gz
+    rm ethstaker_deposit-cli.tar.gz
     # Rename
-    mv staking_deposit-cli*${_arch} staking-deposit-cli
-    cd staking-deposit-cli
+    mv ethstaker_deposit-cli*${_arch} ethstaker_deposit-cli
 }
 
 function generateNewValidatorKeys(){
@@ -71,8 +72,8 @@ function generateNewValidatorKeys(){
     NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     _setKeystorePassword
 
-    cd $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli
-    KEYFOLDER="${KEYPATH}/$(date +%F-%H%M%S)"
+    cd $DEPOSIT_CLI_PATH
+    KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
     ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER"
     if [ $? -eq 0 ]; then
@@ -103,9 +104,10 @@ function _getEthAddy(){
 
 function _getNetwork(){
     NETWORK=$(whiptail --title "Network" --menu \
-          "For which network are you generating validator keys?" 10 78 2 \
+          "For which network are you generating validator keys?" 10 78 3 \
           "mainnet" "Ethereum - Real ETH. Real staking rewards." \
-          "holesky" "Testnet  - Practice your staking setup here." \
+          "holesky" "long term Testnet  - Suitable for staking practice." \
+          "ephemery" "short term Testnet - Ideal for staking practice. Monthly resets." \
           3>&1 1>&2 2>&3)
 }
 
@@ -146,8 +148,8 @@ function addRestoreValidatorKeys(){
     whiptail --title "Keystore Password" --msgbox "Reminder to use the same keystore password as existing validators." 10 78
     _setKeystorePassword
 
-    cd $STAKING_DEPOSIT_CLI_DIR/staking-deposit-cli
-    KEYFOLDER="${KEYPATH}/$(date +%F-%H%M%S)"
+    cd $DEPOSIT_CLI_PATH
+    KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
     ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS"
     if [ $? -eq 0 ]; then
@@ -167,8 +169,8 @@ function addRestoreValidatorKeys(){
 function _setKeystorePassword(){
     while true; do
         # Get keystore password
-        _KEYSTOREPASSWORD=$(whiptail --title "Keystore Password" --inputbox "Enter your validator's keystore password, must be at least 8 chars. " 12 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-        if [[ ${#_KEYSTOREPASSWORD} -ge 8 ]]; then
+        _KEYSTOREPASSWORD=$(whiptail --title "Keystore Password" --inputbox "Enter your validator's keystore password, must be at least 12 chars. " 12 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+        if [[ ${#_KEYSTOREPASSWORD} -ge 12 ]]; then
             _VERIFY_PASS=$(whiptail --title "Verify Password" --inputbox "Confirm your keystore password" 12 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
             if [[ "${_KEYSTOREPASSWORD}" = "${_VERIFY_PASS}" ]]; then
                 ohai "Password is same."
@@ -197,6 +199,13 @@ function setConfig(){
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"
+          ;;
+          ephemery)
+            LAUNCHPAD_URL="https://launchpad.ephemery.dev"
+            LAUNCHPAD_URL_LIDO="https://TBD.testnet.fi/?ref=ethpillar"
+            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
+            CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
+            CSM_SENTINEL_URL="https://t.me/CSMSentinelTBD"
           ;;
     esac
 
@@ -275,7 +284,7 @@ function loadKeys(){
      ohai "Starting validator"
      queryValidatorQueue
      setLaunchPadMessage
-     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 20 78
+     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 20 95
      whiptail --title "Tips: Things to Know" --msgbox "$MSG_TIPS" 24 78
      ohai "Finished loading keys. Press enter to continue."
      read
@@ -285,7 +294,7 @@ function loadKeys(){
 function setLaunchPadMessage(){
     MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
 \n2) Upload your deposit_data-#########.json found in the directory:
-\n$KEYFOLDER/validator_keys
+\n$KEYFOLDER
 \n3) Connect the Launchpad with your wallet, review and accept terms.
 \n4) Complete the 32 ETH deposit transaction(s). One transaction per validator.
 \n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE"
@@ -293,14 +302,14 @@ function setLaunchPadMessage(){
     MSG_TIPS=" - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
 \n - Backup Keystore Files: Keep copies on offline USB storage.
-   Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
+   Location: $KEYFOLDER
 \n - Generate Voluntary Exit Message: Once active and assigned an index #, generate your validator's VEM. To stop validator duties, broadcast VEM."
 
     MSG_LAUNCHPAD_LIDO="1) Visit Lido CSM: $LAUNCHPAD_URL_LIDO
 \n2) Connect your wallet on the correct network, review and accept terms.
 \n3) Copy JSON from your deposit_data-#########.json
 \nTo view JSON, run command:
-cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys/deposit*json
+cat $KEYFOLDER/deposit*
 \n4) Provide the ~2 ETH/stETH bond per validator.
 \n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE"
 
@@ -308,7 +317,7 @@ cat ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys/deposit*json
 \n - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
 \n - Backup Keystore Files: Keep copies on offline USB storage.
-   Location: ~/staking-deposit-cli/$(basename $KEYFOLDER)/validator_keys
+   Location: $KEYFOLDER
 \n - Subscribe to CSM Sentinel Bot: Provides your CSM Node Operator events via telegram $CSM_SENTINEL_URL
 \n - Generate Voluntary Exit Message: Once active and assigned an index #, generate your validator's VEM. To stop validator duties, broadcast VEM."
 
@@ -325,6 +334,8 @@ function queryValidatorQueue(){
     declare -A BEACONCHAIN_URLS=()
     BEACONCHAIN_URLS["mainnet"]="https://beaconcha.in"
     BEACONCHAIN_URLS["holesky"]="https://holesky.beaconcha.in"
+    BEACONCHAIN_URLS["ephemery"]="https://beaconchain.ephemery.dev"
+
     # Dencun entry churn cap
     CHURN_ENTRY_PER_EPOCH=8
     EPOCHS_PER_DAY_CONSTANT=225
@@ -367,7 +378,7 @@ function setMessage(){
 \nIf you have any questions you can get help at https://dsc.gg/ethstaker"
     MSG_PATH="Enter the path to your keystore files.
 \nDirectory contains keystore-m.json file(s).
-\nExample: $KEYPATH/YYYY-MM-DD-NNNNNN/validator_keys"
+\nExample: $DEPOSIT_CLI_PATH/YYYY-MM-DD-NNNNNN/validator_keys"
     MSG_ETHADDRESS="Ensure that you have control over this address.
 \nETH address secured by a hardware wallet is recommended.
 \nIn checksum format, enter your Withdrawal Address:"
@@ -421,5 +432,5 @@ done
 
 setWhiptailColors
 setMessage
-downloadStakingDepositCLI
+downloadEthstakerDepositCli
 menuMain

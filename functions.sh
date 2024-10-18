@@ -191,6 +191,9 @@ getNetwork(){
     11155111)
       NETWORK="Sepolia"
       ;;
+    39438138)
+      NETWORK="Ephemery"
+      ;;
     *)
       NETWORK="Custom Network"
     esac
@@ -711,6 +714,8 @@ createBeaconChainDashboardLink(){
           _link="https://holesky.beaconcha.in/dashboard?validators=" ;;
        mainnet)
           _link="https://beaconcha.in/dashboard?validators=" ;;
+       ephemery)
+          _link="https://beaconchain.ephemery.dev/dashboard?validators=" ;;
        *)
           echo "Unsupported Network: ${NETWORK}" && exit 1
     esac
@@ -749,7 +754,7 @@ testYetAnotherBenchScript(){
     echo "  * Bandwidth should be at least 10Mbit/s upload and 10Mbit/s download"
     echo "  * At least 2TB data transfer per month"
     echo "- Disk:"
-    echo "  * Capacity at least 2TB Mainnet, 300GB Holesky testnet"
+    echo "  * Capacity at least 2TB Mainnet, 300GB Holesky testnet, 3GB Ephemery testnet"
     echo "  * NVME drive preferred, SSD with TLC cache can work"
     echo "  * I/O Per Second on 4k block size test at least 15K IOPS read, 5K IOPS write"
     echo "- CPU:"
@@ -944,6 +949,7 @@ checkValidatorQueue(){
     declare -A BEACONCHAIN_URLS=()
     BEACONCHAIN_URLS["Mainnet"]="https://beaconcha.in"
     BEACONCHAIN_URLS["Holesky"]="https://holesky.beaconcha.in"
+    BEACONCHAIN_URLS["Ephemery"]="https://beaconchain.ephemery.dev"
     # Dencun entry churn cap
     CHURN_ENTRY_PER_EPOCH=8
     CHURN_RATE_CONSTANT=65536
@@ -970,7 +976,12 @@ checkValidatorQueue(){
         echo "Churn: ${CHURN_ENTRY_PER_EPOCH} per epoch"
         ohai "Exit Queue"
         echo "Validators Exiting: $(echo $json | jq -r '.data.beaconchain_exiting')"
-        echo "Estimated wait time: $(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_exiting') / $CHURN_EXIT_PER_DAY" | bc) days"
+        if [[ $(echo $json | jq -r '.data.beaconchain_exiting') -gt 0 ]]; then
+            _waittime=$(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_exiting') / $CHURN_EXIT_PER_DAY" | bc)
+        else
+            _waittime="0"
+        fi
+        echo "Estimated wait time: $_waittime days"
         echo "Churn: ${CHURN_EXIT_PER_EPOCH} per epoch"
         ohai "Total Active Validator Count: $(echo $json | jq -r '.data.validatorscount')"
     else
