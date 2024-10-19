@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.2.2"
+EP_VERSION="2.2.3"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -995,7 +995,20 @@ function getBackTitle(){
 
     # Format gas price
     latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    if [[ -n "$latest_gas_price" ]]; then WEI=$(printf '%d' "$latest_gas_price"); [[ $WEI -le "1000000000" ]] && GP="$(echo "scale=1; $WEI / 1000000" | bc) Mwei" || GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"; else GP="Gas N/A - Syncing"; fi
+    if [[ -n "$latest_gas_price" ]]; then
+      WEI=$(printf '%d' "$latest_gas_price");
+      if ((1000000000<=$WEI && $WEI<=1000000000000)); then
+          GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"
+      elif ((1000000<=$WEI && $WEI<=1000000000)); then
+          GP="$(echo "scale=1; $WEI / 1000000" | bc) Mwei"
+      elif ((1000<=$WEI && $WEI<=1000000)); then
+          GP="$(echo "scale=1; $WEI / 1000" | bc) Kwei"
+      elif ((1<=$WEI && $WEI<=1000)); then
+          GP="$(echo "scale=1; $WEI / 1" | bc) wei"
+      else
+          GP="Gas N/A - Syncing"
+      fi
+    fi
 
     # Format backtitle
     EL_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ "$LB" != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]] ; then printf "$LB | $GP" ; elif [[ -f /etc/systemd/system/execution.service ]]; then printf "Offline EL" ; fi)
