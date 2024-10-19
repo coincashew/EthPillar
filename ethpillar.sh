@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.2.1"
+EP_VERSION="2.2.2"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -43,15 +43,15 @@ OPTIONS=(
   1 "View Logs (Exit: CTRL+B D)"
   - ""
 )
-test -f /etc/systemd/system/execution.service && OPTIONS+=(3 "Execution Client")
-test -f /etc/systemd/system/consensus.service && OPTIONS+=(4 "Consensus Client")
-test -f /etc/systemd/system/validator.service && OPTIONS+=(5 "Validator Client")
-test -f /etc/systemd/system/mevboost.service && OPTIONS+=(6 "MEV-Boost")
+test -f /etc/systemd/system/execution.service && OPTIONS+=(2 "Execution Client")
+test -f /etc/systemd/system/consensus.service && OPTIONS+=(3 "Consensus Client")
+test -f /etc/systemd/system/validator.service && OPTIONS+=(4 "Validator Client")
+test -f /etc/systemd/system/mevboost.service && OPTIONS+=(5 "MEV-Boost")
 OPTIONS+=(
   - ""
-  7 "Start all clients"
-  8 "Stop all clients"
-  9 "Restart all clients"
+  6 "Start all clients"
+  7 "Stop all clients"
+  8 "Restart all clients"
   - ""
   10 "System Administration"
   11 "Toolbox"
@@ -77,31 +77,31 @@ while true; do
       1)
         runScript view_logs.sh
         ;;
-      3)
+      2)
         submenuExecution
         ;;
-      4)
+      3)
         submenuConsensus
         ;;
-      5)
+      4)
         submenuValidator
         ;;
-      6)
+      5)
         submenuMEV-Boost
         ;;
-      7)
+      6)
         test -f /etc/systemd/system/execution.service && sudo service execution start
         test -f /etc/systemd/system/consensus.service && sudo service consensus start
         test -f /etc/systemd/system/validator.service && sudo service validator start
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost start
         ;;
-      8)
+      7)
         test -f /etc/systemd/system/execution.service && sudo service execution stop
         test -f /etc/systemd/system/consensus.service && sudo service consensus stop
         test -f /etc/systemd/system/validator.service && sudo service validator stop
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost stop
         ;;
-      9)
+      8)
         test -f /etc/systemd/system/execution.service && sudo service execution restart
         test -f /etc/systemd/system/consensus.service && sudo service consensus restart
         test -f /etc/systemd/system/validator.service && sudo service validator restart
