@@ -1,8 +1,21 @@
 # 🛡️ EthPillar: one-liner setup tool and node management TUI
 
+  Empowered, inspired, home staker. Free. Open source. Public goods for
+  Ethereum. ARM64 and AMD64 support. Lido CSM Compatible. Jumpstart your ETH
+  solo-staking / Lido CSM journey.
+  
+<figure><img src="https://github.com/coincashew/coincashew/raw/master/.gitbook/assets/EthPillar.final.png" alt=""><figcaption></figcaption></figure>
+
+
+## :arrow\_forward: Quickstart: Ubuntu One-liner Install
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/EthPillar/main/install.sh)"
+```
+
 ## :new: What is EthPillar?
 
-:smile: **Friendly Node Installer**: Helps you installs a Ethereum node (Nimbus+Nethermind) stack in just minutes. MEVboost included.
+:smile: **Friendly Node Installer**: Helps you deploy a systemd installation with minority clients Nimbus-Nethermind or Teku-Besu stack in just minutes. MEVboost included.
 
 :floppy\_disk: **Ease of use**: No more remembering CLI commands required. Access common node operations via a simple text user interface (TUI).
 
@@ -10,7 +23,21 @@
 
 :tada:**Compatibility**: Behind the scenes, node commands and file structure are identical to V2 staking setups.&#x20;
 
-Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)&#x20;
+Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Staking Setup.](https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet)
+
+## :fire: Features
+
+:chains: **Ephemery Testnet Support**: Quickest and easiest way run a node now with native Besu-Teku and ethstaker-deposit-cli integrations.
+
+:droplet: **Lido CSM Integration**: Deploys in minutes and start staking via [Lido's CSM with as little as 2.4 ETH](https://csm.testnet.fi/?ref=ethpillar).
+
+:ladder: **Ethdo and eth-duties Integration:** Helps stakers with every day common tasks.
+
+:bacon: **Grafana and Ethereum-Metrics-Exporter Integration:** Monitoring and dashboards has never been easier.
+
+:mag\_right:  **Built-in Troubleshooting:** Find common issues preventing your node from it's peak performance. Discover EthPillar's built-in Toolbox with port checkers, peer counts, automated system benchmarking.
+
+:tada: **Multiple deployment configurations:** Deploy a Solo Staking Node, Full Node Only, Lido CSM Staking Node, Validator Client Only or Failover Staking Node.
 
 ## :sunglasses: Preview
 
@@ -44,6 +71,10 @@ Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Sta
 
 </div>
 
+## :tada: Speedrun Demo by Stakesaurus
+
+[![Watch the demo](https://img.youtube.com/vi/aZLPACj2oPI/maxresdefault.jpg)](https://www.youtube.com/watch?v=aZLPACj2oPI)
+
 ## :whale: Prerequisites
 
 * Study [Ethstaker's Staking for Beginners](https://www.reddit.com/r/ethstaker/wiki/staking\_for\_beginners/)
@@ -56,7 +87,7 @@ Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Sta
 
 ## :triangular\_ruler: Option 1: Automated One-Liner Install
 
-Open a terminal window from anywhere by typing `Ctrl+Alt+T`.
+Open a terminal window from anywhere by typing `Ctrl+Alt+T`
 
 To install, paste the following:
 
@@ -96,7 +127,7 @@ Congrats on installing a EthPillar, making nodes and home staking easier!
 
 <summary>All types of node operators: Solo staking, Full node, CSM Staking Node</summary>
 
-**Step 1: Configure your network, port forwarding and firewall.**&#x20;
+**Step 1: Configure your network, port forwarding and firewall.**
 
 * With EthPillar, configuration can be changed at:
   * **Tools > UFW Firewall > Enable firewall with default settings**
@@ -128,12 +159,12 @@ Ensure your node has sufficient CPU/disk/network performance.
 
 **Step 1: Generate Validator Keys:**
 
-* Generate new CSM validator keys for the Lido withdrawal vault on Holesky (0xF0179dEC45a37423EAD4FaD5fCb136197872EAd9).
+* Generate new CSM validator keys for the Lido withdrawal vault
 * `Ethpillar > Validator Client > Generate / Import Validator Keys`
 
 **Step 2: Upload JSON Deposit Data:**
 
-* Upload the newly generated deposit data file for your CSM keystores to the Lido CSM Widget. [https://csm.testnet.fi](https://csm.testnet.fi/)
+* Upload the newly generated deposit data file for your CSM keystores to the Lido CSM Widget. [CSM Holesky](https://csm.testnet.fi/?ref=ethpillar) or [CSM Mainnet](https://csm.lido.fi/?ref=ethpillar)
 * Provide the required bond amount in ETH/stETH/wstETH.
 
 **Step 3: Monitor Validator Key Deposit:**
@@ -156,7 +187,7 @@ Ensure your node has sufficient CPU/disk/network performance.
 
 * To begin staking on Ethereum as a validator, you need to submit to the Launchpad your  deposit\_data.json file, which includes crucial withdrawal address details, and pay the required deposit of 32ETH per validator.
 
-**Step 3: Congrats!**;
+**Step 3: Congrats!**
 
 * Now you're waiting in the Entry Queue [https://www.validatorqueue.com](https://www.validatorqueue.com/)
 
@@ -170,11 +201,11 @@ Ensure your node has sufficient CPU/disk/network performance.
 
 <details>
 
-<summary>How to switch between testnet and mainnet with EthPillar ?</summary>
+<summary>Change Networks: How to switch between testnet and mainnet with EthPillar ?</summary>
 
 To switch to mainnet, there are two recommended methods.
 
-* **Cleanest and most problem-free option**: Reformat Ubuntu OS and re-install EthPillar.
+* **Cleanest and most problem-free option**: Reformat Ubuntu OS and re-install EthPillar.&#x20;
 
 <!---->
 
@@ -182,7 +213,48 @@ To switch to mainnet, there are two recommended methods.
 
 </details>
 
+<details>
 
+<summary>Exit Validator: How do I exit a validator?</summary>
+
+If you already have VEMs created, skip to step 2.
+
+Step 1: Navigate to EthPillar > Validator > Generate Voluntary Exit Message
+
+Step 2: Broadcast Voluntary Exit Message
+
+</details>
+
+<details>
+
+<summary>Add Validators: I already have validators running. I want to add one more validator. How do I do that?</summary>
+
+Navigate to,
+
+**EthPillar > Validator Client > Generate / Import Validator Keys**
+
+From there you will pick 1 of 2 options.
+
+* Import validator keys from offline key generation or backup
+* Add new or regenerate existing validator keys from Secret Recovery Phrase
+
+</details>
+
+<details>
+
+<summary>Node Types: What is a failover staking node?</summary>
+
+**Purpose**: To provide high availability, you would run TWO (or more) failover staking nodes on separate machines. Point your validator client to your two failover staking nodes.
+
+**What**: A failover staking node is made up of an execution client, consensus client and mevboost.
+
+**How to**: To configure for nimbus validator client, edit your validator client configuration. [https://nimbus.guide/validator-client-options.html#multiple-beacon-nodes](https://nimbus.guide/validator-client-options.html#multiple-beacon-nodes)
+
+Exposing the consensus client RPC port will also be required. You will need to adjust your firewall to allow traffic from your validator client's IP address as well.
+
+**Benefit**: Running multiple failover staking nodes (or beacon nodes as nimbus refers to it) would allow you to perform maintenance or have an outage on 1 failover staking node.
+
+</details>
 
 ## :joy: POAP
 
