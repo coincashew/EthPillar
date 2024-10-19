@@ -192,6 +192,8 @@ function setConfig(){
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_MAINNET}
             CSM_SENTINEL_URL="https://t.me/CSMSentinel_bot"
+            FAUCET=""
+            HOMEPAGE="https://ethereum.org"
           ;;
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
@@ -199,6 +201,8 @@ function setConfig(){
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"
+            FAUCET="https://holesky-faucet.pk910.de"
+            HOMEPAGE="https://holesky.ethpandaops.io"
           ;;
           ephemery)
             LAUNCHPAD_URL="https://launchpad.ephemery.dev"
@@ -206,6 +210,8 @@ function setConfig(){
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelTBD"
+            FAUCET="https://faucet.bordel.wtf"
+            HOMEPAGE="https://ephemery.dev"
           ;;
     esac
 
@@ -284,20 +290,25 @@ function loadKeys(){
      ohai "Starting validator"
      queryValidatorQueue
      setLaunchPadMessage
-     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 20 95
+     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 24 95
      whiptail --title "Tips: Things to Know" --msgbox "$MSG_TIPS" 24 78
-     ohai "Finished loading keys. Press enter to continue."
-     read
+     ohai "Finished loading keys"
      promptViewLogs
 }
 
 function setLaunchPadMessage(){
+    MSG_FAUCET="" && MSG_HOMEPAGE=""
+    [[ -n ${FAUCET} ]] && MSG_FAUCET=">> Faucet Available: $FAUCET"
+    [[ -n ${HOMEPAGE} ]] && MSG_HOMEPAGE=">> Network Homepage: $HOMEPAGE"
     MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
 \n2) Upload your deposit_data-#########.json found in the directory:
 \n$KEYFOLDER
 \n3) Connect the Launchpad with your wallet, review and accept terms.
-\n4) Complete the 32 ETH deposit transaction(s). One transaction per validator.
-\n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE"
+\n4) Complete the 32 ETH deposit transaction(s).
+\n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE
+\nUseful links:
+$MSG_HOMEPAGE
+$MSG_FAUCET"
 
     MSG_TIPS=" - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
 \n - Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue.
@@ -311,7 +322,10 @@ function setLaunchPadMessage(){
 \nTo view JSON, run command:
 cat $KEYFOLDER/deposit*
 \n4) Provide the ~2 ETH/stETH bond per validator.
-\n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE"
+\n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE
+\nUseful links:
+$MSG_HOMEPAGE
+$MSG_FAUCET"
 
     MSG_TIPS_LIDO=" - DO NOT DEPOSIT 32ETH YOURSELF: Lido will deposit for you.
 \n - Wait for Node Sync: Before making the ~2ETH bond deposit, ensure your EL/CL client is synced to avoid missing rewards.
