@@ -46,7 +46,7 @@ clear_screen()  # Call the function to clear the screen
 valid_networks = ['MAINNET', 'HOLESKY', 'SEPOLIA']
 valid_exec_clients = ['NETHERMIND']
 valid_consensus_clients = ['NIMBUS']
-valid_install_configs = ['Solo Staking Node', 'Full Node Only', 'Lido CSM Staking Node', 'Validator Client Only', 'Failover Staking Node']
+valid_install_configs = ['Solo Staking Node', 'Full Node Only', 'Lido CSM Staking Node', 'Lido CSM Validator Client Only' ,'Validator Client Only', 'Failover Staking Node']
 
 # Load environment variables from env file
 load_dotenv("env")
@@ -173,6 +173,22 @@ else:
             exit(1)
           GRAFFITI=CSM_GRAFFITI
           MEV_MIN_BID=CSM_MEV_MIN_BID
+       case "Lido CSM Validator Client Only":
+          NODE_ONLY=False
+          MEVBOOST_ENABLED=True
+          VALIDATOR_ENABLED=True
+          VALIDATOR_ONLY=True
+          if eth_network == "mainnet":
+              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_MAINNET
+              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_MAINNET
+          elif eth_network == "holesky":
+              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
+              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
+          else:
+              print(f'Unsupported Lido CSM Staking Node network: {eth_network}')
+              exit(1)
+          GRAFFITI=CSM_GRAFFITI
+          MEV_MIN_BID=CSM_MEV_MIN_BID
        case "Validator Client Only":
           NODE_ONLY=False
           MEVBOOST_ENABLED=True
@@ -245,7 +261,7 @@ if not args.skip_prompts:
         message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nIs this correct?'
     elif install_config == "Full Node Only":
         message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\n\nIs this correct?'
-    elif install_config == "Validator Client Only":
+    elif install_config == "Validator Client Only" or install_config == "Lido CSM Validator Client Only" :
         message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nConsensus client (beacon node) address: {BN_ADDRESS}\n\nIs this correct?'
     else:
         print(f"\nError: Unknown install_config")
@@ -761,7 +777,7 @@ def finish_install():
             os.system(f'sudo systemctl enable mevboost')
 
     # Ask CSM staker if they to manage validator keystores
-    if install_config == 'Lido CSM Staking Node':
+    if install_config == 'Lido CSM Staking Node' or install_config == 'Lido CSM Validator Client Only':
         answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nWould you like to generate or import new Lido CSM validator keys now?\nReminder: Set the Lido withdrawal address to: {CSM_WITHDRAWAL_ADDRESS}")
         if answer:
             os.chdir(os.path.expanduser("~/git/ethpillar"))
@@ -781,7 +797,7 @@ def finish_install():
         print(f'\nReminder for Failover Staking Node configurations:\n1. Consensus Client: Expose consensus client RPC port\n2. UFW Firewall: Update to allow incoming traffic on port {CL_REST_PORT}\n3. UFW firewall: Whitelist the validator(s) IP address.')
 
     # Validator Client Only overrides
-    if install_config == 'Validator Client Only':
+    if install_config == 'Validator Client Only' or install_config == 'Lido CSM Validator Client Only':
         answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Would you like update your EL/CL override settings now?\nYour validator client needs to know EL/CL settings.\nIf not, update later at\nEthPillar > System Administration > Override environment variables.")
         if answer:
             command = ['nano', '~/git/ethpillar/.env.overrides']

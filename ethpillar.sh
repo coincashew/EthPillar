@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.2.3"
+EP_VERSION="2.3.0"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -1072,7 +1072,11 @@ function setNodeMode(){
   elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
     NODE_MODE="Full Node Only"
   elif [[ -f /etc/systemd/system/validator.service ]]; then
-    NODE_MODE="Validator Client Only"
+    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ]]; then
+        NODE_MODE="Lido CSM Validator Client Only"
+    else
+        NODE_MODE="Validator Client Only"
+    fi
   else
     NODE_MODE="Not Installed"
   fi
