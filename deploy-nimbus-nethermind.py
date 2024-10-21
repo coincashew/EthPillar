@@ -262,7 +262,7 @@ if not args.skip_prompts:
     elif install_config == "Full Node Only":
         message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\n\nIs this correct?'
     elif install_config == "Validator Client Only" or install_config == "Lido CSM Validator Client Only" :
-        message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nConsensus client (beacon node) address: {BN_ADDRESS}\n\nIs this correct?'
+        message=f'\nConfirmation: Verify your settings\n\nNetwork: {eth_network.upper()}\nInstallation configuration: {install_config}\nFee Recipient Address: {FEE_RECIPIENT_ADDRESS}\n\nConsensus client (beacon node) address: {BN_ADDRESS}\n\nIs this correct?'
     else:
         print(f"\nError: Unknown install_config")
         exit(1)
@@ -798,7 +798,7 @@ def finish_install():
 
     # Validator Client Only overrides
     if install_config == 'Validator Client Only' or install_config == 'Lido CSM Validator Client Only':
-        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"Would you like update your EL/CL override settings now?\nYour validator client needs to know EL/CL settings.\nIf not, update later at\nEthPillar > System Administration > Override environment variables.")
+        answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nValidator Client Only:\n1) Be sure to expose your consensus client RPC port {CL_REST_PORT} and open firewall for this port.\n2) Would you like update your EL/CL override settings now?\nYour validator client needs to know EL/CL settings.\nIf not, update later at\nEthPillar > System Administration > Override environment variables.")
         if answer:
             command = ['nano', '~/git/ethpillar/.env.overrides']
             subprocess.run(command)
