@@ -120,7 +120,7 @@ function updateClient(){
 			exit 1
 		fi
 		tar -xzvf teku.tar.gz -C $HOME
-		mv teku-* teku
+		mv teku-${LATEST_TAG} teku
 		rm teku.tar.gz
 		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
