@@ -479,7 +479,7 @@ def download_and_install_besu():
         # Find the extracted folder
         extracted_folder = None
         for item in os.listdir():
-            if item.startswith(f'besu-'):
+            if item.startswith(f'besu-{besu_version}'):
                 extracted_folder = item
                 break
 

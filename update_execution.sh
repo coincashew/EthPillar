@@ -95,7 +95,7 @@ function updateClient(){
 		cd $HOME
 		wget -O besu.tar.gz $BINARIES_URL
 		tar -xzvf besu.tar.gz -C $HOME
-		sudo mv $HOME/besu-* besu
+		sudo mv besu-${TAG} besu
 		sudo systemctl stop execution
 		sudo rm -rf /usr/local/bin/besu
 		sudo mv $HOME/besu /usr/local/bin/besu
