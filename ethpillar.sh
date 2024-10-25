@@ -436,7 +436,7 @@ while true; do
       - ""
       20 "Configure autostart"
       21 "Uninstall node"
-      22 "Change Network: Switch between Testnet/Mainnet"
+      22 "Reinstall node: Change installation type, network"
       23 "Override environment variables"
       - ""
       99 "Back to main menu"
@@ -508,10 +508,10 @@ while true; do
         runScript uninstall.sh
         ;;
       22)
-        if whiptail --title "Switch Networks" --defaultno --yesno "Are you sure you want to switch networks?\nAll current node data will be removed." 9 78; then
+        if whiptail --title "Reinstall EthPillar" --defaultno --yesno "Are you sure you want to reinstall?\nAll current node data will be removed." 9 78; then
            if runScript uninstall.sh; then
               installNode
-              whiptail --title "Switch Networks" --msgbox "Completed network switching process." 8 78
+              whiptail --title "Reinstall complete" --msgbox "Completed node reinstall process." 8 78
            fi
         fi
         ;;
