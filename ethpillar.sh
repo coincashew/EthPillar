@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="2.3.0"
+EP_VERSION="3.0.0"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -47,14 +47,16 @@ test -f /etc/systemd/system/execution.service && OPTIONS+=(2 "Execution Client")
 test -f /etc/systemd/system/consensus.service && OPTIONS+=(3 "Consensus Client")
 test -f /etc/systemd/system/validator.service && OPTIONS+=(4 "Validator Client")
 test -f /etc/systemd/system/mevboost.service && OPTIONS+=(5 "MEV-Boost")
+test -f /etc/systemd/system/csm_nimbusvalidator.service && OPTIONS+=(6 "CSM Nimbus Validator")
 OPTIONS+=(
   - ""
-  6 "Start all clients"
-  7 "Stop all clients"
-  8 "Restart all clients"
+  10 "Start all clients"
+  11 "Stop all clients"
+  12 "Restart all clients"
   - ""
-  10 "System Administration"
-  11 "Toolbox"
+  20 "System Administration"
+  21 "Toolbox"
+  22 "Plugins"
   99 "Quit"
 )
 
@@ -90,28 +92,37 @@ while true; do
         submenuMEV-Boost
         ;;
       6)
+        submenuPluginCSMValidator
+        ;;
+      10)
         test -f /etc/systemd/system/execution.service && sudo service execution start
         test -f /etc/systemd/system/consensus.service && sudo service consensus start
         test -f /etc/systemd/system/validator.service && sudo service validator start
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost start
+        test -f /etc/systemd/system/csm_nimbusvalidator.service && sudo service csm_nimbusvalidator start
         ;;
-      7)
+      11)
         test -f /etc/systemd/system/execution.service && sudo service execution stop
         test -f /etc/systemd/system/consensus.service && sudo service consensus stop
         test -f /etc/systemd/system/validator.service && sudo service validator stop
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost stop
+        test -f /etc/systemd/system/csm_nimbusvalidator.service && sudo service csm_nimbusvalidator stop
         ;;
-      8)
+      12)
         test -f /etc/systemd/system/execution.service && sudo service execution restart
         test -f /etc/systemd/system/consensus.service && sudo service consensus restart
         test -f /etc/systemd/system/validator.service && sudo service validator restart
         test -f /etc/systemd/system/mevboost.service && sudo service mevboost restart
+        test -f /etc/systemd/system/csm_nimbusvalidator.service && sudo service csm_nimbusvalidator restart
         ;;
-      10)
+      20)
         submenuAdminstrative
         ;;
-      11)
+      21)
         submenuTools
+        ;;
+      22)
+        submenuPlugins
         ;;
       99)
         break
@@ -847,6 +858,163 @@ while true; do
         sudo ufw allow from $ip_whitelist
         ohai "IP address whitelisted."
         sleep 2
+        ;;
+      99)
+        break
+        ;;
+    esac
+done
+}
+
+submenuPluginCSMValidator(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "View logs"
+      2 "Start validator"
+      3 "Stop validator"
+      4 "Restart validator"
+      5 "Edit configuration"
+      6 "Edit environment file"
+      7 "Update to latest release"
+      - ""
+      10 "Generate Validator Keys: Make a new secret recovery phrase"
+      11 "Import Validator Keys: From offline key generation or backup"
+      12 "Add/Restore Validator Keys: From secret recovery phrase"
+      13 "View validator pubkeys and indices"
+      - ""
+      20 "Generate Voluntary Exit Messages (VEM)"
+      21 "Broadcast Voluntary Exit Messages (VEM)"
+      22 "Next withdrawal: See expected time, blocks to go"
+      23 "Check validator status, balance"
+      24 "Check validator entry/exit queue with beaconcha.in"
+      25 "Attestation Performance: Obtain information about attester inclusion"
+      - ""
+      42 "Uninstall plugin"
+      - ""
+      99 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Plugin - Separate Lido CSM Validator" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        sudo bash -c 'journalctl -fu csm_nimbusvalidator | ccze -A'
+        ;;
+      2)
+        sudo service csm_nimbusvalidator start
+        ;;
+      3)
+        sudo service csm_nimbusvalidator stop
+        ;;
+      4)
+        sudo service csm_nimbusvalidator restart
+        ;;
+      5)
+        sudo nano /etc/systemd/system/csm_nimbusvalidator.service
+        if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart validator?" 8 78; then
+          sudo systemctl daemon-reload && sudo service csm_nimbusvalidator restart
+        fi
+        ;;
+      6)
+        sudo nano /opt/ethpillar/plugin-csm/csm_env_vars
+        if whiptail --title "Reload Environment values and restart services" --yesno "Do you want to restart validator?" 8 78; then
+          sudo systemctl daemon-reload && sudo service csm_nimbusvalidator restart
+        fi
+        ;;
+      7)
+        runScript plugins/csm/plugin_csm_validator.sh -u
+        ;;
+      10)
+        runScript plugins/csm/plugin_csm_validator.sh -g
+        ;;
+      11)
+        runScript plugins/csm/plugin_csm_validator.sh -m
+        ;;
+      12)
+        runScript plugins/csm/plugin_csm_validator.sh -d
+        ;;
+      13)
+        runScript plugins/csm/plugin_csm_validator.sh -p
+        ;;
+      20)
+        installEthdo
+        generateVoluntaryExitMessage
+        ;;
+      21)
+        installEthdo
+        broadcastVoluntaryExitMessageLocally
+        ;;
+      22)
+        installEthdo
+        ethdoNextWithdrawalSweep
+        ;;
+      23)
+        installEthdo
+        checkValidatorStatus
+        ;;
+      24)
+        checkValidatorQueue
+        ;;
+      25)
+        installEthdo
+        checkValidatorAttestationInclusion
+        ;;
+      42)
+        runScript plugins/csm/plugin_csm_validator.sh -r
+        ;;
+      99)
+        break
+        ;;
+    esac
+done
+}
+
+submenuPlugins(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "Lido CSM Validator: Activate an extra validator service. Re-use this node's EL/CL."
+      - ""
+      99 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Plugins" \
+      --menu "Choose from the following plugins to add functionality to your node:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        if [[ ! -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then
+          if whiptail --title "Install Lido CSM Validator" --yesno "Do you want to install an extra Nimbus validator service for Lido's CSM?" 8 78; then
+            runScript plugins/csm/plugin_csm_validator.sh -i
+          fi
+        fi
+        submenuPluginCSMValidator
         ;;
       99)
         break

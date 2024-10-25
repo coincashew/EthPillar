@@ -251,8 +251,8 @@ getClient(){
 
 # Get list of validator public keys
 getPubKeys(){
-   NETWORK=$(echo $NETWORK | tr "[:upper:]" "[:lower:]")
    TEMP=""
+   local ARGUMENT=${1:-"default"}
    case $VC in
       Lighthouse)
          TEMP=$(/usr/local/bin/lighthouse account validator list --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
@@ -278,12 +278,22 @@ getPubKeys(){
          convertLIST
       ;;
       Nimbus)
-         # Command if combined CL+VC
-         nimbus_cmd="ls /var/lib/nimbus/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
-         # Command if standalone VC
-         test -f /etc/systemd/system/validator.service && nimbus_cmd="ls /var/lib/nimbus_validator/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
-         TEMP=$(sudo -u validator bash -c "$nimbus_cmd")
-         convertLIST
+        case "$ARGUMENT" in
+            plugin_csm_validator)
+                # Command if standalone VC
+                test -f ${SERVICE_FILE} && nimbus_cmd="ls ${DATA_DIR}/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
+                TEMP=$(sudo -u "${SERVICE_ACCOUNT}" bash -c "$nimbus_cmd")
+                convertLIST
+                ;;
+            default)
+                # Command if combined CL+VC
+                nimbus_cmd="ls /var/lib/nimbus/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
+                # Command if standalone VC
+                test -f /etc/systemd/system/validator.service && nimbus_cmd="ls /var/lib/nimbus_validator/validators | grep -Eo '0x[a-fA-F0-9]{96}'"
+                TEMP=$(sudo -u validator bash -c "$nimbus_cmd")
+                convertLIST
+                ;;
+        esac
       ;;
       Prysm)
          TEMP=$(/usr/local/bin/validator accounts list --wallet-dir=/var/lib/prysm/validators | grep -Eo '0x[a-fA-F0-9]{96}')

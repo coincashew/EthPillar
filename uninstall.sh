@@ -13,9 +13,20 @@ function promptYesNo(){
   		uninstallVC
   		uninstallMevboost
 		cleanupMisc
+		uninstallPlugins
   		whiptail --title "Uninstall finished" --msgbox "You have uninstalled this staking node and all validator keys." 8 78
 	else
 		echo "Cancelled uninstall." && return 1
+	fi
+}
+
+function uninstallPlugins(){
+	if [[ -d /opt/ethpillar/plugin-csm ]]; then
+		sudo systemctl stop csm_nimbusvalidator
+		sudo systemctl disable csm_nimbusvalidator
+		sudo rm /etc/systemd/system/csm_nimbusvalidator.service
+		sudo userdel csm_nimbus_validator
+		sudo rm -rf /opt/ethpillar/plugin-csm;
 	fi
 }
 
