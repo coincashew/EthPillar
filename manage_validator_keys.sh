@@ -12,6 +12,7 @@ STAKING_DEPOSIT_CLI_DIR=$HOME
 DEPOSIT_CLI_PATH=$STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli
 # Initialize variable
 OFFLINE_MODE=false
+isLido=""
 # Base directory with scripts
 BASE_DIR=$HOME/git/ethpillar
 # Load functions
@@ -53,6 +54,7 @@ function downloadEthstakerDepositCli(){
 }
 
 function generateNewValidatorKeys(){
+    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
     if network_isConnected; then
         if whiptail --title "Offline Key Generation" --defaultno --yesno "$MSG_OFFLINE" 20 78; then
             network_down
@@ -79,7 +81,8 @@ function generateNewValidatorKeys(){
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
-        loadKeys
+        # $1 is argument for CSM Validator Plugin
+        loadKeys $ARGUMENT
         if [ $OFFLINE_MODE == true ]; then
             network_up
             ohai "Network is online"
@@ -112,6 +115,7 @@ function _getNetwork(){
 }
 
 function importValidatorKeys(){
+    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
     KEYFOLDER=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     if [ -d "$KEYFOLDER" ]; then
         _getNetwork
@@ -121,7 +125,8 @@ function importValidatorKeys(){
 
         if whiptail --title "Important Information" --defaultno --yesno "$MSG_IMPORT" 20 78; then
             _KEYSTOREPASSWORD=""
-            loadKeys
+            # $1 is argument for CSM Validator Plugin
+            loadKeys $ARGUMENT
         fi
     else
         ohai "$KEYFOLDER does not exist. Try again."
@@ -130,6 +135,7 @@ function importValidatorKeys(){
 }
 
 function addRestoreValidatorKeys(){
+    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
     if whiptail --title "Offline Key Generation" --defaultno --yesno "$MSG_OFFLINE" 20 78; then
         network_down
         OFFLINE_MODE=true
@@ -155,7 +161,8 @@ function addRestoreValidatorKeys(){
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
-        loadKeys
+        # $1 is argument for CSM Validator Plugin
+        loadKeys $ARGUMENT
         if [ $OFFLINE_MODE == true ]; then
             network_up
             ohai "Network is online"
@@ -194,6 +201,7 @@ function setConfig(){
             CSM_SENTINEL_URL="https://t.me/CSMSentinel_bot"
             FAUCET=""
             HOMEPAGE="https://ethereum.org"
+            EXPLORER="https://beaconcha.in"
           ;;
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
@@ -203,6 +211,7 @@ function setConfig(){
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"
             FAUCET="https://holesky-faucet.pk910.de"
             HOMEPAGE="https://holesky.ethpandaops.io"
+            EXPLORER="https://holesky.beaconcha.in"
           ;;
           ephemery)
             LAUNCHPAD_URL="https://launchpad.ephemery.dev"
@@ -212,11 +221,12 @@ function setConfig(){
             CSM_SENTINEL_URL="https://t.me/CSMSentinelTBD"
             FAUCET="https://faucet.bordel.wtf"
             HOMEPAGE="https://ephemery.dev"
+            EXPLORER="https://beaconlight.ephemery.dev"
           ;;
     esac
 
     # Check if Lido CSM Validator
-    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ]]; then
+    if [[ $isLido ]]; then
         # Update message for Lido
         MSG_ETHADDRESS="\nSet this to Lido's CSM Withdrawal Vault Address.
 \n${NETWORK}: ${CSM_WITHDRAWAL_ADDRESS}
@@ -224,11 +234,31 @@ function setConfig(){
     fi
 }
 
+function checkLido(){
+    [[ $# -eq 1 ]] && local ARGUMENT=$1 || ARGUMENT="default"
+    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service &> /dev/null) ||
+          $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service &> /dev/null) ||
+          "$ARGUMENT" == "plugin_csm_validator" ]]; then
+      isLido="1"
+    fi
+}
+
 # Load validator keys into validator client
 function loadKeys(){
-   getClientVC
+   case $1 in
+      default)
+        getClientVC && sudo systemctl stop validator
+        ;;
+      plugin_csm_validator)
+        VC="Nimbus"
+        local __DATA_DIR=${DATA_DIR}
+        local __BINARY_PATH="${PLUGIN_INSTALL_PATH}"
+        local __SERVICE_USER="${SERVICE_ACCOUNT}"
+        local __SERVICE_NAME="${SERVICE_NAME}"
+        sudo systemctl stop ${__SERVICE_NAME}
+        ;;
+   esac
    ohai "Loading PubKeys into $VC Validator"
-   sudo systemctl stop validator
    ohai "Stopping validator to import keys"
    case $VC in
       Lighthouse)
@@ -272,10 +302,17 @@ function loadKeys(){
         rm $HOME/validators-password.txt
       ;;
      Nimbus)
-        sudo /usr/local/bin/nimbus_beacon_node deposits import \
-            --data-dir=/var/lib/nimbus_validator $KEYFOLDER
-        sudo chown -R validator:validator /var/lib/nimbus_validator
-        sudo chmod -R 700 /var/lib/nimbus_validator
+        if [[ "$1" = "plugin_csm_validator" ]]; then
+            sudo "${__BINARY_PATH}"/nimbus_beacon_node deposits import \
+            --data-dir="${__DATA_DIR}" $KEYFOLDER
+            sudo chown -R ${__SERVICE_USER}:${__SERVICE_USER} "${__DATA_DIR}"
+            sudo chmod -R 700 "${__DATA_DIR}"
+        else
+            sudo /usr/local/bin/nimbus_beacon_node deposits import \
+                --data-dir=/var/lib/nimbus_validator $KEYFOLDER
+            sudo chown -R validator:validator /var/lib/nimbus_validator
+            sudo chmod -R 700 /var/lib/nimbus_validator
+        fi
       ;;
      Prysm)
         sudo /usr/local/bin/validator accounts import \
@@ -286,20 +323,22 @@ function loadKeys(){
         sudo chmod 700 /var/lib/prysm/validators
       ;;
      esac
-     sudo systemctl start validator
      ohai "Starting validator"
+     [[ $1 == "default" ]] && sudo systemctl start validator
+     [[ $1 == "plugin_csm_validator" ]] && sudo systemctl start ${__SERVICE_NAME}
      queryValidatorQueue
      setLaunchPadMessage
      whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 24 95
      whiptail --title "Tips: Things to Know" --msgbox "$MSG_TIPS" 24 78
      ohai "Finished loading keys"
-     promptViewLogs
+     promptViewLogs $1
 }
 
 function setLaunchPadMessage(){
-    MSG_FAUCET="" && MSG_HOMEPAGE=""
+    MSG_FAUCET="" && MSG_HOMEPAGE="" && MSG_EXPLORER=""
     [[ -n ${FAUCET} ]] && MSG_FAUCET=">> Faucet Available: $FAUCET"
     [[ -n ${HOMEPAGE} ]] && MSG_HOMEPAGE=">> Network Homepage: $HOMEPAGE"
+    [[ -n ${EXPLORER} ]] && MSG_EXPLORER=">> Explorer:         $EXPLORER"
     MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
 \n2) Upload your deposit_data-#########.json found in the directory:
 \n$KEYFOLDER
@@ -308,6 +347,7 @@ function setLaunchPadMessage(){
 \n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE
 \nUseful links:
 $MSG_HOMEPAGE
+$MSG_EXPLORER
 $MSG_FAUCET"
 
     MSG_TIPS=" - Wait for Node Sync: Before making a deposit, ensure your EL/CL client is synced to avoid missing rewards.
@@ -325,6 +365,7 @@ cat $KEYFOLDER/deposit*
 \n5) Lido will deposit the 32ETH. Wait for your validators to become active. $MSG_VALIDATOR_QUEUE
 \nUseful links:
 $MSG_HOMEPAGE
+$MSG_EXPLORER
 $MSG_FAUCET"
 
     MSG_TIPS_LIDO=" - DO NOT DEPOSIT 32ETH YOURSELF: Lido will deposit for you.
@@ -335,7 +376,7 @@ $MSG_FAUCET"
 \n - Subscribe to CSM Sentinel Bot: Provides your CSM Node Operator events via telegram $CSM_SENTINEL_URL
 \n - Generate Voluntary Exit Message: Once active and assigned an index #, generate your validator's VEM. To stop validator duties, broadcast VEM."
 
-    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ]]; then
+    if [[ $isLido ]]; then
        # Update message for Lido
        MSG_LAUNCHPAD="${MSG_LAUNCHPAD_LIDO}"
        MSG_TIPS="$MSG_TIPS_LIDO"
@@ -374,7 +415,12 @@ function getClientVC(){
 
 function promptViewLogs(){
     if whiptail --title "Validator Keys Imported - $VC" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
-        sudo bash -c 'journalctl -fu validator | ccze -A'
+        case $1 in
+            default)
+               sudo bash -c 'journalctl -fu validator | ccze -A' ;;
+            plugin_csm_validator)
+               sudo bash -c "journalctl -fu ${SERVICE_NAME} | ccze -A" ;;
+        esac
     fi
 }
 
@@ -444,7 +490,9 @@ while true; do
 done
 }
 
+[[ $# -eq 1 ]] && skip="$1" || skip=""
 setWhiptailColors
 setMessage
 downloadEthstakerDepositCli
-menuMain
+# Only run if no args
+[[ -z $skip ]] && menuMain

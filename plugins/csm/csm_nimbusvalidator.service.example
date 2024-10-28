@@ -1,0 +1,17 @@
+[Unit]
+Description=Nimbus CSM Validator Client
+Wants=network-online.target
+After=network-online.target
+Documentation=http://eth.coincashew.com
+
+[Service]
+User=csm_nimbus_validator
+Group=csm_nimbus_validator
+Type=simple
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/ethpillar/plugin-csm/csm_env_vars
+ExecStart=/opt/ethpillar/plugin-csm/nimbus_validator_client --data-dir=${DATA_DIR} --payload-builder=${PAYLOAD_BUILDER} --beacon-node=${BEACON_NODE_ADDRESS} --metrics --metrics-port=${METRICS_PORT} --metrics-address=${METRICS_ADDRESS} --suggested-fee-recipient=${FEE_RECIPIENT} --graffiti=${GRAFFITI} --doppelganger-detection=${DOPPELGANGER_DETECTION} --non-interactive
+
+[Install]
+WantedBy=multi-user.target
