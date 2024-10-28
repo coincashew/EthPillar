@@ -2,6 +2,7 @@
 FEE_RECIPIENT=""
 BEACON_NODE_ADDRESS="http://127.0.0.1:5052"
 METRICS_PORT="8108"
+METRICS_ADDRESS="127.0.0.1"
 DATA_DIR="/opt/ethpillar/plugin-csm/csm_nimbus_validator"
 GRAFFITI="🏠🥩🪙🛡️Eth💊rCSM"
 PAYLOAD_BUILDER="true"
