@@ -447,7 +447,7 @@ while true; do
       - ""
       20 "Configure autostart"
       21 "Uninstall node"
-      22 "Reinstall: Change installation type, change networks"
+      22 "Reinstall node: Change installation type, network"
       23 "Override environment variables"
       - ""
       99 "Back to main menu"
