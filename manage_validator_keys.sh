@@ -236,8 +236,8 @@ function setConfig(){
 
 function checkLido(){
     [[ $# -eq 1 ]] && local ARGUMENT=$1 || ARGUMENT="default"
-    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service &> /dev/null) ||
-          $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service &> /dev/null) ||
+    if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) ||
+          $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) ||
           "$ARGUMENT" == "plugin_csm_validator" ]]; then
       isLido="1"
     fi
@@ -494,5 +494,6 @@ done
 setWhiptailColors
 setMessage
 downloadEthstakerDepositCli
+checkLido
 # Only run if no args
 [[ -z $skip ]] && menuMain
