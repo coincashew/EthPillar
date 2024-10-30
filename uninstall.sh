@@ -28,6 +28,13 @@ function uninstallPlugins(){
 		sudo userdel csm_nimbus_validator
 		sudo rm -rf /opt/ethpillar/plugin-csm;
 	fi
+	if [[ -d /opt/ethpillar/plugin-sentinel ]]; then
+		sudo docker stop csm-sentinel
+		sudo docker rm csm-sentinel
+		sudo docker rmi csm-sentinel
+		sudo docker volume rm csm-sentinel-persistent
+		sudo rm -rf /opt/ethpillar/plugin-sentinel
+	fi
 }
 
 function cleanupMisc(){

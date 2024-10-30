@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="3.0.0"
+EP_VERSION="3.1.0"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -866,6 +866,73 @@ while true; do
 done
 }
 
+submenuPluginSentinel(){
+while true; do
+    getNetworkConfig
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "View Logs"
+      2 "Start sentinel"
+      3 "Stop sentinel"
+      4 "Restart sentinel"
+      5 "Edit .env configuration"
+      6 "Update to latest release"
+      7 "Uninstall plugin"
+      - ""
+      10 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Plugin - CSM Sentinel" \
+      --menu "\nGet private notifications for your CSM Node Operator ID on Telegram\nConnect with your bot at t.me/[YOUR-BOT-NAME] and initiate service by typing /start" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        sudo bash -c 'docker logs csm-sentinel -f -n 300 | ccze -A'
+        ohai "Press ENTER to exit logs."
+        read
+        ;;
+      2)
+        sudo docker start csm-sentinel
+        ;;
+      3)
+        sudo docker stop csm-sentinel
+        ;;
+      4)
+        sudo docker restart csm-sentinel
+        ;;
+      5)
+        sudo nano /opt/ethpillar/plugin-sentinel/csm-sentinel/.env
+        if whiptail --title "Reload env and restart services" --yesno "Do you want to restart with updated env?" 8 78; then
+          sudo docker stop csm-sentinel
+          runScript plugins/sentinel/plugin_csm_sentinel.sh -s
+          sudo docker start csm-sentinel
+        fi
+        ;;
+      6)
+        runScript plugins/sentinel/plugin_csm_sentinel.sh -u
+        ;;
+      7)
+        runScript plugins/sentinel/plugin_csm_sentinel.sh -r
+        ;;
+      10)
+        break
+        ;;
+    esac
+done
+}
+
 submenuPluginCSMValidator(){
 while true; do
     getBackTitle
@@ -989,6 +1056,7 @@ while true; do
     # Define the options for the submenu
     SUBOPTIONS=(
       1 "Lido CSM Validator: Activate an extra validator service. Re-use this node's EL/CL."
+      2 "CSM-Sentinel: Sends notifications for your CSM Node Operator ID. Self-hosted. Docker. Telegram."
       - ""
       99 "Back to main menu"
     )
@@ -1015,6 +1083,12 @@ while true; do
           fi
         fi
         submenuPluginCSMValidator
+        ;;
+      2)
+        if [[ ! -d /opt/ethpillar/plugin-sentinel ]]; then
+            runScript plugins/sentinel/plugin_csm_sentinel.sh -i
+        fi
+        submenuPluginSentinel
         ;;
       99)
         break
