@@ -572,11 +572,16 @@ generateVoluntaryExitMessage(){
         # Iterate through each file and create the VEM
         for KEYSTORE in "${KEYSTORE_PATH}"/keystore*.json;
         do
-           ethdo validator exit --validator=${KEYSTORE} "--passphrase=${KEYSTORE_PASSPHRASE}" --json > $VEM_PATH/exit_tmp.json
+           ethdo --allow-insecure-connections --connection ${API_BN_ENDPOINT} validator exit --validator=${KEYSTORE} "--passphrase=${KEYSTORE_PASSPHRASE}" --json > $VEM_PATH/exit_tmp.json
            INDEX=$(cat $VEM_PATH/exit_tmp.json | jq -r .message.validator_index)
-           # Rename exit file with validator index
-           mv $VEM_PATH/exit_tmp.json $VEM_PATH/exit_validator_index_${INDEX}.json
-           echo "INFO: Generated voluntary exit message for index ${INDEX}"
+           if [[ $INDEX =~ ^[0-9]+$ ]]; then
+               # Rename exit file with validator index
+               mv $VEM_PATH/exit_tmp.json $VEM_PATH/exit_validator_index_${INDEX}.json
+               echo "INFO: Generated voluntary exit message for index ${INDEX}"
+           else
+               echo "ERROR: Unable to retrieve Validator INDEX"
+               exit 1
+           fi
         done
         echo "${tty_bold}${COUNT} Voluntary exit message(s) saved at: $VEM_PATH${tty_reset}"
     else
@@ -630,9 +635,14 @@ broadcastVoluntaryExitMessageLocally(){
             # Iterate through each file and broadcast the VEM
             for VEM in "${VEM_PATH}"/exit*.json;
             do
-               ethdo --connection ${API_BN_ENDPOINT} validator exit --signed-operations ${VEM}
-               INDEX=$(cat $VEM | jq -r .message.validator_index)
-               echo "INFO: Broadcast VEM for index ${INDEX}"
+                INDEX=$(cat $VEM | jq -r .message.validator_index)
+                if [[ $INDEX =~ ^[0-9]+$ ]]; then
+                   ethdo --allow-insecure-connections --connection ${API_BN_ENDPOINT} validator exit --signed-operations ${VEM}
+                   echo "INFO: Broadcast VEM for index ${INDEX}"
+                else
+                   echo "ERROR: Unable to retrieve Validator INDEX. Broadcast failed."
+                   exit 1
+                fi
             done
             echo "${tty_bold}${COUNT} Voluntary exit message(s) broadcasted.${tty_reset}"
         fi
