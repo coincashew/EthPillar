@@ -242,6 +242,7 @@ getClient(){
     EL=$(test -f /etc/systemd/system/execution.service && grep Description= /etc/systemd/system/execution.service | awk -F'=' '{print $2}' | awk '{print $1}')
     CL=$(test -f /etc/systemd/system/consensus.service && grep Description= /etc/systemd/system/consensus.service | awk -F'=' '{print $2}' | awk '{print $1}')
     VC=$(test -f /etc/systemd/system/validator.service && grep Description= /etc/systemd/system/validator.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    CSM_VC=$(test -f /etc/systemd/system/csm_nimbusvalidator.service && grep Description= /etc/systemd/system/csm_nimbusvalidator.service | awk -F'=' '{print $2}' | awk '{print $1}')
     if [[ -n $CL  ]]; then
         CLIENT=$CL
     elif [[ -n $VC ]]; then

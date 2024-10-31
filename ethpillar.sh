@@ -47,7 +47,7 @@ test -f /etc/systemd/system/execution.service && OPTIONS+=(2 "Execution Client")
 test -f /etc/systemd/system/consensus.service && OPTIONS+=(3 "Consensus Client")
 test -f /etc/systemd/system/validator.service && OPTIONS+=(4 "Validator Client")
 test -f /etc/systemd/system/mevboost.service && OPTIONS+=(5 "MEV-Boost")
-test -f /etc/systemd/system/csm_nimbusvalidator.service && OPTIONS+=(6 "CSM Nimbus Validator")
+test -f /etc/systemd/system/csm_nimbusvalidator.service && OPTIONS+=(6 "CSM Nimbus Validator Plugin")
 OPTIONS+=(
   - ""
   10 "Start all clients"
@@ -1256,12 +1256,16 @@ function getBackTitle(){
     EL_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ "$LB" != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]] ; then printf "$LB | $GP" ; elif [[ -f /etc/systemd/system/execution.service ]]; then printf "Offline EL" ; fi)
     CL_TEXT=$(if [[ $(systemctl is-active --quiet consensus) ]] || [[ "$LS" != "CL Syncing" ]]; then printf "$LS" ; elif [[ -f /etc/systemd/system/consensus.service ]]; then printf "Offline CL" ; fi)
     VC_TEXT=$(if systemctl is-active --quiet validator; then printf " | VC $VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf " | Offline VC $VC"; fi)
+    CSM_TEXT=$(if systemctl is-active --quiet csm_nimbusvalidator; then printf " | CSM VC $CSM_VC"; elif [[ -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then printf " | Offline CSM VC $CSM_VC"; fi)
     HOSTNAME=$(hostname)
     NETWORK_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ $LB != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf "$NETWORK on $HOSTNAME | "; else printf "$HOSTNAME | " ; fi)
     if [[ $NODE_MODE == "Validator Client Only" ]]; then
         BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT}${VC_TEXT} | Public Goods by CoinCashew.eth"
     else
         BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
+    fi
+    if [[ $PLUGIN_MODE == true ]]; then
+    BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT} | $CL-$EL$VC_TEXT$CSM_TEXT | Public Goods by CoinCashew.eth"
     fi
 }
 
@@ -1321,6 +1325,9 @@ function setNodeMode(){
     fi
   else
     NODE_MODE="Not Installed"
+  fi
+  if [[ -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then
+    PLUGIN_MODE=true
   fi
   export NODE_MODE
 }
