@@ -1264,7 +1264,7 @@ function getBackTitle(){
     else
         BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
     fi
-    if [[ $PLUGIN_MODE == true ]]; then
+    if [[ ${PLUGIN_MODE:-false} == true ]]; then
     BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT} | $CL-$EL$VC_TEXT$CSM_TEXT | Public Goods by CoinCashew.eth"
     fi
 }
