@@ -20,23 +20,34 @@ source $BASE_DIR/functions.sh
 # Load Lido CSM withdrawal address and fee recipient
 source $BASE_DIR/env
 
+# Pinned version of ethstaker-deposit-cli
+edc_version="0.6.0"
+edc_hash="932a916"
+
 # Get machine info
 _platform=$(get_platform)
 _arch=$(get_arch)
 
 function downloadEthstakerDepositCli(){
     if [ -d $STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli ]; then
-        ohai "ethstaker_deposit-cli already downloaded."
-        return
+        edc_version_installed=$($STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli/deposit --version)
+        if [[ "${edc_version_installed}" =~ .*"${edc_version}".* ]]; then
+            echo "ethstaker_deposit-cli is up-to-date"
+            return
+        else
+            rm -rf $STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli
+            echo "ethstaker_deposit-cli update available"
+            echo "Updating to v${edc_version}"
+            echo "from ${edc_version_installed}"
+        fi
     fi
-    ohai "Installing ethstaker_deposit-cli"
+    ohai "Downloading ethstaker_deposit-cli v${edc_version}"
     #Install dependencies
     sudo apt install jq curl -y
 
     #Setup variables
     RELEASE_URL="https://api.github.com/repos/eth-educators/ethstaker-deposit-cli/releases/latest"
-    #BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}-${_arch}.tar.gz$)"
-    BINARIES_URL="https://github.com/eth-educators/ethstaker-deposit-cli/releases/download/v0.2.1/ethstaker_deposit-cli-66054f5-${_platform}-${_arch}.tar.gz"
+    BINARIES_URL="https://github.com/eth-educators/ethstaker-deposit-cli/releases/download/v${edc_version}/ethstaker_deposit-cli-${edc_hash}-${_platform}-${_arch}.tar.gz"
     BINARY_FILE="ethstaker_deposit-cli.tar.gz"
 
     [[ -z $BINARIES_URL ]] && echo "Error: Unable to determine BINARIES URL" && exit 1
@@ -77,7 +88,7 @@ function generateNewValidatorKeys(){
     cd $DEPOSIT_CLI_PATH
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
-    ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER"
+    ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER" --regular-withdrawal
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
@@ -157,7 +168,7 @@ function addRestoreValidatorKeys(){
     cd $DEPOSIT_CLI_PATH
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
-    ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS"
+    ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS" --regular-withdrawal
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
