@@ -1104,7 +1104,22 @@ checkDiskSpace(){
         fi
     else
         # Notify completion
-        echo "Free space check completed. Results:"
+        ohai ">> Free space check results:"
         cat "$ALERT_FILE"
     fi
+}
+
+# Checks and outputs CPU Load. Notify user if load is high.
+checkCPULoad(){
+    cpus=$(lscpu | grep -e "^CPU(s):" | cut -f2 -d: | awk '{print $1}')
+    cpu_threshold=$(echo "scale=2;${cpus} * 0.9"| bc -l)
+    ohai ">> CPU Load Avg check results:"
+    cat <<EOF
+##############################################################
+CPU Load Avg Check :   <$cpu_threshold Normal,  >$cpu_threshold Caution,  >$cpus Unhealthy
+# of CPUs : $cpus
+##############################################################
+CPU Load Average : $(uptime | awk -F'load average:' '{ print $2 }' | cut -f1 -d,)
+CPU Heath Status : $(uptime | awk -F'load average:' '{ print $2 }' | cut -f1 -d, | awk -v num="$cpu_threshold" -v num2="$cpus" '{if ($1 < num) print "✅ Normal"; else if ($1 > num2) print "❌ Unhealthy"; else print "⚠️ Caution"}')
+EOF
 }

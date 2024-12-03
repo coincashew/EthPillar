@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="3.1.0"
+EP_VERSION="3.1.1"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -1337,5 +1337,6 @@ setWhiptailColors
 installNode
 applyPatches
 checkDiskSpace
+checkCPULoad
 setNodeMode
 menuMain
