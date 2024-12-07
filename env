@@ -22,7 +22,7 @@ GRAFFITI="🏠🥩🪙🛡️EthPillar"
 FEE_RECIPIENT_ADDRESS=
 
 # MEV must be greater than this value or a block is produced locally
-MEV_MIN_BID="0.05"
+MEV_MIN_BID="0.025"
 
 # Ethereum Clients to be installed
 CONSENSUS_CLIENT=NIMBUS
