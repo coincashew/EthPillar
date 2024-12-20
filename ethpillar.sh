@@ -190,7 +190,7 @@ while true; do
       8)
         exposeRpcEL
         ;;
-      9)
+     10)
         break
         ;;
     esac
@@ -273,8 +273,9 @@ while true; do
       3 "Stop validator"
       4 "Restart validator"
       5 "Edit configuration"
-      )
-    [[ ${NODE_MODE} == "Validator Client Only" ]] && SUBOPTIONS+=(6 "Update to latest release")
+      6 "Change Suggested Gas Limit"
+    )
+    [[ ${NODE_MODE} == "Validator Client Only" ]] && SUBOPTIONS+=(7 "Update to latest release")
     SUBOPTIONS+=(
       - ""
       10 "Generate / Import Validator Keys"
@@ -324,6 +325,9 @@ while true; do
         fi
         ;;
       6)
+        changeGasLimit
+        ;;
+      7)
         runScript update_consensus.sh
         ;;
       10)

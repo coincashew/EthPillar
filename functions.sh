@@ -904,6 +904,72 @@ exposeRpcEL(){
     _updateFlagAndRestartService
 }
 
+# Increase gas limit in the Validator Client and optionally, the Beacon Node
+changeGasLimit(){
+    _default='30000000'
+    _increase='50000000'
+    _service='validator'
+    _file="/etc/systemd/system/${_service}.service"
+    getNetworkConfig
+
+    case "${VC}" in
+        Nimbus ) _flag='--suggested-gas-limit';;
+        # Besu       ) _flag='--rpc-http-host';;
+        # Erigon     ) _flag='--http.addr';;
+        # Geth       ) _flag='--http.addr';;
+        # Reth       ) _flag='--http.addr';;
+        * ) echo "Execution client not detected"; return 0;;
+    esac
+
+    clear
+    echo "###########################################################################"
+    ohai "Change the Suggested Gas Limit for your Validators"
+    echo "###########################################################################"
+    ohai "Purpose:"
+    echo "Allows you to set the suggested gas limit for your validator client."
+    echo "This can change the suggested gas limit from the default value of ${_default}"
+    echo "to ${_increase}, or any integer million from 30M to 99M."
+    echo ""
+    echo "Run this command again to switch back to the default value of ${_default}"
+    echo "This will impact the load on your network. Be cautious when changing this value."
+    echo "This change only affects the validator client, not the execution client."
+    echo ""
+    ohai "Result of this operation:"
+    echo "- Flag Change:  This will modify ${VC}'s flag: ${_flag}"
+    echo "- Restarts ${_service} client for changes to take effect."
+    ohai "Next Steps:"
+    echo "Check validator performance and network health after changing the suggested gas limit."
+    echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
+    read -rsn1 yn
+    if [[ ${yn} = [Nn]* ]]; then return 0; fi
+
+    echo "${tty_bold}Do you wish to chage the suggested gas limit? This will modify ${_flag} and restart the ${_service} client." 
+    echo "Answer 50 to increase to 50M, or any integer between 30 and 99 to set the gas limit to that value."
+    echo "Hit enter to keep/reset to the default 30M.${tty_reset}"
+    read -rn2 newSize
+    ## Configurable up to 100M
+    #newSize=${newSize:-0}  # Initialize newSize to 0 if it is not set
+
+if [[ -n ${newSize} && ${newSize} =~ ^[0-9]+$ && ${newSize} -gt 30 && ${newSize} -le 100 ]]; then
+        _increase="${newSize}000000"
+        _value=${_increase}
+        echo ""
+        ohai "Setting the suggested gas limit: ${_increase}"
+    elif [[ -n ${newSize} && ${newSize} =~ ^[0-9]+$ && ${newSize} -lt 30 ]]; then
+    
+        _value=${_default}
+        echo ""
+        echo "The value you entered is below 30M."
+        ohai "Resetting the suggested gas limit to default: ${_default}"
+    else
+        _value=${_default}
+        echo ""
+        ohai "Resetting the suggested gas limit to default: ${_default}"
+    fi
+
+    _updateFlagAndRestartService
+}
+
 # Helper function for Exposing RPC ports
 _updateFlagAndRestartService(){
     # Check if multiline configuration file that ends with \
