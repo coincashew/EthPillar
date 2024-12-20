@@ -21,8 +21,8 @@ source $BASE_DIR/functions.sh
 source $BASE_DIR/env
 
 # Pinned version of ethstaker-deposit-cli
-edc_version="0.6.0"
-edc_hash="932a916"
+edc_version="1.0.0"
+edc_hash="4ce275e"
 
 # Get machine info
 _platform=$(get_platform)
