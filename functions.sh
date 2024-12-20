@@ -904,16 +904,16 @@ exposeRpcEL(){
     _updateFlagAndRestartService
 }
 
-# Allow external EL RPC access (port 8545)
-increaseGasLimit(){
-    _closed='127.0.0.1'
-    _exposed='0.0.0.0'
-    _service='execution'
+# Increase gas limit in the Validator Client and optionally, the Beacon Node
+changeGasLimit(){
+    _default='30000000'
+    _increase='50000000'
+    _service='validator'
     _file="/etc/systemd/system/${_service}.service"
     getNetworkConfig
 
-    case "${EL}" in
-        Nethermind ) _flag='-suggested-gas-limit';;
+    case "${VC}" in
+        Nimbus ) _flag='--suggested-gas-limit';;
         # Besu       ) _flag='--rpc-http-host';;
         # Erigon     ) _flag='--http.addr';;
         # Geth       ) _flag='--http.addr';;
@@ -923,16 +923,18 @@ increaseGasLimit(){
 
     clear
     echo "###########################################################################"
-    ohai "Change the Suggested Gas Limit for your Execution Client"
+    ohai "Change the Suggested Gas Limit for your Validators"
     echo "###########################################################################"
     ohai "Purpose:"
-    echo "Allows you to set the suggested gas limit for your Execution client."
-    echo "Chages the suggested gas limit from the default value of 3M to 4M."
+    echo "Allows you to set the suggested gas limit for your validator client."
+    echo "This can change the suggested gas limit from the default value of ${_default} to ${_increase}."
+    echo "Run this command again to switch back to the defaule value of ${_default}"
     echo "This will impact the load on your network. Be cautious when changing this value."
-    echo "Update the configuration file to adjust as necessary."
+    echo "This change only affects the validator client, not the execution client."
+    echo "Update the configuration file to a different value if necessary."
     echo ""
     ohai "Result of this operation:"
-    echo "- Flag Change:  This will modify ${EL}'s flag: ${_flag}"
+    echo "- Flag Change:  This will modify ${VC}'s flag: ${_flag}"
     echo "- Restarts ${_service} client for changes to take effect."
     ohai "Next Steps:"
     echo "Check validator performance and network health after changing the suggested gas limit."
@@ -940,14 +942,17 @@ increaseGasLimit(){
     read -rsn1 yn
     if [[ ${yn} = [Nn]* ]]; then return 0; fi
 
-    echo "${tty_bold}Do you wish to chage the suggested gas limit? This will modify ${_flag} and restart ${_service} client. Answer n decline. [y|n]${tty_reset}"
-    read -rsn1 yn
-    if [[ ${yn} = [Yy]* ]]; then
-        _value=${_exposed}
-        ohai "Changing suggested gas limit: ${_flag}"
+    echo "${tty_bold}Do you wish to chage the suggested gas limit? This will modify ${_flag} and restart the ${_service} client." 
+    echo "Answer 50 to increase to 50M, or hit enter to keep/reset to the default 30M.${tty_reset}"
+    read -rn2 changeSize
+    if [[ ${changeSize} = [50]* ]]; then
+        _value=${_increase}
+        echo ""
+        ohai "Setting the suggested gas limit: ${_increase}"
     else
-        _value=${_closed}
-        ohai "Resetting suggested gas limit to defilt: ${_flag}"
+        _value=${_default}
+        echo ""
+        ohai "Resetting the suggested gas limit to default: ${_default}"
     fi
 
     _updateFlagAndRestartService

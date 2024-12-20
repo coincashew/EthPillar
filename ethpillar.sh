@@ -144,9 +144,8 @@ while true; do
       6 "Update to latest release"
       7 "Resync execution client"
       8 "Expose execution client RPC Port"
-      9 "Increase Suggested Gas Limit to 5M"
       - ""
-      10 "Back to main menu"
+      9 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -190,9 +189,6 @@ while true; do
         ;;
       8)
         exposeRpcEL
-        ;;
-      9)
-        increaseGasLimit
         ;;
      10)
         break
@@ -277,8 +273,9 @@ while true; do
       3 "Stop validator"
       4 "Restart validator"
       5 "Edit configuration"
-      )
-    [[ ${NODE_MODE} == "Validator Client Only" ]] && SUBOPTIONS+=(6 "Update to latest release")
+      6 "Change Suggested Gas Limit"
+    )
+    [[ ${NODE_MODE} == "Validator Client Only" ]] && SUBOPTIONS+=(7 "Update to latest release")
     SUBOPTIONS+=(
       - ""
       10 "Generate / Import Validator Keys"
@@ -328,6 +325,9 @@ while true; do
         fi
         ;;
       6)
+        changeGasLimit
+        ;;
+      7)
         runScript update_consensus.sh
         ;;
       10)
