@@ -927,11 +927,12 @@ changeGasLimit(){
     echo "###########################################################################"
     ohai "Purpose:"
     echo "Allows you to set the suggested gas limit for your validator client."
-    echo "This can change the suggested gas limit from the default value of ${_default} to ${_increase}."
-    echo "Run this command again to switch back to the defaule value of ${_default}"
+    echo "This can change the suggested gas limit from the default value of ${_default}"
+    echo "to ${_increase}, or any integer million from 30M to 99M."
+    echo ""
+    echo "Run this command again to switch back to the default value of ${_default}"
     echo "This will impact the load on your network. Be cautious when changing this value."
     echo "This change only affects the validator client, not the execution client."
-    echo "Update the configuration file to a different value if necessary."
     echo ""
     ohai "Result of this operation:"
     echo "- Flag Change:  This will modify ${VC}'s flag: ${_flag}"
@@ -943,12 +944,23 @@ changeGasLimit(){
     if [[ ${yn} = [Nn]* ]]; then return 0; fi
 
     echo "${tty_bold}Do you wish to chage the suggested gas limit? This will modify ${_flag} and restart the ${_service} client." 
-    echo "Answer 50 to increase to 50M, or hit enter to keep/reset to the default 30M.${tty_reset}"
-    read -rn2 changeSize
-    if [[ ${changeSize} = [50]* ]]; then
+    echo "Answer 50 to increase to 50M, or any integer between 30 and 99 to set the gas limit to that value."
+    echo "Hit enter to keep/reset to the default 30M.${tty_reset}"
+    read -rn2 newSize
+    ## Configurable up to 100M
+    #newSize=${newSize:-0}  # Initialize newSize to 0 if it is not set
+
+if [[ -n ${newSize} && ${newSize} =~ ^[0-9]+$ && ${newSize} -gt 30 && ${newSize} -le 100 ]]; then
+        _increase="${newSize}000000"
         _value=${_increase}
         echo ""
         ohai "Setting the suggested gas limit: ${_increase}"
+    elif [[ -n ${newSize} && ${newSize} =~ ^[0-9]+$ && ${newSize} -lt 30 ]]; then
+    
+        _value=${_default}
+        echo ""
+        echo "The value you entered is below 30M."
+        ohai "Resetting the suggested gas limit to default: ${_default}"
     else
         _value=${_default}
         echo ""
