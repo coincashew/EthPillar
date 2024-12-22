@@ -907,7 +907,7 @@ exposeRpcEL(){
 # Increase gas limit in the Validator Client and optionally, the Beacon Node
 changeGasLimit(){
     _default='30000000'
-    _increase='50000000'
+    _increase='36000000'
     _service='validator'
     _file="/etc/systemd/system/${_service}.service"
     getNetworkConfig
@@ -944,7 +944,7 @@ changeGasLimit(){
     if [[ ${yn} = [Nn]* ]]; then return 0; fi
 
     echo "${tty_bold}Do you wish to chage the suggested gas limit? This will modify ${_flag} and restart the ${_service} client." 
-    echo "Answer 50 to increase to 50M, or any integer between 30 and 99 to set the gas limit to that value."
+    echo "Answer 36 to increase to 36M, or any integer between 30 and 99 to set the gas limit to that value."
     echo "Hit enter to keep/reset to the default 30M.${tty_reset}"
     read -rn2 newSize
     ## Configurable up to 100M
