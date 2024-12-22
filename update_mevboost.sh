@@ -17,7 +17,7 @@ _platform=$(get_platform)
 _arch=$(get_arch)
 
 function getCurrentVersion(){
-    INSTALLED=$(mev-boost --version)
+    INSTALLED=$(mev-boost --version 2>&1)
     #Find version in format #.#.#
     if [[ $INSTALLED ]] ; then
         VERSION=$(echo $INSTALLED | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')
