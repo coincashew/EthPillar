@@ -12,7 +12,10 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="3.1.2"
+EP_VERSION="3.1.3"
+
+# Default text editor
+EDITOR="nano"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -176,7 +179,7 @@ while true; do
         sudo service execution restart
         ;;
       5)
-        sudo nano /etc/systemd/system/execution.service
+        sudo "${EDITOR}" /etc/systemd/system/execution.service
         if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart execution client?" 8 78; then
           sudo systemctl daemon-reload && sudo service execution restart
         fi
@@ -242,7 +245,7 @@ while true; do
         sudo service consensus restart
         ;;
       5)
-        sudo nano /etc/systemd/system/consensus.service
+        sudo "${EDITOR}" /etc/systemd/system/consensus.service
         if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart consensus client?" 8 78; then
           sudo systemctl daemon-reload && sudo service consensus restart
         fi
@@ -318,7 +321,7 @@ while true; do
         sudo service validator restart
         ;;
       5)
-        sudo nano /etc/systemd/system/validator.service
+        sudo "${EDITOR}" /etc/systemd/system/validator.service
         if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart validator?" 8 78; then
           sudo systemctl daemon-reload && sudo service validator restart
         fi
@@ -408,7 +411,7 @@ while true; do
         sudo service mevboost restart
         ;;
       5)
-        sudo nano /etc/systemd/system/mevboost.service
+        sudo "${EDITOR}" /etc/systemd/system/mevboost.service
         if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart MEV-Boost" 8 78; then
           sudo systemctl daemon-reload && sudo service mevboost restart
         fi
@@ -531,7 +534,7 @@ while true; do
            # Create from template
            cp .env.overrides.example .env.overrides
         fi
-        nano .env.overrides
+        "${EDITOR}" .env.overrides
         # Reload environment variables overrides
         [[ -f ./.env.overrides ]] && source ./.env.overrides
         ;;
@@ -589,13 +592,13 @@ while true; do
         sudo systemctl restart grafana-server prometheus ethereum-metrics-exporter prometheus-node-exporter
         ;;
       5)
-        sudo nano /etc/systemd/system/ethereum-metrics-exporter.service
+        sudo "${EDITOR}" /etc/systemd/system/ethereum-metrics-exporter.service
         if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart ethereum metrics exporter?" 8 78; then
           sudo systemctl daemon-reload && sudo service ethereum-metrics-exporter restart
         fi
         ;;
       6)
-        sudo nano /etc/prometheus/prometheus.yml
+        sudo "${EDITOR}" /etc/prometheus/prometheus.yml
         if whiptail --title "Restart services" --yesno "Do you want to restart prometheus?" 8 78; then
           sudo service prometheus restart
         fi
@@ -913,7 +916,7 @@ while true; do
         sudo docker restart csm-sentinel
         ;;
       5)
-        sudo nano /opt/ethpillar/plugin-sentinel/csm-sentinel/.env
+        sudo "${EDITOR}" /opt/ethpillar/plugin-sentinel/csm-sentinel/.env
         if whiptail --title "Reload env and restart services" --yesno "Do you want to restart with updated env?" 8 78; then
           sudo docker stop csm-sentinel
           runScript plugins/sentinel/plugin_csm_sentinel.sh -s
@@ -991,13 +994,13 @@ while true; do
         sudo service csm_nimbusvalidator restart
         ;;
       5)
-        sudo nano /etc/systemd/system/csm_nimbusvalidator.service
+        sudo "${EDITOR}" /etc/systemd/system/csm_nimbusvalidator.service
         if whiptail --title "Reload daemon and restart services" --yesno "Do you want to restart validator?" 8 78; then
           sudo systemctl daemon-reload && sudo service csm_nimbusvalidator restart
         fi
         ;;
       6)
-        sudo nano /opt/ethpillar/plugin-csm/csm_env_vars
+        sudo "${EDITOR}" /opt/ethpillar/plugin-csm/csm_env_vars
         if whiptail --title "Reload Environment values and restart services" --yesno "Do you want to restart validator?" 8 78; then
           sudo systemctl daemon-reload && sudo service csm_nimbusvalidator restart
         fi
