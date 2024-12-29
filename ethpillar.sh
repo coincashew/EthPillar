@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="3.1.3"
+EP_VERSION="3.1.4"
 
 # Default text editor
 EDITOR="nano"
@@ -277,7 +277,7 @@ while true; do
       4 "Restart validator"
       5 "Edit configuration"
       )
-    [[ ${NODE_MODE} == "Validator Client Only" ]] && SUBOPTIONS+=(6 "Update to latest release")
+    [[ ${NODE_MODE} =~ "Validator Client Only" ]] && SUBOPTIONS+=(6 "Update to latest release")
     SUBOPTIONS+=(
       - ""
       10 "Generate / Import Validator Keys"
