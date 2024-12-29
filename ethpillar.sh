@@ -1262,7 +1262,7 @@ function getBackTitle(){
     CSM_TEXT=$(if systemctl is-active --quiet csm_nimbusvalidator; then printf " | CSM VC $CSM_VC"; elif [[ -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then printf " | Offline CSM VC $CSM_VC"; fi)
     HOSTNAME=$(hostname)
     NETWORK_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ $LB != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf "$NETWORK on $HOSTNAME | "; else printf "$HOSTNAME | " ; fi)
-    if [[ $NODE_MODE == "Validator Client Only" ]]; then
+    if [[ $NODE_MODE =~ "Validator Client Only" ]]; then
         BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT}${VC_TEXT} | Public Goods by CoinCashew.eth"
     else
         BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"

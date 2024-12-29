@@ -25,7 +25,7 @@ function promptYesNo(){
 
 function promptViewLogs(){
     if whiptail --title "Update complete" --yesno "Would you like to view logs and confirm everything is running properly?" 8 78; then
-		if [[ ${NODE_MODE} == "Validator Client Only" ]]; then
+		if [[ ${NODE_MODE} =~ "Validator Client Only" ]]; then
 			sudo bash -c 'journalctl -fu validator | ccze -A'
 		else
 			sudo bash -c 'journalctl -fu consensus | ccze -A'
