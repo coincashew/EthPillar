@@ -120,13 +120,6 @@ linux_install_python() {
     exit_on_error $?
 }
 
-linux_update_pip() {
-    PYTHONPATH=$(which $python)
-    ohai "You are using python@ $PYTHONPATH$"
-    ohai "Installing python tools"
-    $python -m pip install --upgrade pip
-}
-
 linux_install_validator-install() {
     ohai "Cloning ethpillar into ~/git/ethpillar"
     mkdir -p ~/git/ethpillar
@@ -171,7 +164,6 @@ if [[ "$OS" == "Linux" ]]; then
     if [[ -z $skip_prompt ]]; then wait_for_user; fi
     linux_install_pre
     linux_install_python
-    linux_update_pip
     linux_install_validator-install
     echo ""
     echo ""
