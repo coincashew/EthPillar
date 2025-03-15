@@ -1123,3 +1123,26 @@ CPU Load Average : $(uptime | awk -F'load average:' '{ print $2 }' | cut -f1 -d,
 CPU Heath Status : $(uptime | awk -F'load average:' '{ print $2 }' | cut -f1 -d, | awk -v num="$cpu_threshold" -v num2="$cpus" '{if ($1 < num) print "✅ Normal"; else if ($1 > num2) print "❌ Unhealthy"; else print "⚠️ Caution"}')
 EOF
 }
+
+# Explain Validator Actions and Topup features
+showValidatorActions(){
+    local VA_PATH="/en/validator-actions"
+    local TOPUP_PATH="/en/top-up"
+    declare -A VALIDATOR_ACTION_URLS=()
+    VALIDATOR_ACTION_URLS["Mainnet"]="https://launchpad.ethereum.org"
+    VALIDATOR_ACTION_URLS["Holesky"]="https://holesky.launchpad.ethereum.org"
+    VALIDATOR_ACTION_URLS["Ephemery"]="https://launchpad.ephemery.dev"
+    local VA_URL=${VALIDATOR_ACTION_URLS["${NETWORK}"]}${VA_PATH}
+    local TOPUP_URL=${VALIDATOR_ACTION_URLS["${NETWORK}"]}${TOPUP_PATH}
+    local MSG="Visit the link below with your browser and connect your withdrawal address wallet to
+
+- upgrade to compounding validator (0x02),
+- consolidate validator(s),
+- make a partial withdrawal,
+- top up / add ETH to validator balance,
+- force an exit
+
+Actions: $VA_URL
+  TopUp: $TOPUP_URL"
+    whiptail --title "Validator Actions: New features since Pectra Upgrade" --msgbox "$MSG" 18 78
+}

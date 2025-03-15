@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="3.1.4"
+EP_VERSION="3.2.0"
 
 # Default text editor
 EDITOR="nano"
@@ -282,13 +282,14 @@ while true; do
       - ""
       10 "Generate / Import Validator Keys"
       11 "View validator pubkeys and indices"
+      12 "🆕 Validator Actions: Compound/consolidate, partial withdrawals, top up, force exit"
       - ""
-      12 "Generate Voluntary Exit Messages (VEM)"
-      13 "Broadcast Voluntary Exit Messages (VEM)"
-      14 "Next withdrawal: See expected time, blocks to go"
-      15 "Check validator status, balance"
-      16 "Check validator entry/exit queue with beaconcha.in"
-      17 "Attestation Performance: Obtain information about attester inclusion"
+      20 "Generate Voluntary Exit Messages (VEM)"
+      21 "Broadcast Voluntary Exit Messages (VEM)"
+      22 "Next withdrawal: See expected time, blocks to go"
+      23 "Check validator status, balance"
+      24 "Check validator entry/exit queue with beaconcha.in"
+      25 "Attestation Performance: Obtain information about attester inclusion"
       - ""
       99 "Back to main menu"
     )
@@ -337,25 +338,28 @@ while true; do
         viewPubkeyAndIndices
         ;;
       12)
+        showValidatorActions
+        ;;
+      20)
         installEthdo
         generateVoluntaryExitMessage
         ;;
-      13)
+      21)
         installEthdo
         broadcastVoluntaryExitMessageLocally
         ;;
-      14)
+      22)
         installEthdo
         ethdoNextWithdrawalSweep
         ;;
-      15)
+      23)
         installEthdo
         checkValidatorStatus
         ;;
-      16)
+      24)
          checkValidatorQueue
          ;;
-      17)
+      25)
         installEthdo
         checkValidatorAttestationInclusion
         ;;
