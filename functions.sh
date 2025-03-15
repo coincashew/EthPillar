@@ -256,7 +256,7 @@ getPubKeys(){
    local ARGUMENT=${1:-"default"}
    case $VC in
       Lighthouse)
-         TEMP=$(/usr/local/bin/lighthouse account validator list --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
+         TEMP=$(sudo /usr/local/bin/lighthouse account validator list --datadir /var/lib/lighthouse | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;
       Lodestar)
