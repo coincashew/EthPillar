@@ -11,10 +11,8 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-set -u
-
-# enable  command completion
-set -o history -o histexpand
+# Exit immediately on error, on undefined variables
+set -eu
 
 abort() {
   printf "%s\n" "$1"
