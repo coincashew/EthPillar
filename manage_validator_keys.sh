@@ -81,6 +81,7 @@ function generateNewValidatorKeys(){
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
     setConfig
     _getEthAddy
+    _getValidatorType
 
     NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     _setKeystorePassword
@@ -88,7 +89,7 @@ function generateNewValidatorKeys(){
     cd $DEPOSIT_CLI_PATH
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
-    ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER" --regular-withdrawal
+    ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER" "$_VALIDATORTYPE"
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
@@ -125,6 +126,20 @@ function _getNetwork(){
           3>&1 1>&2 2>&3)
 }
 
+function _getValidatorType(){
+    if [[ $isLido ]]; then
+        _VALIDATORTYPE="--regular-withdrawal"
+        return
+    fi
+    _VALIDATORTYPE=$(whiptail --title "Validator Type" --menu \
+          "Type of Validator? After Pectra, compounding validators are recommended." 10 88 2 \
+          "regular-withdrawal" "32 ETH max effective balance. 0x01 withdrawal credentials" \
+          "compounding" "Up to 2048 ETH max effective balance. 0x02 withdrawal credentials" \
+          3>&1 1>&2 2>&3)
+    if [ -z "$_VALIDATORTYPE" ]; then exit; fi # pressed cancel
+    _VALIDATORTYPE="--$_VALIDATORTYPE"
+}
+
 function importValidatorKeys(){
     [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
     KEYFOLDER=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
@@ -159,6 +174,7 @@ function addRestoreValidatorKeys(){
     if network_isConnected; then whiptail --title "Warning: Internet Connection Detected" --msgbox "$MSG_INTERNET" 18 78; fi
     setConfig
     _getEthAddy
+    _getValidatorType
 
     NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     START_INDEX=$(whiptail --title "# of Existing Keys" --inputbox "How many validator keys were previously made? Also known as the starting index." 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
@@ -168,7 +184,7 @@ function addRestoreValidatorKeys(){
     cd $DEPOSIT_CLI_PATH
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
-    ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS" --regular-withdrawal
+    ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS" "$_VALIDATORTYPE"
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
@@ -354,7 +370,7 @@ function setLaunchPadMessage(){
 \n2) Upload your deposit_data-#########.json found in the directory:
 \n$KEYFOLDER
 \n3) Connect the Launchpad with your wallet, review and accept terms.
-\n4) Complete the 32 ETH deposit transaction(s).
+\n4) Complete your ETH deposit transaction(s).
 \n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE
 \nUseful links:
 $MSG_HOMEPAGE
