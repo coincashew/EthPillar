@@ -7,8 +7,10 @@
 # Acknowledgments
 # validator-install is branched from validator-install written by Accidental-green: https: //github.com/accidental-green/validator-install
 
-# Exit immediately on error, on undefined variables
-set -eu
+set -u
+
+# enable  command completion
+set -o history -o histexpand
 
 python="python3"
 
