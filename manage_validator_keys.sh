@@ -242,7 +242,7 @@ function setConfig(){
             EXPLORER="https://holesky.beaconcha.in"
           ;;
           hoodi)
-            LAUNCHPAD_URL="https://hoodi.launchpad.ethereum.org"
+            LAUNCHPAD_URL="https://hoodi.launchpad.ethstaker.cc"
             LAUNCHPAD_URL_LIDO="https://csm.testnet.fi/?ref=ethpillar"
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOODI}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOODI}
