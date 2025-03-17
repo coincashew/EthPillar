@@ -119,10 +119,11 @@ function _getEthAddy(){
 
 function _getNetwork(){
     NETWORK=$(whiptail --title "Network" --menu \
-          "For which network are you generating validator keys?" 10 78 3 \
+          "For which network are you generating validator keys?" 10 78 4 \
           "mainnet" "Ethereum - Real ETH. Real staking rewards." \
-          "holesky" "long term Testnet  - Suitable for staking practice." \
+          "hoodi" "PENDINGTODO-long term Testnet  - Suitable for staking practice." \
           "ephemery" "short term Testnet - Ideal for staking practice. Monthly resets." \
+          "holesky" "long term Testnet  - Deprecated" \
           3>&1 1>&2 2>&3)
 }
 
@@ -239,6 +240,16 @@ function setConfig(){
             FAUCET="https://holesky-faucet.pk910.de"
             HOMEPAGE="https://holesky.ethpandaops.io"
             EXPLORER="https://holesky.beaconcha.in"
+          ;;
+          hoodi)
+            LAUNCHPAD_URL="https://hoodi.launchpad.ethereum.org"
+            LAUNCHPAD_URL_LIDO="https://csm.testnet.fi/?ref=ethpillar"
+            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOODI}
+            CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOODI}
+            CSM_SENTINEL_URL="https://t.me/CSMSentinelHoodi_bot"
+            FAUCET="https://hoodi-faucet.pk910.de"
+            HOMEPAGE="https://hoodi.ethpandaops.io"
+            EXPLORER="https://hoodi.beaconcha.in"
           ;;
           ephemery)
             LAUNCHPAD_URL="https://launchpad.ephemery.dev"
@@ -416,6 +427,7 @@ function queryValidatorQueue(){
     declare -A BEACONCHAIN_URLS=()
     BEACONCHAIN_URLS["mainnet"]="https://beaconcha.in"
     BEACONCHAIN_URLS["holesky"]="https://holesky.beaconcha.in"
+    BEACONCHAIN_URLS["hoodi"]="https://hoodi.beaconcha.in"
     BEACONCHAIN_URLS["ephemery"]="https://beaconchain.ephemery.dev"
 
     # Dencun entry churn cap

@@ -59,6 +59,9 @@ function resyncClient(){
 		Ephemery)
 			URL="https://ephemery.beaconstate.ethstaker.cc"
 			;;
+		Hoodi)
+			URL="https://hoodi.beaconstate.ethstaker.cc"
+			;;
 		esac
 
 		sudo systemctl stop consensus
