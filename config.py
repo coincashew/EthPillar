@@ -21,6 +21,10 @@ sepolia_relay_options = [
     {'name': 'Flashbots', 'url': 'https://0x845bd072b7cd566f02faeb0a4033ce9399e42839ced64e8b2adcfc859ed1e8e1a5a293336a49feac6d9a5edb779be53a@boost-relay-sepolia.flashbots.net'}
 ]
 
+hoodi_relay_options = [
+    {'name': 'Flashbots', 'url': 'https://placeholder@boost-relay-hoodi.flashbots.net'}
+]
+
 # Checkpoint-Sync Data
 mainnet_sync_urls = [
     ("ETHSTAKER", "https://beaconstate.ethstaker.cc"),
@@ -49,6 +53,10 @@ sepolia_sync_urls = [
 
 ephemery_sync_urls = [
     ("ETHSTAKER", "https://ephemery.beaconstate.ethstaker.cc"),
-    ("Bordel", "https://checkpointz.bordel.wtf"),
     ("EF DevOps", "https://checkpoint-sync.ephemery.ethpandaops.io"),
+]
+
+hoodi_sync_urls = [
+    ("ETHSTAKER", "https://hoodi.beaconstate.ethstaker.cc"),
+    ("EF DevOps", "https://checkpoint-sync.hoodi.ethpandaops.io"),
 ]

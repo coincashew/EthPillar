@@ -199,6 +199,9 @@ getNetwork(){
     17000)
       NETWORK="Holesky"
       ;;
+    560048)
+      NETWORK="Hoodi"
+      ;;
     11155111)
       NETWORK="Sepolia"
       ;;
@@ -750,6 +753,8 @@ createBeaconChainDashboardLink(){
           _link="https://beaconcha.in/dashboard?validators=" ;;
        ephemery)
           _link="https://beaconchain.ephemery.dev/dashboard?validators=" ;;
+       hoodi)
+          _link="https://hoodi.beaconcha.in/dashboard?validators=" ;;
        *)
           echo "Unsupported Network: ${NETWORK}" && exit 1
     esac
@@ -788,7 +793,7 @@ testYetAnotherBenchScript(){
     echo "  * Bandwidth should be at least 10Mbit/s upload and 10Mbit/s download"
     echo "  * At least 2TB data transfer per month"
     echo "- Disk:"
-    echo "  * Capacity at least 2TB Mainnet, 300GB Holesky testnet, 3GB Ephemery testnet"
+    echo "  * Capacity at least 2TB Mainnet, 50GB Hoodi testnet, 3GB Ephemery testnet"
     echo "  * NVME drive preferred, SSD with TLC cache can work"
     echo "  * I/O Per Second on 4k block size test at least 15K IOPS read, 5K IOPS write"
     echo "- CPU:"
@@ -983,6 +988,7 @@ checkValidatorQueue(){
     declare -A BEACONCHAIN_URLS=()
     BEACONCHAIN_URLS["Mainnet"]="https://beaconcha.in"
     BEACONCHAIN_URLS["Holesky"]="https://holesky.beaconcha.in"
+    BEACONCHAIN_URLS["Hoodi"]="https://hoodi.beaconcha.in"
     BEACONCHAIN_URLS["Ephemery"]="https://beaconchain.ephemery.dev"
     # Dencun entry churn cap
     CHURN_ENTRY_PER_EPOCH=8
@@ -1130,6 +1136,7 @@ showValidatorActions(){
     local TOPUP_PATH="/en/top-up"
     declare -A VALIDATOR_ACTION_URLS=()
     VALIDATOR_ACTION_URLS["Mainnet"]="https://launchpad.ethereum.org"
+    VALIDATOR_ACTION_URLS["Hoodi"]="https://hoodi.launchpad.ethereum.org"
     VALIDATOR_ACTION_URLS["Holesky"]="https://holesky.launchpad.ethereum.org"
     VALIDATOR_ACTION_URLS["Ephemery"]="https://launchpad.ephemery.dev"
     local VA_URL=${VALIDATOR_ACTION_URLS["${NETWORK}"]}${VA_PATH}
