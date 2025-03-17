@@ -57,6 +57,5 @@ ephemery_sync_urls = [
 ]
 
 hoodi_sync_urls = [
-    ("ETHSTAKER", "https://hoodi.beaconstate.ethstaker.cc"),
     ("EF DevOps", "https://checkpoint-sync.hoodi.ethpandaops.io"),
 ]

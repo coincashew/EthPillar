@@ -60,7 +60,7 @@ function resyncClient(){
 			URL="https://ephemery.beaconstate.ethstaker.cc"
 			;;
 		Hoodi)
-			URL="https://hoodi.beaconstate.ethstaker.cc"
+			URL="https://checkpoint-sync.hoodi.ethpandaops.io"
 			;;
 		esac
 

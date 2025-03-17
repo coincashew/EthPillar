@@ -362,17 +362,13 @@ elif eth_network == "holesky":
 elif eth_network == "sepolia":
     sync_urls = sepolia_sync_urls
 elif eth_network == "hoodi":
-    #TODO: remove post genesis
-    #sync_urls = hoodi_sync_urls
+    sync_urls = hoodi_sync_urls
     setup_hoodi_network()
 elif eth_network == "ephemery":
     sync_urls = ephemery_sync_urls
     setup_ephemery_network("ephemery-testnet/ephemery-genesis")
 
-#TODO: remove post genesis
-if not eth_network == "hoodi":
-    # Use a random sync url
-    sync_url = random.choice(sync_urls)[1]
+sync_url = random.choice(sync_urls)[1]
 
 def setup_node():
     if not VALIDATOR_ONLY:
@@ -771,9 +767,6 @@ WantedBy=multi-user.target
         os.remove(nimbus_temp_file)
 
 def run_nimbus_checkpoint_sync():
-    # Skip for genesis event, TODO remove
-    if eth_network=="hoodi":
-        return
     if sync_url is not None and not VALIDATOR_ONLY:
         print(f'>> Running Checkpoint Sync. Using Sync URL: {sync_url}')
         db_path = "/var/lib/nimbus/db"
@@ -864,8 +857,8 @@ def finish_install():
         print(f'Mevboost Version: \n{mevboost_version}\n')
 
     print(f'Network: {eth_network.upper()}\n')
-    #TODO remove for hoodi post genesis
-    if not VALIDATOR_ONLY and not eth_network=="hoodi":
+
+    if not VALIDATOR_ONLY:
         print(f'CheckPointSyncURL: {sync_url}\n')
 
     if VALIDATOR_ONLY and BN_ADDRESS:
