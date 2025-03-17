@@ -586,7 +586,7 @@ def download_and_install_nethermind():
             file_path = f"/opt/ethpillar/testnet/bootnode.txt"
             with open(file_path, "r") as file:
                 bootnodes = ",".join(file.read().splitlines())
-            _network=f"--config none.json --Init.ChainSpecPath=/opt/ethpillar/testnet/chainspec.json --Discovery.Bootnodes={bootnodes} --JsonRpc.EnabledModules=Eth,Subscribe,Trace,TxPool,Web3,Personal,Proof,Net,Parity,Health,Rpc,Debug,Admin --JsonRpc.EngineHost=127.0.0.1 --JsonRpc.EnginePort=8551 --Init.IsMining=false"
+            _network=f"--config none.json --Init.ChainSpecPath=/opt/ethpillar/testnet/chainspec.json --Discovery.Bootnodes={bootnodes} --JsonRpc.Enabled=true --JsonRpc.EnabledModules=Eth,Subscribe,Trace,TxPool,Web3,Personal,Proof,Net,Parity,Health,Rpc,Debug,Admin --JsonRpc.EngineHost=127.0.0.1 --JsonRpc.EnginePort=8551 --Init.IsMining=false"
         elif eth_network=="hoodi":
             file_path = f"/opt/ethpillar/testnet/enodes.yaml"
             with open(file_path, "r") as file:
