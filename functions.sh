@@ -746,7 +746,7 @@ createBeaconChainDashboardLink(){
     getPubKeys
     getIndices
     local _ids=$(echo ${INDICES[@]} | sed  's/ /,/g')
-    case $NETWORK in
+    case ${NETWORK,,} in
        holesky)
           _link="https://holesky.beaconcha.in/dashboard?validators=" ;;
        mainnet)
