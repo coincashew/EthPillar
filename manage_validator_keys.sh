@@ -121,9 +121,9 @@ function _getNetwork(){
     NETWORK=$(whiptail --title "Network" --menu \
           "For which network are you generating validator keys?" 10 78 4 \
           "mainnet" "Ethereum - Real ETH. Real staking rewards." \
-          "hoodi" "PENDINGTODO-long term Testnet  - Suitable for staking practice." \
+          "hoodi" "long term Testnet - Suitable for staking practice." \
           "ephemery" "short term Testnet - Ideal for staking practice. Monthly resets." \
-          "holesky" "long term Testnet  - Deprecated" \
+          "holesky" "long term Testnet - Deprecated" \
           3>&1 1>&2 2>&3)
 }
 
