@@ -726,13 +726,13 @@ def install_nimbus():
             file_path = f"/opt/ethpillar/testnet/bootstrap_nodes.txt"
             with open(file_path, "r") as file:
                 bootnodes = ",".join(file.read().splitlines())
-            _network=f"--network=/opt/ethpillar/testnet --bootstrap-node=${bootnodes}"
+            _network=f"--network=/opt/ethpillar/testnet --bootstrap-node={bootnodes}"
         elif eth_network=="hoodi":
             file_path = f"/opt/ethpillar/testnet/bootstrap_nodes.yaml"
             with open(file_path, "r") as file:
                 data = yaml.safe_load(file)
             bootnodes = ','.join(data)
-            _network=f"--network=/opt/ethpillar/testnet --bootstrap-node=${bootnodes}"
+            _network=f"--network=/opt/ethpillar/testnet --bootstrap-node={bootnodes}"
         else:
             _network=f"--network={eth_network}"
 
