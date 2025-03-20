@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="4.0.0"
+EP_VERSION="4.1.0"
 
 # Default text editor
 EDITOR="nano"
@@ -1289,7 +1289,7 @@ function installNode(){
           _CLIENTCOMBO=$(whiptail --title "Choose your consensus and execution clients" --menu \
           "Pick your combination:" 10 78 2 \
           "Nimbus-Nethermind" "lightweight. secure. easy to use. nim and .net" \
-          "Teku-Besu" "ephemery testnet ready. enterprise grade. java" \
+          "Teku-Besu" "institutional grade. enterprise staking. java" \
           3>&1 1>&2 2>&3)
           case $_CLIENTCOMBO in
           Nimbus-Nethermind)
@@ -1303,14 +1303,8 @@ function installNode(){
 }
 
 # Ask to apply patches
-function applyPatches(){
-  # Has monitoring installed but previous configuration without alert rules
-  if [[ ! -f /etc/prometheus/alert.rules.yml && -f /etc/systemd/system/ethereum-metrics-exporter.service ]]; then
-    if whiptail --title "New Patch Available - Enable Grafana Alerting" --yesno "Would you like to apply patch 1 to enable Grafana Alerting?" 8 78; then
-      runScript patches/001-alerts.sh
-    fi
-  fi
-}
+#function applyPatches(){
+#}
 
 # Determine node configuration
 function setNodeMode(){
@@ -1342,7 +1336,7 @@ function setNodeMode(){
 checkV1StakingSetup
 setWhiptailColors
 installNode
-applyPatches
+#applyPatches
 checkDiskSpace
 checkCPULoad
 setNodeMode
