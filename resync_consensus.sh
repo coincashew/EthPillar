@@ -48,19 +48,19 @@ function resyncClient(){
 		getNetwork
 		case $NETWORK in
 		Holesky)
-			URL="https://holesky.beaconstate.ethstaker.cc"
+			_checkpointsync="--network=holesky --trusted-node-url=https://holesky.beaconstate.ethstaker.cc"
 			;;
 		Mainnet)
-			URL="https://beaconstate.ethstaker.cc"
+			_checkpointsync="--network=mainnet --trusted-node-url=https://beaconstate.ethstaker.cc"
 			;;
 		Sepolia)
-			URL="https://sepolia.beaconstate.info"
+			_checkpointsync="--network=sepolia --trusted-node-url=https://sepolia.beaconstate.info"
 			;;
 		Ephemery)
-			URL="https://ephemery.beaconstate.ethstaker.cc"
+			_checkpointsync="--network=/opt/ethpillar/testnet --trusted-node-url=https://ephemery.beaconstate.ethstaker.cc"
 			;;
 		Hoodi)
-			URL="https://checkpoint-sync.hoodi.ethpandaops.io"
+			_checkpointsync="--network=/opt/ethpillar/testnet --trusted-node-url=https://checkpoint-sync.hoodi.ethpandaops.io"
 			;;
 		esac
 
@@ -68,8 +68,7 @@ function resyncClient(){
 		sudo rm -rf /var/lib/nimbus/db
 
 		sudo -u consensus /usr/local/bin/nimbus_beacon_node trustedNodeSync \
-		--network=$(echo $NETWORK | tr '[:upper:]' '[:lower:]') \
-		--trusted-node-url=$URL \
+		"${_checkpointsync}" \
 		--data-dir=/var/lib/nimbus \
 		--backfill=false
 
