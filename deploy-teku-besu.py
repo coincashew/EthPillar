@@ -41,7 +41,7 @@ def clear_screen():
 clear_screen()  # Call the function to clear the screen
 
 # Valid configurations
-valid_networks = ['MAINNET', 'HOLESKY', 'SEPOLIA', 'EPHEMERY']
+valid_networks = ['MAINNET','HOODI','EPHEMERY', 'HOLESKY', 'SEPOLIA']
 valid_exec_clients = ['BESU']
 valid_consensus_clients = ['TEKU']
 valid_install_configs = ['Solo Staking Node', 'Full Node Only', 'Lido CSM Staking Node', 'Lido CSM Validator Client Only', 'Validator Client Only', 'Failover Staking Node']
@@ -63,10 +63,12 @@ FEE_RECIPIENT_ADDRESS=os.getenv('FEE_RECIPIENT_ADDRESS')
 MEV_MIN_BID=os.getenv('MEV_MIN_BID')
 CSM_FEE_RECIPIENT_ADDRESS_MAINNET=os.getenv('CSM_FEE_RECIPIENT_ADDRESS_MAINNET')
 CSM_FEE_RECIPIENT_ADDRESS_HOLESKY=os.getenv('CSM_FEE_RECIPIENT_ADDRESS_HOLESKY')
+CSM_FEE_RECIPIENT_ADDRESS_HOODI=os.getenv('CSM_FEE_RECIPIENT_ADDRESS_HOODI')
 CSM_GRAFFITI=os.getenv('CSM_GRAFFITI')
 CSM_MEV_MIN_BID=os.getenv('CSM_MEV_MIN_BID')
 CSM_WITHDRAWAL_ADDRESS_MAINNET=os.getenv('CSM_WITHDRAWAL_ADDRESS_MAINNET')
 CSM_WITHDRAWAL_ADDRESS_HOLESKY=os.getenv('CSM_WITHDRAWAL_ADDRESS_HOLESKY')
+CSM_WITHDRAWAL_ADDRESS_HOODI=os.getenv('CSM_WITHDRAWAL_ADDRESS_HOODI')
 
 # Create argparse options
 parser = argparse.ArgumentParser(description='Validator Install Options :: CoinCashew.com',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -163,6 +165,9 @@ else:
           if eth_network == "mainnet":
               FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_MAINNET
               CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_MAINNET
+          elif eth_network == "hoodi":
+              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOODI
+              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOODI
           elif eth_network == "holesky":
               FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
               CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
@@ -182,6 +187,9 @@ else:
           if eth_network == "mainnet":
               FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_MAINNET
               CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_MAINNET
+          elif eth_network == "hoodi":
+              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOODI
+              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOODI
           elif eth_network == "holesky":
               FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
               CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
@@ -204,8 +212,8 @@ else:
           VALIDATOR_ENABLED=False
           VALIDATOR_ONLY=False
 
-# Ephemery override, always turn off mevboost
-if eth_network == "ephemery":
+# Ephemery and hoodi override, turn off mevboost
+if eth_network == "ephemery" or eth_network == "hoodi":
     MEVBOOST_ENABLED=False
 
 execution_client=""
@@ -285,6 +293,8 @@ if not args.skip_prompts:
 # Initialize sync urls for selected network
 if eth_network == "mainnet":
     sync_urls = mainnet_sync_urls
+elif eth_network == "hoodi":
+    sync_urls = hoodi_sync_urls
 elif eth_network == "holesky":
     sync_urls = holesky_sync_urls
 elif eth_network == "sepolia":
@@ -395,6 +405,8 @@ def install_mevboost():
 
         if eth_network == 'mainnet':
             relay_options=mainnet_relay_options
+        elif eth_network == 'hoodi':
+            relay_options=hoodi_relay_options
         elif eth_network == 'holesky':
             relay_options=holesky_relay_options
         else:
