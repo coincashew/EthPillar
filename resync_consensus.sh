@@ -60,7 +60,7 @@ function resyncClient(){
 			_checkpointsync="--network=/opt/ethpillar/testnet --trusted-node-url=https://ephemery.beaconstate.ethstaker.cc"
 			;;
 		Hoodi)
-			_checkpointsync="--network=/opt/ethpillar/testnet --trusted-node-url=https://checkpoint-sync.hoodi.ethpandaops.io"
+			_checkpointsync="--network=hoodi --trusted-node-url=https://checkpoint-sync.hoodi.ethpandaops.io"
 			;;
 		esac
 

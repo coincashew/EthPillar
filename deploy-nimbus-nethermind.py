@@ -330,30 +330,6 @@ def setup_ephemery_network(genesis_repository):
     else:
         print(f"Failed to retrieve genesis release for {genesis_repository}")
 
-def setup_hoodi_network():
-    testnet_dir = "/opt/ethpillar/testnet"
-    url = f"https://github.com/eth-clients/hoodi/archive/refs/tags/genesis.tar.gz"
-    ssz = f"https://github.com/eth-clients/hoodi/raw/refs/heads/main/metadata/genesis.ssz"
-
-    # remove old testnet_dir and setup dir
-    if os.path.exists(testnet_dir):
-        subprocess.run([f'sudo rm -rf {testnet_dir}'], shell=True)
-    subprocess.run([f'sudo mkdir -p {testnet_dir}'], shell=True)
-    subprocess.run([f'sudo chmod -R 755 {testnet_dir}'], shell=True)
-
-    # get genesis tar file
-    print(f">> Downloading HOODI genesis files > URL: {url}")
-    response = requests.get(url, stream=True)
-    if response.status_code == 200:
-        temp_dir = tempfile.mkdtemp()
-        with tarfile.open(fileobj=response.raw, mode='r|gz') as tar:
-            tar.extractall(f"{temp_dir}")
-        os.system(f"wget {ssz} -O {temp_dir}/hoodi-genesis/metadata/genesis.ssz")
-        os.system(f"sudo mv {temp_dir}/hoodi-genesis/metadata/* {testnet_dir}")
-        print(f">> Successfully downloaded HOODI genesis files")
-    else:
-        print("Failed to download genesis release")
-
 # Initialize sync urls for selected network
 if eth_network == "mainnet":
     sync_urls = mainnet_sync_urls
@@ -363,7 +339,6 @@ elif eth_network == "sepolia":
     sync_urls = sepolia_sync_urls
 elif eth_network == "hoodi":
     sync_urls = hoodi_sync_urls
-    setup_hoodi_network()
 elif eth_network == "ephemery":
     sync_urls = ephemery_sync_urls
     setup_ephemery_network("ephemery-testnet/ephemery-genesis")
@@ -583,12 +558,6 @@ def download_and_install_nethermind():
             with open(file_path, "r") as file:
                 bootnodes = ",".join(file.read().splitlines())
             _network=f"--config none.json --Init.ChainSpecPath=/opt/ethpillar/testnet/chainspec.json --Discovery.Bootnodes={bootnodes} --JsonRpc.Enabled=true --JsonRpc.EnabledModules=Eth,Subscribe,Trace,TxPool,Web3,Personal,Proof,Net,Parity,Health,Rpc,Debug,Admin --JsonRpc.EngineHost=127.0.0.1 --JsonRpc.EnginePort=8551 --Init.IsMining=false"
-        elif eth_network=="hoodi":
-            file_path = f"/opt/ethpillar/testnet/enodes.yaml"
-            with open(file_path, "r") as file:
-                data = yaml.safe_load(file)
-            bootnodes = ','.join(data)
-            _network=f"--config none.json --Init.ChainSpecPath=/opt/ethpillar/testnet/chainspec.json --Discovery.Bootnodes={bootnodes} --JsonRpc.Enabled=true --JsonRpc.EnabledModules=Eth,Subscribe,Trace,TxPool,Web3,Personal,Proof,Net,Parity,Health,Rpc,Debug,Admin --JsonRpc.EngineHost=127.0.0.1 --JsonRpc.EnginePort=8551 --Init.IsMining=false"
         else:
             _network=f"--config {eth_network}"
 
@@ -727,12 +696,6 @@ def install_nimbus():
             with open(file_path, "r") as file:
                 bootnodes = ",".join(file.read().splitlines())
             _network=f"--network=/opt/ethpillar/testnet --bootstrap-node={bootnodes}"
-        elif eth_network=="hoodi":
-            file_path = f"/opt/ethpillar/testnet/bootstrap_nodes.yaml"
-            with open(file_path, "r") as file:
-                data = yaml.safe_load(file)
-            bootnodes = ','.join(data)
-            _network=f"--network=/opt/ethpillar/testnet --bootstrap-node={bootnodes}"
         else:
             _network=f"--network={eth_network}"
 
@@ -773,7 +736,7 @@ def run_nimbus_checkpoint_sync():
         os.system(f'sudo rm -rf {db_path}')
 
         # Process custom testnet configuration
-        if eth_network=="hoodi" or eth_network=="ephemery":
+        if eth_network=="ephemery":
             _network=f"--network=/opt/ethpillar/testnet"
         else:
             _network=f"--network={eth_network}"
