@@ -249,7 +249,7 @@ function setConfig(){
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHoodi_bot"
             FAUCET="https://hoodi-faucet.pk910.de"
             HOMEPAGE="https://hoodi.ethpandaops.io"
-            EXPLORER="https://hoodi.beaconcha.in"
+            EXPLORER="https://hoodi.cloud.blockscout.com"
           ;;
           ephemery)
             LAUNCHPAD_URL="https://launchpad.ephemery.dev"
