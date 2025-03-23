@@ -122,7 +122,7 @@ if not args.network and not args.skip_prompts:
     index = SelectionMenu.get_selection(valid_networks,title='Validator Install Quickstart :: CoinCashew.com',subtitle='Installs Nethermind EL / Nimbus BN / Nimbus VC / MEVboost\nSelect Ethereum network:')
 
     # Exit selected
-    if index == 5:
+    if index == len(valid_networks):
         exit(0)
 
     # Set network
