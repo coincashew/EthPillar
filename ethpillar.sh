@@ -448,6 +448,7 @@ while true; do
       4 "View software versions"
       5 "View cpu/ram/disk/net (btop)"
       6 "View general node information"
+      7 "Export logs: Save logs to disk"
       - ""
       10 "Update EthPillar"
       11 "About EthPillar"
@@ -506,6 +507,9 @@ while true; do
       ;;
       6)
         print_node_info
+      ;;
+      7)
+        export_logs
       ;;
       10)
         cd $BASE_DIR ; git fetch origin main ; git checkout main ; git pull --ff-only ; git reset --hard ; git clean -xdf

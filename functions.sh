@@ -1153,3 +1153,74 @@ Actions: $VA_URL
   TopUp: $TOPUP_URL"
     whiptail --title "Validator Actions: New features since Pectra Upgrade" --msgbox "$MSG" 18 78
 }
+
+# Function to display log dialog and return the selected option
+function get_user_input() {
+    local OPTIONS=()
+    test -f /etc/systemd/system/execution.service && OPTIONS+=("consensus" "")
+    test -f /etc/systemd/system/consensus.service && OPTIONS+=("execution" "")
+    test -f /etc/systemd/system/validator.service && OPTIONS+=("validator" "")
+    test -f /etc/systemd/system/mevboost.service && OPTIONS+=("mevboost" "" )
+    test -f /etc/systemd/system/csm_nimbusvalidator.service && OPTIONS+=("csm_nimbusvalidator" "")
+    local service=$(whiptail --title "Export journalctl service logs" --menu \
+          "I want to export logs for:" 15 60 6 \
+          "${OPTIONS[@]}" \
+          3>&1 1>&2 2>&3)
+    if [ -z "$service" ]; then return; fi # pressed cancel
+    local date_range=$(whiptail --title "Date Range Selection" --menu "Choose a date range:" 15 60 5 \
+        "Today" "" \
+        "Yesterday" "" \
+        "Last_Hour" "" \
+        "Last_Week" "" \
+        "Custom" ""  3>&1 1>&2 2>&3)
+    if [ -z "$date_range" ]; then return; fi # pressed cancel
+    echo "$service $date_range"
+}
+
+# Exports journalctl logs
+function export_logs() {
+    local user_input=$(get_user_input)
+    if [ -z "$user_input" ]; then return; fi # pressed cancel
+    local service=$(echo "$user_input" | awk '{print $1}')
+    local date_range=$(echo "$user_input" | awk '{print $2}')
+
+    # Determine the start and end times based on the selected date range
+    local start_time=""
+    local end_time=""
+    case $date_range in
+        "Today")
+            start_time="00:00"
+            end_time="23:59:59"
+            ;;
+        "Yesterday")
+            start_time="$(date -d yesterday +%F) 00:00:00"
+            end_time="$(date -d yesterday +%F) 23:59:59"
+            ;;
+        "Last_Hour")
+            start_time="$(date -d '1 hour ago' '+%F %H:%M:%S')"
+            end_time="$(date '+%F %H:%M:%S')"
+            ;;
+        "Last_Week")
+            start_time="$(date -d 'last week' +%F) 00:00:00"
+            end_time="$(date -d 'this week' +%F) 23:59:59"
+            ;;
+        "Custom")
+            local custom_start=$(whiptail --title "Custom Start Date" --inputbox "Enter start date (YYYY-MM-DD HH:MM):" 10 60 "$(date +%F)" 3>&1 1>&2 2>&3)
+            local custom_end=$(whiptail --title "Custom End Date" --inputbox "Enter end date (YYYY-MM-DD HH:MM):" 10 60 "$(date +%F)" 3>&1 1>&2 2>&3)
+            start_time="$custom_start"
+            end_time="$custom_end"
+            ;;
+        *)
+            whiptail --title "Invalid Option" --msgbox "Invalid date range selected." 10 60
+            return 1
+            ;;
+    esac
+
+    # Prompt for the output file name
+    local output_file=$(whiptail --title "Output File Name" --inputbox "Enter the output file name:" 10 60 "ethpillar_logs_${service}.txt" 3>&1 1>&2 2>&3)
+
+    # Generate journalctl command based on user input and save to a log file
+    sudo journalctl --since "$start_time" --until "$end_time" -u $service > $HOME/$output_file
+
+    whiptail --title "Export Complete" --msgbox "Logs have been exported to $HOME/$output_file" 10 60
+}
