@@ -233,7 +233,7 @@ function setConfig(){
           ;;
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
-            LAUNCHPAD_URL_LIDO="https://csm.testnet.fi/?ref=ethpillar"
+            LAUNCHPAD_URL_LIDO="https://csm-holesky.testnet.fi/?ref=ethpillar"
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"

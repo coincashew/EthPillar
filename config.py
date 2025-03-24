@@ -22,7 +22,7 @@ sepolia_relay_options = [
 ]
 
 hoodi_relay_options = [
-    {'name': 'Flashbots', 'url': 'https://placeholder@boost-relay-hoodi.flashbots.net'}
+    {'name': 'Titan Relay', 'url': 'https://0xaa58208899c6105603b74396734a6263cc7d947f444f396a90f7b7d3e65d102aec7e5e5291b27e08d02c50a050825c2f@hoodi.titanrelay.xyz'}
 ]
 
 # Checkpoint-Sync Data

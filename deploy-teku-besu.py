@@ -212,8 +212,8 @@ else:
           VALIDATOR_ENABLED=False
           VALIDATOR_ONLY=False
 
-# Ephemery and hoodi override, turn off mevboost
-if eth_network == "ephemery" or eth_network == "hoodi":
+# Ephemery override, turn off mevboost
+if eth_network == "ephemery":
     MEVBOOST_ENABLED=False
 
 execution_client=""
