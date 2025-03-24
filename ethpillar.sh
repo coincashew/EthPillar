@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="4.1.0"
+EP_VERSION="4.1.1"
 
 # Default text editor
 EDITOR="nano"
@@ -1307,8 +1307,12 @@ function installNode(){
 }
 
 # Ask to apply patches
-#function applyPatches(){
-#}
+function applyPatches(){
+  # Add motd to login message
+  if ! grep -q "cat.*motd" ~/.profile; then
+      echo "cat ~/git/ethpillar/motd" >> ~/.profile
+  fi
+}
 
 # Determine node configuration
 function setNodeMode(){
@@ -1340,7 +1344,7 @@ function setNodeMode(){
 checkV1StakingSetup
 setWhiptailColors
 installNode
-#applyPatches
+applyPatches
 checkDiskSpace
 checkCPULoad
 setNodeMode
