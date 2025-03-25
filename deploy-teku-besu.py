@@ -196,8 +196,8 @@ if install_config == "Lido CSM Staking Node" or install_config == "Lido CSM Vali
         print(f'Unsupported Lido CSM Staking Node network: {eth_network}')
         exit(1)
 
-# Ephemery override, turn off mevboost
-if eth_network == "ephemery":
+# Ephemery override, hoodi(disabled until new mevboost are available) turn off mevboost
+if eth_network == "ephemery" or eth_network == "hoodi":
     MEVBOOST_ENABLED=False
 
 execution_client=""
