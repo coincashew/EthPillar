@@ -223,7 +223,7 @@ function setConfig(){
     case $NETWORK in
           mainnet)
             LAUNCHPAD_URL="https://launchpad.ethereum.org"
-            LAUNCHPAD_URL_LIDO="https://csm.lido.fi/?ref=ethpillar"
+            LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_MAINNET}
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_MAINNET}
             CSM_SENTINEL_URL="https://t.me/CSMSentinel_bot"
@@ -233,7 +233,7 @@ function setConfig(){
           ;;
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
-            LAUNCHPAD_URL_LIDO="https://csm-holesky.testnet.fi/?ref=ethpillar"
+            LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOLESKY}
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"
@@ -243,7 +243,7 @@ function setConfig(){
           ;;
           hoodi)
             LAUNCHPAD_URL="https://hoodi.launchpad.ethstaker.cc"
-            LAUNCHPAD_URL_LIDO="https://csm.testnet.fi/?ref=ethpillar"
+            LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOODI}
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOODI}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOODI}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHoodi_bot"
@@ -253,7 +253,7 @@ function setConfig(){
           ;;
           ephemery)
             LAUNCHPAD_URL="https://launchpad.ephemery.dev"
-            LAUNCHPAD_URL_LIDO="https://TBD.testnet.fi/?ref=ethpillar"
+            LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOLESKY}
             CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelTBD"
@@ -445,6 +445,7 @@ function queryValidatorQueue(){
         MSG_VALIDATOR_QUEUE="For ${NETWORK}, currently ${_val_joining} validators waiting to join. ETA: ${_val_wait_days} days."
     else
       echo "DEBUG: Unable to query beaconcha.in for $NETWORK validator queue data."
+      MSG_VALIDATOR_QUEUE=""
     fi
 }
 

@@ -69,6 +69,9 @@ CSM_MEV_MIN_BID=os.getenv('CSM_MEV_MIN_BID')
 CSM_WITHDRAWAL_ADDRESS_MAINNET=os.getenv('CSM_WITHDRAWAL_ADDRESS_MAINNET')
 CSM_WITHDRAWAL_ADDRESS_HOLESKY=os.getenv('CSM_WITHDRAWAL_ADDRESS_HOLESKY')
 CSM_WITHDRAWAL_ADDRESS_HOODI=os.getenv('CSM_WITHDRAWAL_ADDRESS_HOODI')
+LAUNCHPAD_URL_LIDO_MAINNET=os.getenv('LAUNCHPAD_URL_LIDO_MAINNET')
+LAUNCHPAD_URL_LIDO_HOODI=os.getenv('LAUNCHPAD_URL_LIDO_HOODI')
+LAUNCHPAD_URL_LIDO_HOLESKY=os.getenv('LAUNCHPAD_URL_LIDO_HOLESKY')
 
 # Create argparse options
 parser = argparse.ArgumentParser(description='Validator Install Options :: CoinCashew.com',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -139,78 +142,59 @@ if not args.install_config and not args.skip_prompts:
 else:
     install_config=args.install_config
 
+# Defaults to all false
+MEVBOOST_ENABLED=False
+VALIDATOR_ENABLED=False
+VALIDATOR_ONLY=False
+NODE_ONLY=False
+
 # Sepolia is a permissioned validator set, default to NODE_ONLY
 if eth_network == "sepolia":
     NODE_ONLY=True
-    MEVBOOST_ENABLED=False
-    VALIDATOR_ENABLED=False
-    VALIDATOR_ONLY=False
 else:
     match install_config:
        case "Solo Staking Node":
-          NODE_ONLY=False
-          MEVBOOST_ENABLED=True
-          VALIDATOR_ENABLED=True
-          VALIDATOR_ONLY=False
+           MEVBOOST_ENABLED=True
+           VALIDATOR_ENABLED=True
        case "Full Node Only":
-          NODE_ONLY=True
-          MEVBOOST_ENABLED=False
-          VALIDATOR_ENABLED=False
-          VALIDATOR_ONLY=False
+           NODE_ONLY=True
        case "Lido CSM Staking Node":
-          NODE_ONLY=False
-          MEVBOOST_ENABLED=True
-          VALIDATOR_ENABLED=True
-          VALIDATOR_ONLY=False
-          if eth_network == "mainnet":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_MAINNET
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_MAINNET
-          elif eth_network == "hoodi":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOODI
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOODI
-          elif eth_network == "holesky":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
-          elif eth_network == "ephemery":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY              
-          else:
-            print(f'Unsupported Lido CSM Staking Node network: {eth_network}')
-            exit(1)
-          GRAFFITI=CSM_GRAFFITI
-          MEV_MIN_BID=CSM_MEV_MIN_BID
+           MEVBOOST_ENABLED=True
+           VALIDATOR_ENABLED=True
        case "Lido CSM Validator Client Only":
-          NODE_ONLY=False
-          MEVBOOST_ENABLED=True
-          VALIDATOR_ENABLED=True
-          VALIDATOR_ONLY=True
-          if eth_network == "mainnet":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_MAINNET
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_MAINNET
-          elif eth_network == "hoodi":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOODI
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOODI
-          elif eth_network == "holesky":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
-          elif eth_network == "ephemery":
-              FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
-              CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
-          else:
-              print(f'Unsupported Lido CSM Staking Node network: {eth_network}')
-              exit(1)
-          GRAFFITI=CSM_GRAFFITI
-          MEV_MIN_BID=CSM_MEV_MIN_BID
+           MEVBOOST_ENABLED=True
+           VALIDATOR_ENABLED=True
+           VALIDATOR_ONLY=True
        case "Validator Client Only":
-          NODE_ONLY=False
-          MEVBOOST_ENABLED=True
-          VALIDATOR_ENABLED=True
-          VALIDATOR_ONLY=True
+           MEVBOOST_ENABLED=True
+           VALIDATOR_ENABLED=True
+           VALIDATOR_ONLY=True
        case "Failover Staking Node":
-          NODE_ONLY=False
-          MEVBOOST_ENABLED=True
-          VALIDATOR_ENABLED=False
-          VALIDATOR_ONLY=False
+           MEVBOOST_ENABLED=True
+
+# Apply Lido CSM configs
+if install_config == "Lido CSM Staking Node" or install_config == "Lido CSM Validator Client Only":
+    GRAFFITI=CSM_GRAFFITI
+    MEV_MIN_BID=CSM_MEV_MIN_BID
+    if eth_network == "mainnet":
+        FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_MAINNET
+        CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_MAINNET
+        LAUNCHPAD_URL_LIDO=LAUNCHPAD_URL_LIDO_MAINNET
+    elif eth_network == "holesky":
+        FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
+        CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
+        LAUNCHPAD_URL_LIDO=LAUNCHPAD_URL_LIDO_HOLESKY
+    elif eth_network == "hoodi":
+        FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOODI
+        CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOODI
+        LAUNCHPAD_URL_LIDO=LAUNCHPAD_URL_LIDO_HOODI
+    elif eth_network == "ephemery":
+        FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOLESKY
+        CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOLESKY
+        LAUNCHPAD_URL_LIDO=LAUNCHPAD_URL_LIDO_HOLESKY
+    else:
+        print(f'Unsupported Lido CSM Staking Node network: {eth_network}')
+        exit(1)
 
 # Ephemery override, turn off mevboost
 if eth_network == "ephemery":
@@ -755,9 +739,8 @@ def finish_install():
             if MEVBOOST_ENABLED == True:
                 os.system(f'sudo systemctl start mevboost')
 
-    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nConfigure node to autostart:\nWould you like this node to autostart when system boots up?")
-
     # Prompt to enable autostart services
+    answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nConfigure node to autostart:\nWould you like this node to autostart when system boots up?")
     if answer:
         if not VALIDATOR_ONLY:
             os.system(f'sudo systemctl enable execution consensus')
@@ -766,8 +749,9 @@ def finish_install():
         if MEVBOOST_ENABLED == True and not VALIDATOR_ONLY:
             os.system(f'sudo systemctl enable mevboost')
 
-    # Ask CSM staker if they to manage validator keystores
-    if install_config == 'Lido CSM Staking Node' or install_config == "Lido CSM Validator Client Only":
+    # Show Lido CSM Instructions and ask CSM staker if they to manage validator keystores
+    if install_config == 'Lido CSM Staking Node' or install_config == 'Lido CSM Validator Client Only':
+        os.system(f'whiptail --title "Next Steps: Lido CSM" --msgbox "1. Generate validator keys\n\n2. Upload your keys & bond at {LAUNCHPAD_URL_LIDO}\n\n3. Fully sync your node.\n\nThanks for using Lido CSM and EthPillar!" 15 78')
         answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nWould you like to generate or import new Lido CSM validator keys now?\nReminder: Set the Lido withdrawal address to: {CSM_WITHDRAWAL_ADDRESS}")
         if answer:
             os.chdir(os.path.expanduser("~/git/ethpillar"))
