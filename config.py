@@ -39,7 +39,6 @@ mainnet_sync_urls = [
 ]
 
 holesky_sync_urls = [
-    ("ETHSTAKER", "https://holesky.beaconstate.ethstaker.cc"),
     ("BEACONSTATE", "https://holesky.beaconstate.info"),
     ("EF DevOps", "https://checkpoint-sync.holesky.ethpandaops.io"),
     ("Lodestar", "https://beaconstate-holesky.chainsafe.io"),
