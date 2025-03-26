@@ -31,6 +31,7 @@ from consolemenu.items import *
 import argparse
 from dotenv import load_dotenv, dotenv_values
 from config import *
+from tqdm import tqdm
 
 def clear_screen():
     if os.name == 'posix':  # Unix-based systems (e.g., Linux, macOS)
@@ -344,13 +345,17 @@ def install_mevboost():
             # Download the file
             response = requests.get(download_url, stream=True)
             response.raise_for_status()  # Raise an exception for HTTP errors
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024
+            t = tqdm(total=total_size, unit='B', unit_scale=True)
 
             # Save the binary to the home folder
             with open("mev-boost.tar.gz", "wb") as f:
-                for chunk in response.iter_content(1024):
+                for chunk in response.iter_content(block_size):
                     if chunk:
+                        t.update(len(chunk))
                         f.write(chunk)
-
+            t.close()
             print(f">> Successfully downloaded: {asset['name']}")
 
         except requests.exceptions.RequestException as e:
@@ -455,13 +460,17 @@ def download_and_install_besu():
             # Download the file
             response = requests.get(download_url, stream=True)
             response.raise_for_status()  # Raise an exception for HTTP errors
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024
+            t = tqdm(total=total_size, unit='B', unit_scale=True)
 
             # Save the binary to the home folder
             with open("besu.tar.gz", "wb") as f:
-                for chunk in response.iter_content(1024):
+                for chunk in response.iter_content(block_size):
                     if chunk:
+                        t.update(len(chunk))
                         f.write(chunk)
-
+            t.close()
             print(f">> Successfully downloaded: {asset['name']}")
 
         except requests.exceptions.RequestException as e:
@@ -548,13 +557,17 @@ def download_teku():
             # Download the file
             response = requests.get(download_url, stream=True)
             response.raise_for_status()  # Raise an exception for HTTP errors
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024
+            t = tqdm(total=total_size, unit='B', unit_scale=True)
 
             # Save the binary to the home folder
             with open("teku.tar.gz", "wb") as f:
-                for chunk in response.iter_content(1024):
+                for chunk in response.iter_content(block_size):
                     if chunk:
+                        t.update(len(chunk))
                         f.write(chunk)
-
+            t.close()
             print(f">> Successfully downloaded: teku-{teku_version}.tar.gz")
 
         except requests.exceptions.RequestException as e:

@@ -116,7 +116,7 @@ linux_install_python() {
     ohai "Creating venv"
     $python -m venv ~/.local --system-site-packages
     ohai "Installing pip requirements"
-    ~/.local/bin/pip install requests console-menu python-dotenv
+    ~/.local/bin/pip install requests console-menu python-dotenv tqdm
     exit_on_error $?
 }
 

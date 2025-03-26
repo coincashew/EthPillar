@@ -33,6 +33,7 @@ from consolemenu.items import *
 import argparse
 from dotenv import load_dotenv, dotenv_values
 from config import *
+from tqdm import tqdm
 
 import os
 
@@ -384,13 +385,17 @@ def install_mevboost():
             # Download the file
             response = requests.get(download_url, stream=True)
             response.raise_for_status()  # Raise an exception for HTTP errors
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024
+            t = tqdm(total=total_size, unit='B', unit_scale=True)
 
             # Save the binary to the home folder
             with open("mev-boost.tar.gz", "wb") as f:
-                for chunk in response.iter_content(1024):
+                for chunk in response.iter_content(block_size):
                     if chunk:
+                        t.update(len(chunk))
                         f.write(chunk)
-
+            t.close()
             print(f">> Successfully downloaded: {asset['name']}")
 
         except requests.exceptions.RequestException as e:
@@ -506,13 +511,18 @@ def download_and_install_nethermind():
             # Download the file
             response = requests.get(download_url, stream=True)
             response.raise_for_status()  # Raise an exception for HTTP errors
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024
+            t = tqdm(total=total_size, unit='B', unit_scale=True)
 
             # Save the binary to a temporary file
             with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temp_file:
-                for chunk in response.iter_content(1024):
+                for chunk in response.iter_content(block_size):
                     if chunk:
+                        t.update(len(chunk))
                         temp_file.write(chunk)
                 temp_path = temp_file.name
+            t.close()
 
             print(f">> Successfully downloaded: {zip_filename}")
 
@@ -620,13 +630,17 @@ def download_nimbus():
             # Download the file
             response = requests.get(download_url, stream=True)
             response.raise_for_status()  # Raise an exception for HTTP errors
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024
+            t = tqdm(total=total_size, unit='B', unit_scale=True)
 
             # Save the binary to the home folder
             with open("nimbus.tar.gz", "wb") as f:
-                for chunk in response.iter_content(1024):
+                for chunk in response.iter_content(block_size):
                     if chunk:
+                        t.update(len(chunk))
                         f.write(chunk)
-
+            t.close()
             print(f">> Successfully downloaded: {asset['name']}")
 
         except requests.exceptions.RequestException as e:
