@@ -135,16 +135,21 @@ function _installPlugin(){
 
   # Prompt user for config values
   NETWORK=$(whiptail --title "Network" --menu \
-          "For which network are running CSM Validators?" 10 78 3 \
+          "For which network are running CSM Validators?" 10 78 4 \
           "mainnet" "Ethereum - Real ETH. Real staking rewards." \
-          "holesky" "long term Testnet  - Suitable for staking practice." \
-          "ephemery" "short term Testnet - Ideal for staking practice. Monthly resets." \
+          "hoodi" "Long term Testnet - Ideal for CSM experimentation" \
+          "ephemery" "Short term Testnet - Good for testing setups. Monthly resets." \
+          "holesky" "deprecated Testnet" \
           3>&1 1>&2 2>&3)
   
   case $NETWORK in
       mainnet)
         CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}
         CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_MAINNET}
+      ;;
+      hoodi)
+        CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOODI}
+        CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOODI}
       ;;
       holesky)
         CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
