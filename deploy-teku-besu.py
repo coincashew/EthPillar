@@ -773,6 +773,7 @@ def finish_install():
 
     # Ask solo staker if they to manage validator keystores
     if install_config == 'Solo Staking Node' or install_config == 'Validator Client Only':
+        os.system(f'whiptail --title "Next Steps: Staking" --msgbox "1. Generate or import validator keys\n\n2. Let your node fully sync\n\nThanks for using EthPillar!" 13 78')
         answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nWould you like to generate or import validator keys now?\nIf not, resume at: ethpillar > Validator Client ")
         if answer:
             os.chdir(os.path.expanduser("~/git/ethpillar"))
