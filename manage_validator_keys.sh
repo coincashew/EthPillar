@@ -82,6 +82,7 @@ function generateNewValidatorKeys(){
     setConfig
     _getEthAddy
     _getValidatorType
+    _getAmount
 
     NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     _setKeystorePassword
@@ -89,7 +90,7 @@ function generateNewValidatorKeys(){
     cd $DEPOSIT_CLI_PATH
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
-    ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER" "$_VALIDATORTYPE"
+    ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER" "$_VALIDATORTYPE" "$_AMOUNT"
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
@@ -141,6 +142,23 @@ function _getValidatorType(){
     _VALIDATORTYPE="--$_VALIDATORTYPE"
 }
 
+function _getAmount(){
+    if [[ $isLido ]] || [[ "$_VALIDATORTYPE" == "--regular-withdrawal" ]]; then
+        _AMOUNT="--amount=32"
+        return
+    fi
+    while true; do
+        _AMOUNT=$(whiptail --title "Validator Amount" --inputbox "Please enter the amount of ETH you wish to deposit to these validator(s).\nRequires at least 32 ETH or at max 2048 ETH." 15 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+        if [ -z "$_AMOUNT" ]; then exit; fi #pressed cancel
+        if [[ "${_AMOUNT}" -ge 32 ]] && [[ "${_AMOUNT}" -le 2048 ]]; then
+            _AMOUNT="--amount=${_AMOUNT}"
+            break
+        else
+            whiptail --title "Error" --msgbox "Invalid Amount. Amount must be between 32 and 2048." 8 78
+        fi
+    done
+}
+
 function importValidatorKeys(){
     [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
     KEYFOLDER=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
@@ -176,6 +194,7 @@ function addRestoreValidatorKeys(){
     setConfig
     _getEthAddy
     _getValidatorType
+    _getAmount
 
     NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     START_INDEX=$(whiptail --title "# of Existing Keys" --inputbox "How many validator keys were previously made? Also known as the starting index." 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
@@ -185,7 +204,7 @@ function addRestoreValidatorKeys(){
     cd $DEPOSIT_CLI_PATH
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
-    ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS" "$_VALIDATORTYPE"
+    ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS" "$_VALIDATORTYPE" "$_AMOUNT"
     if [ $? -eq 0 ]; then
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
