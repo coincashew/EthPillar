@@ -68,7 +68,7 @@ function resyncClient(){
 		sudo rm -rf /var/lib/nimbus/db
 
 		sudo -u consensus /usr/local/bin/nimbus_beacon_node trustedNodeSync \
-		"${_checkpointsync}" \
+		${_checkpointsync} \
 		--data-dir=/var/lib/nimbus \
 		--backfill=false
 
