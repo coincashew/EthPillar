@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="4.2.0"
+EP_VERSION="4.2.1"
 
 # Default text editor
 EDITOR="nano"
@@ -503,7 +503,7 @@ while true; do
         if ! command -v btop &> /dev/null; then
             sudo apt-get install btop -y
         fi
-        btop
+        btop --utf-force
       ;;
       6)
         print_node_info
