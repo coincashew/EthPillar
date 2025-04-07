@@ -633,7 +633,7 @@ KillSignal=SIGINT
 TimeoutStopSec=900
 Environment=JAVA_OPTS=-Xmx6g
 Environment=TEKU_OPTS=-XX:-HeapDumpOnOutOfMemoryError
-ExecStart=/usr/local/bin/teku/bin/teku --network={eth_network} --data-path=/var/lib/teku --data-storage-mode=minimal --initial-state={sync_url} --ee-endpoint=http://127.0.0.1:8551 --ee-jwt-secret-file={JWTSECRET_PATH} --rest-api-enabled=true --rest-api-port={CL_REST_PORT} --p2p-port={CL_P2P_PORT} --p2p-peer-upper-bound={CL_MAX_PEER_COUNT} --metrics-enabled=true --metrics-port=8008 {_feeparameters} {_mevparameters}
+ExecStart=/usr/local/bin/teku/bin/teku --network={eth_network} --data-path=/var/lib/teku --data-storage-mode=minimal --checkpoint-sync-url={sync_url} --ee-endpoint=http://127.0.0.1:8551 --ee-jwt-secret-file={JWTSECRET_PATH} --rest-api-enabled=true --rest-api-port={CL_REST_PORT} --p2p-port={CL_P2P_PORT} --p2p-peer-upper-bound={CL_MAX_PEER_COUNT} --metrics-enabled=true --metrics-port=8008 {_feeparameters} {_mevparameters}
 
 [Install]
 WantedBy=multi-user.target
