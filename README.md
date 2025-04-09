@@ -1,4 +1,10 @@
 [![Github release](https://img.shields.io/github/v/release/coincashew/ethpillar)](https://github.com/coincashew/ethpillar/releases)
+[![License](https://img.shields.io/github/license/coincashew/EthPillar)](https://github.com/coincashew/EthPillar/blob/main/LICENSE)
+[![GitHub Repo stars](https://img.shields.io/github/stars/coincashew/EthPillar?logo=github&color=yellow)](https://github.com/coincashew/EthPillar/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/coincashew/EthPillar?logo=github&color=blue)](https://github.com/coincashew/EthPillar/network/members)
+[![Build](https://github.com/coincashew/EthPillar/actions/workflows/update.yaml/badge.svg)](https://github.com/coincashew/EthPillar/actions)
+[![GitHub last commit](https://img.shields.io/github/last-commit/coincashew/EthPillar?logo=git)](https://github.com/coincashew/EthPillar/commits/main)
+[![Discord](https://img.shields.io/badge/discord-join%20chat-5B5EA6)](https://t.co/lnlom4iImq)
 
 # 🛡️ EthPillar: one-liner setup tool and node management TUI
 
