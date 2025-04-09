@@ -1,3 +1,5 @@
+[![Github release](https://img.shields.io/github/v/release/coincashew/ethpillar)](https://github.com/coincashew/ethpillar/releases)
+
 # 🛡️ EthPillar: one-liner setup tool and node management TUI
 
   Empowered, inspired, home staker. Free. Open source. Public goods for
