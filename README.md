@@ -4,6 +4,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/coincashew/EthPillar?logo=github&color=blue)](https://github.com/coincashew/EthPillar/network/members)
 [![GitHub last commit](https://img.shields.io/github/last-commit/coincashew/EthPillar?logo=git)](https://github.com/coincashew/EthPillar/commits/main)
 [![Discord](https://img.shields.io/badge/discord-join%20chat-5B5EA6)](https://t.co/lnlom4iImq)
+[![Twitter](https://img.shields.io/twitter/follow/coincashew_)](https://x.com/coincashew_)
 
 # 🛡️ EthPillar: one-liner setup tool and node management TUI
 
