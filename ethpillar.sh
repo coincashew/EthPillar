@@ -877,6 +877,46 @@ while true; do
 done
 }
 
+submenuPerformanceTuning(){
+while true; do
+    getBackTitle
+    getNetworkConfig
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      1 "Swappiness: Optimize pages between memory and the swap space"
+      2 "noatime: Reduced disk I/O and improved performance"
+      - ""
+      99 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Performance Tuning" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      1)
+        sudo bash -c './helpers/set_swappiness.sh'
+        ;;
+      2)
+        sudo bash -c './helpers/set_noatime.sh'
+        ;;
+      99)
+        break
+        ;;
+    esac
+done
+}
+
 submenuPluginSentinel(){
 while true; do
     getNetworkConfig
@@ -1129,6 +1169,8 @@ while true; do
       14 "UFW Firewall: Control network traffic against unauthorized access"
       15 "Speedtest: Test internet bandwidth using speedtest.net"
       16 "Yet-Another-Bench-Script: Test node performance. Automated Benchmarking."
+      🚀 "Performance Tuning: Optimize your nodes with OS tweaks"
+      🔐 "Fail2Ban: Automatically protecting your node from common attack patterns"
       - ""
       99 "Back to main menu"
     )
@@ -1227,6 +1269,12 @@ while true; do
         ;;
       16)
         testYetAnotherBenchScript
+        ;;
+      🚀)
+        submenuPerformanceTuning
+        ;;
+      🔐)
+        sudo bash -c './helpers/install_fail2ban.sh'
         ;;
       99)
         break
