@@ -86,7 +86,7 @@ Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Sta
 ## :whale: Prerequisites
 
 * Study [Ethstaker's Staking for Beginners](https://www.reddit.com/r/ethstaker/wiki/staking\_for\_beginners/)
-* [Review how staking works and the hardware requirements](guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/prerequisites.md)
+* [Review how staking works and the hardware requirements](https://github.com/coincashew/coincashew/blob/master/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-i-installation/prerequisites.md)
 * A Linux [Ubuntu](https://ubuntu.com/download) installation.&#x20;
   * Tested with [Ubuntu 24.04 LTS](https://ubuntu.com/download)
   * Also appears compatible with [armbian](https://www.armbian.com/download/), [Linux Mint](https://www.linuxmint.com/), [Debian](https://www.debian.org/distrib/netinst)
