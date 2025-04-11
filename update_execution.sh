@@ -17,7 +17,11 @@ _platform=$(get_platform)
 _arch=$(get_arch)
 
 function getCurrentVersion(){
-	 EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
+	if [[ $EL == "Erigon" ]]; then
+		VERSION=$(/usr/local/bin/erigon --version) #erigon missing web3_clientVersion support
+		return
+	fi
+	EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
     #Find version in format #.#.#
     if [[ $EL_INSTALLED ]] ; then
         VERSION=$(echo $EL_INSTALLED | sed 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
@@ -54,8 +58,8 @@ function getLatestVersion(){
 	    CHANGES_URL="https://github.com/hyperledger/besu/releases"
 	    ;;
 	  Erigon)
-	    TAG_URL="https://api.github.com/repos/ledgerwatch/erigon/releases/latest"
-	    CHANGES_URL="https://github.com/ledgerwatch/erigon/releases"
+	    TAG_URL="https://api.github.com/repos/erigontech/erigon/releases/latest"
+	    CHANGES_URL="https://github.com/erigontech/erigon/releases"
 	    ;;
 	  Geth)
 	    TAG_URL="https://api.github.com/repos/ethereum/go-ethereum/releases/latest"
@@ -103,16 +107,17 @@ function updateClient(){
 		rm besu.tar.gz
 	    ;;
 	  Erigon)
-	    RELEASE_URL="https://api.github.com/repos/ledgerwatch/erigon/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}_${_arch})"
+	    RELEASE_URL="https://api.github.com/repos/erigontech/erigon/releases/latest"
+		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}_${_arch}.tar.gz)"
 		echo Downloading URL: $BINARIES_URL
 		cd $HOME
 		wget -O erigon.tar.gz $BINARIES_URL
 		tar -xzvf erigon.tar.gz -C $HOME
+		mv erigon_*_${_arch} erigon
 		sudo systemctl stop execution
-		sudo mv $HOME/erigon /usr/local/bin/erigon
+		sudo mv $HOME/erigon/erigon /usr/local/bin
 		sudo systemctl start execution
-		rm erigon.tar.gz README.md
+		rm -rf erigon erigon.tar.gz
 		;;
 	  Geth)
 		# Convert to lower case
