@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="4.3.0"
+EP_VERSION="4.3.1"
 
 # Default text editor
 EDITOR="nano"
