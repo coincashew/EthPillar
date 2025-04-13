@@ -1282,7 +1282,7 @@ while true; do
         sudo bash -c './helpers/install_unattendedupgrades.sh'
         ;;
       🔒)
-        sudo bash -c './helpers/install_install_2fa.sh'
+        sudo bash -c './helpers/install_2fa.sh'
         ;;
       99)
         break
