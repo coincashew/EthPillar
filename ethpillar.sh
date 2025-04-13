@@ -1171,6 +1171,7 @@ while true; do
       16 "Yet-Another-Bench-Script: Test node performance. Automated Benchmarking."
       🚀 "Performance Tuning: Optimize your nodes with OS tweaks"
       🔐 "Fail2Ban: Automatically protecting your node from common attack patterns"
+      🛠️ "Unattended-upgrades: Automatically install security updates"
       - ""
       99 "Back to main menu"
     )
@@ -1275,6 +1276,9 @@ while true; do
         ;;
       🔐)
         sudo bash -c './helpers/install_fail2ban.sh'
+        ;;
+      🛠️)
+        sudo bash -c './helpers/install_unattendedupgrades.sh'
         ;;
       99)
         break
