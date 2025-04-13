@@ -1172,6 +1172,7 @@ while true; do
       🚀 "Performance Tuning: Optimize your nodes with OS tweaks"
       🔐 "Fail2Ban: Automatically protecting your node from common attack patterns"
       🛠️ "Unattended-upgrades: Automatically install security updates"
+      🔒 "2FA: Secure your SSH access with two-factor authentication"
       - ""
       99 "Back to main menu"
     )
@@ -1279,6 +1280,9 @@ while true; do
         ;;
       🛠️)
         sudo bash -c './helpers/install_unattendedupgrades.sh'
+        ;;
+      🔒)
+        sudo bash -c './helpers/install_install_2fa.sh'
         ;;
       99)
         break
