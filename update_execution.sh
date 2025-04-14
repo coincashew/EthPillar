@@ -17,10 +17,6 @@ _platform=$(get_platform)
 _arch=$(get_arch)
 
 function getCurrentVersion(){
-	if [[ $EL == "Erigon" ]]; then
-		VERSION=$(/usr/local/bin/erigon --version) #erigon missing web3_clientVersion support
-		return
-	fi
 	EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
     #Find version in format #.#.#
     if [[ $EL_INSTALLED ]] ; then
