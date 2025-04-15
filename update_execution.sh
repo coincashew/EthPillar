@@ -20,7 +20,7 @@ function getCurrentVersion(){
 	EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
     #Find version in format #.#.#
     if [[ $EL_INSTALLED ]] ; then
-        VERSION=$(echo $EL_INSTALLED | sed 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
+        VERSION=$(echo $EL_INSTALLED | sed 's/.*[v\/]\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
 	else
 		VERSION="Client not running or still starting up. Unable to query version."
 	fi
