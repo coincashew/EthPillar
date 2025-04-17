@@ -1108,6 +1108,7 @@ while true; do
     SUBOPTIONS=(
       1 "Lido CSM Validator: Activate an extra validator service. Re-use this node's EL/CL."
       2 "CSM-Sentinel: Sends notifications for your CSM Node Operator ID. Self-hosted. Docker. Telegram."
+      🔎 "Dora the Explorer: lightweight beaconchain explorer. validator actions. self-hosted. private."
       - ""
       99 "Back to main menu"
     )
@@ -1140,6 +1141,14 @@ while true; do
             runScript plugins/sentinel/plugin_csm_sentinel.sh -i
         fi
         submenuPluginSentinel
+        ;;
+      🔎)
+        getNetworkConfig
+        export ip_current network_current BACKTITLE EDITOR NETWORK
+        if [[ ! -d /opt/ethpillar/plugin-dora ]]; then
+            runScript plugins/dora/plugin_dora.sh -i
+        fi
+        runScript plugins/dora/menu.sh
         ;;
       99)
         break

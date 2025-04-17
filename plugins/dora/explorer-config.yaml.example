@@ -1,0 +1,126 @@
+logging:
+  #outputLevel: "info"
+  #outputStderr: false
+
+  #filePath: "explorer.log"
+  #fileLevel: "warn"
+
+# Chain network configuration
+chain:
+  displayName: "__NETWORK"
+
+# HTTP Server configuration
+server:
+  host: "__IP" # Address to listen on
+  port: "8080" # Port to listen on
+
+frontend:
+  enabled: true # Enable or disable to web frontend
+  debug: false
+  minimize: false # minimize html templates
+
+  # Name of the site, displayed in the title tag
+  siteName: "Dora the Explorer Self-Hosted"
+  siteSubtitle: "Powered by EthPillar"
+
+  # link to EL Explorer
+  ethExplorerLink: ""
+
+  # file or inventory url to load validator names from
+  validatorNamesYaml: ""
+  validatorNamesInventory: ""
+
+  # frontend features
+  showSensitivePeerInfos: true
+  showPeerDASInfos: true
+  showSubmitDeposit: true
+  showSubmitElRequests: true
+  publicRpcUrl: "http://localhost:8545"    # Use ssh tunnel if not accessible. command: ssh <VPS OR NODE IP> -L 8545:localhost:8545 # or use a publicRPC
+  rainbowkitProjectId: "***"   # Get one from https://cloud.reown.com/, it's free, but still works without?
+
+beaconapi:
+  # beacon node rpc endpoints
+  endpoints:
+    - name: "local"
+      url: "http://127.0.0.1:5052"
+
+  # local cache for page models
+  localCacheSize: 100 # 100MB
+
+  # remote cache for page models
+  redisCacheAddr: ""
+  redisCachePrefix: ""
+
+executionapi:
+  # execution node rpc endpoints
+  endpoints:
+    - name: "local"
+      url: "http://127.0.0.1:8545"
+
+  logBatchSize: 1000
+  depositDeployBlock: 0 # el block number from where to crawl the deposit contract (should be <=, but close to the deposit contract deployment block)
+  electraDeployBlock: 0 # el block number from where to crawl the electra system contracts (should be <=, but close to electra fork activation block)
+
+# indexer keeps track of the latest epochs in memory.
+indexer:
+  # max number of epochs to keep in memory
+  inMemoryEpochs: 1
+
+  # number of epochs to keep validator activity history for (high memory usage for large validator sets)
+  activityHistoryLength: 0
+
+  # disable synchronizing historic data
+  disableSynchronizer: false
+
+  # reset synchronization state to this epoch on startup - only use to resync database, comment out afterwards
+  #resyncFromEpoch: 0
+
+  # force re-synchronization of epochs that are already present in DB - only use to fix missing data after schema upgrades
+  #resyncForceUpdate: true
+
+  # number of seconds to pause the synchronization between each epoch (don't overload CL client)
+  syncEpochCooldown: 2
+
+  # maximum number of parallel beacon state requests (might cause high memory usage)
+  maxParallelValidatorSetRequests: 1
+
+# database configuration
+database:
+  engine: "sqlite" # sqlite / pgsql
+
+  # sqlite settings (only used if engine is sqlite)
+  sqlite:
+    file: "./explorer-db.sqlite"
+
+  # pgsql settings (only used if engine is pgsql)
+  pgsql:
+    host: "127.0.0.1"
+    port: 5432
+    user: ""
+    password: ""
+    name: ""
+  pgsqlWriter: # optional separate writer connection (used for replication setups)
+    host: ""
+    port: 5432
+    user: ""
+    password: ""
+    name: ""
+
+# separate block db for storing block bodies (no archive beacon node required)
+blockDb:
+  engine: "none" # pebble / s3 / none (disable block db)
+
+  # pebble settings (only used if engine is set to pebble)
+  pebble:
+    path: "./tmp-blockdb.peb"
+    cacheSize: 100 # 100MB
+
+  # s3 settings (only used if engine is set to s3)
+  s3:
+    bucket: ""
+    endpoint: ""
+    secure: false
+    region: ""
+    accessKey: ""
+    secretKey: ""
+    path: "" # path prefix
