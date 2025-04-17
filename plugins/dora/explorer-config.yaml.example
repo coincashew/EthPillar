@@ -70,7 +70,7 @@ indexer:
   activityHistoryLength: 0
 
   # disable synchronizing historic data
-  disableSynchronizer: false
+  disableSynchronizer: true
 
   # reset synchronization state to this epoch on startup - only use to resync database, comment out afterwards
   #resyncFromEpoch: 0
