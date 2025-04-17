@@ -26,7 +26,7 @@ function uninstallPlugins(){
 		sudo systemctl disable csm_nimbusvalidator
 		sudo rm /etc/systemd/system/csm_nimbusvalidator.service
 		sudo userdel csm_nimbus_validator
-		sudo rm -rf /opt/ethpillar/plugin-csm;
+		sudo rm -rf /opt/ethpillar/plugin-csm
 	fi
 	if [[ -d /opt/ethpillar/plugin-sentinel ]]; then
 		sudo docker stop csm-sentinel
@@ -34,6 +34,13 @@ function uninstallPlugins(){
 		sudo docker rmi csm-sentinel
 		sudo docker volume rm csm-sentinel-persistent
 		sudo rm -rf /opt/ethpillar/plugin-sentinel
+	fi
+	if [[ -d /opt/ethpillar/plugin-dora ]]; then
+		sudo systemctl stop dora
+		sudo systemctl disable dora
+		sudo rm /etc/systemd/system/dora.service
+		sudo userdel dora
+		sudo rm -rf /opt/ethpillar/plugin-dora
 	fi
 }
 

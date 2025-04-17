@@ -1,0 +1,17 @@
+[Unit]
+Description=Dora Lightweight Beaconchain Explorer
+Wants=network-online.target
+After=network-online.target
+Documentation=http://eth.coincashew.com
+
+[Service]
+User=dora
+Group=dora
+Type=simple
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/opt/ethpillar/plugin-dora
+ExecStart=/opt/ethpillar/plugin-dora/dora-explorer -config=/opt/ethpillar/plugin-dora/explorer-config.yaml
+
+[Install]
+WantedBy=multi-user.target
