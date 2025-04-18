@@ -40,7 +40,7 @@ if ! whiptail --title "CSM Sentinel: Running your own instance" --yesno "$MSG_AB
 _NETWORK=$(whiptail --title "Set Network" --menu \
       "For which network are you running CSM Sentinel?" 10 78 2 \
       "mainnet" "ethereum" \
-      "holesky" "testnet" \
+      "hoodi" "testnet" \
       3>&1 1>&2 2>&3)
 
 MSG_TOKEN="First, you need to create a bot on Telegram.
@@ -121,13 +121,13 @@ cat << EOF > /opt/ethpillar/plugin-sentinel/csm-sentinel/.env
 FILESTORAGE_PATH=.storage
 TOKEN=${_TOKEN}
 WEB3_SOCKET_PROVIDER=${_WEB3_SOCKET_PROVIDER}
-CSM_ADDRESS=0x4562c3e63c2e586cD1651B958C22F88135aCAd4f
-ACCOUNTING_ADDRESS=0xc093e53e8F4b55A223c18A2Da6fA00e60DD5EFE1
-FEE_DISTRIBUTOR_ADDRESS=0xD7ba648C8F72669C6aE649648B516ec03D07c8ED
-VEBO_ADDRESS=0xffDDF7025410412deaa05E3E1cE68FE53208afcb
+CSM_ADDRESS=0x79CEf36D84743222f37765204Bec41E92a93E59d
+ACCOUNTING_ADDRESS=0xA54b90BA34C5f326BC1485054080994e38FB4C60
+FEE_DISTRIBUTOR_ADDRESS=0xaCd9820b0A2229a82dc1A0770307ce5522FF3582
+VEBO_ADDRESS=0x8664d394C2B3278F26A1B44B967aEf99707eeAB2
 CSM_STAKING_MODULE_ID=4
-ETHERSCAN_URL=https://holesky.etherscan.io
-BEACONCHAIN_URL=https://holesky.beaconcha.in
+ETHERSCAN_URL=https://hoodi.etherscan.io
+BEACONCHAIN_URL=https://hoodi.beaconcha.in
 CSM_UI_URL=https://csm.testnet.fi/?ref=ethpillar
 EOF
       ;;
