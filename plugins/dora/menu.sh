@@ -47,9 +47,11 @@ while true; do
         ;;
       2)
         sudo systemctl start dora
+        sudo systemctl enable dora
         ;;
       3)
         sudo systemctl stop dora
+        sudo systemctl disable dora
         ;;
       4)
         sudo systemctl restart dora
