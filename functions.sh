@@ -514,8 +514,9 @@ addSwapfile(){
         echo "Lower RAM Swappiness to 10"
         # Temporarily change the swappiness value
         sudo sysctl vm.swappiness=10
-        # Make the change permanent
-        sudo bash -c 'echo "vm.swappiness = 10" >> /etc/sysctl.conf'
+        # Make the change permanent using sysctl.d
+        sudo mkdir -p /etc/sysctl.d
+        echo "vm.swappiness = 10" | sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null
     else
         echo "Swap is already enabled."
     fi
@@ -535,7 +536,7 @@ generateVoluntaryExitMessage(){
     echo "1) A path to the directory containing your keystore-m_####.json file(s)"
     echo "2) The keystore's passphrase"
     echo ""
-    echo "Note: “passphrase” is NOT your mnemonic or secret recovery phrase!"
+    ohai "Note: “passphrase” is NOT your mnemonic or secret recovery phrase!"
     echo ""
     ohai "Result of this operation:"
     echo "- One VEM file (e.g. exit_validator_index_#.json) per validator is generated."
