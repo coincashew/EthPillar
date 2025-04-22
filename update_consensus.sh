@@ -52,8 +52,8 @@ function getLatestVersion(){
 		CHANGES_URL="https://github.com/status-im/nimbus-eth2/releases"
 		;;
 	  Prysm)
-	    TAG_URL="https://api.github.com/repos/prysmaticlabs/prysm/releases/latest"
-	    CHANGES_URL="https://github.com/prysmaticlabs/prysm/releases"
+	    TAG_URL="https://api.github.com/repos/OffchainLabs/prysm/releases/latest"
+	    CHANGES_URL="https://github.com/OffchainLabs/prysm/releases"
 	    ;;
 	  *)
 		echo "ERROR: Unable to determine client."
