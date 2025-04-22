@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Create service account for client-stats service
+sudo useradd --no-create-home --shell /bin/false prysm
+
 # Copy the service file to systemd directory
 sudo cp client-stats.service /etc/systemd/system/
 
