@@ -13,6 +13,9 @@
 
 set -e
 
+# Enable 2fa only if ssh keys are present
+[[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
+
 # Check if the user is root
 if [[ $EUID -ne 0 ]]; then
   echo "This script must be run as root. Please use sudo."
@@ -31,9 +34,6 @@ echo "* ⚠️ Critical Note: Always test 2FA in a parallel session to avoid acc
 echo ""
 
 function install(){
-# Install 2fa only if ssh keys are present
-[[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
-
 echo "Do you wish to install? [y|n]"
 read -rsn1 yn
 [[ ! ${yn} = [Yy]* ]] && exit 0
@@ -46,6 +46,10 @@ apt-get update -qq && apt-get install -y libpam-google-authenticator
 echo "🔐 Generating 2FA credentials..."
 google-authenticator -C -t -d -f -r 3 -R 30 -w 3
 
+# Create SSH config directory if it doesn't exist
+echo "🔧 Creating SSH config directory..."
+mkdir -p /etc/ssh/sshd_config.d
+
 # Backup original PAM config
 cp /etc/pam.d/sshd /etc/pam.d/sshd.bak
 
@@ -53,12 +57,14 @@ cp /etc/pam.d/sshd /etc/pam.d/sshd.bak
 echo "📝 Configuring PAM..."
 echo "auth required pam_google_authenticator.so" >> /etc/pam.d/sshd
 sed -i 's/^@include common-auth/#@include common-auth/' /etc/pam.d/sshd
+echo "📝 PAM configuration saved to /etc/pam.d/sshd"
 
 # Configure SSH
-echo "🔧 Modifying SSH configuration..."
-sed -i 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/^#*UsePAM.*/UsePAM yes/' /etc/ssh/sshd_config
-echo 'AuthenticationMethods publickey,keyboard-interactive' >> /etc/ssh/sshd_config
+echo "🔧 Creating custom SSH configuration..."
+echo "ChallengeResponseAuthentication yes
+UsePAM yes
+AuthenticationMethods publickey,keyboard-interactive" > /etc/ssh/sshd_config.d/two-factor.conf
+echo "🔧 SSH configuration saved to /etc/ssh/sshd_config.d/two-factor.conf"
 
 # Restart SSH service
 echo "🔄 Restarting SSH service..."
@@ -87,10 +93,9 @@ else
     sed -i 's/^#@include common-auth/@include common-auth/' /etc/pam.d/sshd
 fi
 
-# Revert SSH config changes
-echo "🔙 Reverting SSH configuration..."
-sed -i 's/^ChallengeResponseAuthentication yes/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
-sed -i '/AuthenticationMethods publickey,keyboard-interactive/d' /etc/ssh/sshd_config
+# Remove custom SSH config
+echo "🔙 Removing custom SSH configuration..."
+rm -f /etc/ssh/sshd_config.d/two-factor.conf
 
 # Restart SSH service
 echo "🔄 Restarting SSH service..."
@@ -101,7 +106,7 @@ echo -e "\n✅ 2FA disabled. Test connection before closing this session!"
 
 # Check for 2FA installation and offer to uninstall, otherwise install.
 if grep -q --ignore-case -oE "pam_google_authenticator.so" /etc/pam.d/sshd || \
-   grep -q --ignore-case -oE "ChallengeResponseAuthentication yes" /etc/ssh/sshd_config; then
+   [ -f /etc/ssh/sshd_config.d/two-factor.conf ]; then
     uninstall
 else
     install

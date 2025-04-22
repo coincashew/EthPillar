@@ -46,18 +46,18 @@ apt update && apt install -y fail2ban
 
 # Create config file
 config_path="/etc/fail2ban/jail.local"
-echo " 
-[sshd]
+echo "[sshd]
 enabled = true
-port = 22
+port = $new_port
 filter = sshd
 logpath = /var/log/auth.log
-maxretry = 3
-" >$config_path
+maxretry = 3" > $config_path
 
-# Configure fail2ban to use the new SSH port
-echo "Configuring fail2ban for port $new_port..."
-sed -i "s/port = 22/port = $new_port/" $config_path
+# Create SSH config directory if it doesn't exist
+mkdir -p /etc/ssh/sshd_config.d
+
+# Configure SSH port in a separate config file
+echo "Port $new_port" > /etc/ssh/sshd_config.d/port.conf
 
 # Start fail2ban service
 echo "Starting fail2ban service..."
@@ -66,6 +66,9 @@ systemctl start fail2ban
 # Enable fail2ban service to start on boot
 echo "Enabling fail2ban to start on boot..."
 systemctl enable fail2ban
+
+# Restart SSH service to apply port change
+systemctl restart ssh
 
 # Display success message
 echo "SUCCESS: Fail2ban installation complete. SSH port set to $new_port."
