@@ -1,0 +1,22 @@
+[Unit]
+Description=Prysm Client Stats
+Wants=network-online.target
+After=network-online.target
+Requires=validator.service
+
+[Service]
+Type=simple
+User=prysm
+Group=prysm
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=900
+ExecStart=/usr/local/bin/client-stats \
+  --beacon-node-metrics-url=http://localhost:8080/metrics \
+  --validator-metrics-url=http://localhost:8081/metrics \
+  --clientstats-api-url=https://beaconcha.in/api/v1/stats/<YOUR_BEACONCHA.IN_API-KEY>/<YOUR_VALIDATOR_NAME> \
+  --scrape-interval 3m
+
+[Install]
+WantedBy=multi-user.target
