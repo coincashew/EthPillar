@@ -159,16 +159,24 @@ function updateClient(){
 		_platform=$(echo ${_platform} | tr '[:upper:]' '[:lower:]')
 		file_beacon=beacon-chain-${prysm_version}-${_platform}-${_arch}
 		file_validator=validator-${prysm_version}-${_platform}-${_arch}
+		file_client_stats=client-stats-${prysm_version}-${_platform}-${_arch}
+		file_prysmctl=prysmctl-${prysm_version}-${_platform}-${_arch}
 		curl -f -L "https://prysmaticlabs.com/releases/${file_beacon}" -o beacon-chain
 		curl -f -L "https://prysmaticlabs.com/releases/${file_validator}" -o validator
-		chmod +x beacon-chain validator
+		curl -f -L "https://prysmaticlabs.com/releases/${file_client_stats}" -o client-stats
+		curl -f -L "https://prysmaticlabs.com/releases/${file_prysmctl}" -o prysmctl
+		chmod +x beacon-chain validator client-stats prysmctl
 		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
+		test -f /etc/systemd/system/prysm-stats.service && sudo systemctl stop client-stats
 		sudo rm /usr/local/bin/beacon-chain
 		sudo rm /usr/local/bin/validator
-		sudo mv beacon-chain validator /usr/local/bin
-		test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
-		test -f /etc/systemd/system/validator.service && sudo service validator start
+		sudo rm /usr/local/bin/client-stats
+		sudo rm /usr/local/bin/prysmctl
+		sudo mv beacon-chain validator client-stats prysmctl /usr/local/bin
+        test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
+        test -f /etc/systemd/system/validator.service && sudo systemctl start validator
+		test -f /etc/systemd/system/prysm-stats.service && sudo systemctl start client-stats
 	    ;;
 	  esac
 }
