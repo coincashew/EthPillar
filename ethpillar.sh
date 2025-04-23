@@ -1377,6 +1377,13 @@ function applyPatches(){
   if ! grep -q "cat.*motd" ~/.profile; then
       echo "cat ~/git/ethpillar/motd" >> ~/.profile
   fi
+  # Fix terminal formatting with locale
+  current_locale=$(locale | grep '^LANG=' | awk -F= '{print $2}')
+  if [[ ! -f /opt/ethpillar/patches/002-locale.completed ]] && [[ ! "$current_locale" == *"UTF"* ]]; then
+    if whiptail --title "New Patch Available - Set locale to fix terminal, missing emojis" --yesno "Would you like to apply patch 2?\n\nMore info: https://github.com/coincashew/EthPillar/issues/73" 9 78; then
+      runScript patches/002-locale.sh
+    fi
+  fi
 }
 
 # Determine node configuration
