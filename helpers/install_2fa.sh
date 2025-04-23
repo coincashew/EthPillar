@@ -13,9 +13,6 @@
 
 set -e
 
-# Enable 2fa only if ssh keys are present
-[[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
-
 # Check if the user is root
 if [[ $EUID -ne 0 ]]; then
   echo "This script must be run as root. Please use sudo."

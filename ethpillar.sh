@@ -1291,6 +1291,8 @@ while true; do
         sudo bash -c './helpers/install_unattendedupgrades.sh'
         ;;
       🔒)
+        # Enable 2fa only if ssh keys are present, check current user
+        [[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
         sudo bash -c './helpers/install_2fa.sh'
         ;;
       99)
