@@ -168,7 +168,7 @@ function updateClient(){
 		chmod +x beacon-chain validator client-stats prysmctl
 		test -f /etc/systemd/system/consensus.service && sudo systemctl stop consensus
 		test -f /etc/systemd/system/validator.service && sudo service validator stop
-		test -f /etc/systemd/system/prysm-stats.service && sudo systemctl stop client-stats
+		test -f /etc/systemd/system/client-stats.service && sudo systemctl stop client-stats
 		sudo rm /usr/local/bin/beacon-chain
 		sudo rm /usr/local/bin/validator
 		sudo rm /usr/local/bin/client-stats
@@ -176,7 +176,7 @@ function updateClient(){
 		sudo mv beacon-chain validator client-stats prysmctl /usr/local/bin
         test -f /etc/systemd/system/consensus.service && sudo systemctl start consensus
         test -f /etc/systemd/system/validator.service && sudo systemctl start validator
-		test -f /etc/systemd/system/prysm-stats.service && sudo systemctl start client-stats
+		test -f /etc/systemd/system/client-stats.service && sudo systemctl start client-stats
 	    ;;
 	  esac
 }
