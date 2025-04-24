@@ -13,12 +13,6 @@
 
 set -e
 
-# Check if the user is root
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root. Please use sudo."
-  exit 1
-fi
-
 clear
 echo "########################################################################################"
 echo "2FA: Secure your SSH access with two-factor authentication"
@@ -37,7 +31,7 @@ read -rsn1 yn
 
 # Install required package
 echo "🔧 Installing libpam-google-authenticator..."
-apt-get update -qq && apt-get install -y libpam-google-authenticator
+sudo apt-get update -qq && sudo apt-get install -y libpam-google-authenticator
 
 # Generate Google Authenticator credentials
 echo "🔐 Generating 2FA credentials..."
@@ -45,27 +39,27 @@ google-authenticator -C -t -d -f -r 3 -R 30 -w 3
 
 # Create SSH config directory if it doesn't exist
 echo "🔧 Creating SSH config directory..."
-mkdir -p /etc/ssh/sshd_config.d
+sudo mkdir -p /etc/ssh/sshd_config.d
 
 # Backup original PAM config
-cp /etc/pam.d/sshd /etc/pam.d/sshd.bak
+sudo cp /etc/pam.d/sshd /etc/pam.d/sshd.bak
 
 # Configure PAM
 echo "📝 Configuring PAM..."
-echo "auth required pam_google_authenticator.so" >> /etc/pam.d/sshd
-sed -i 's/^@include common-auth/#@include common-auth/' /etc/pam.d/sshd
+sudo sh -c 'echo "auth required pam_google_authenticator.so" >> /etc/pam.d/sshd'
+sudo sh -c 'sed -i "s/^@include common-auth/#@include common-auth/" /etc/pam.d/sshd'
 echo "📝 PAM configuration saved to /etc/pam.d/sshd"
 
 # Configure SSH
 echo "🔧 Creating custom SSH configuration..."
 echo "ChallengeResponseAuthentication yes
 UsePAM yes
-AuthenticationMethods publickey,keyboard-interactive" > /etc/ssh/sshd_config.d/two-factor.conf
+AuthenticationMethods publickey,keyboard-interactive" | sudo tee /etc/ssh/sshd_config.d/two-factor.conf
 echo "🔧 SSH configuration saved to /etc/ssh/sshd_config.d/two-factor.conf"
 
 # Restart SSH service
 echo "🔄 Restarting SSH service..."
-systemctl restart ssh
+sudo systemctl restart ssh
 
 echo -e "\n✅ Setup complete! Scan the QR code above with your 2FA app (i.e. Aegis, Google Authenticator)"
 echo "⚠️  IMPORTANT: Keep your backup codes safe!"
@@ -83,20 +77,20 @@ echo
 # Restore original PAM config
 if [ -f /etc/pam.d/sshd.bak ]; then
     echo "🔙 Restoring PAM configuration..."
-    mv /etc/pam.d/sshd.bak /etc/pam.d/sshd
+    sudo mv /etc/pam.d/sshd.bak /etc/pam.d/sshd
 else
     echo "🔧 Removing 2FA from PAM..."
-    sed -i '/pam_google_authenticator.so/d' /etc/pam.d/sshd
-    sed -i 's/^#@include common-auth/@include common-auth/' /etc/pam.d/sshd
+    sudo sh -c 'sed -i "/pam_google_authenticator.so/d" /etc/pam.d/sshd'
+    sudo sh -c 'sed -i "s/^#@include common-auth/@include common-auth/" /etc/pam.d/sshd'
 fi
 
 # Remove custom SSH config
 echo "🔙 Removing custom SSH configuration..."
-rm -f /etc/ssh/sshd_config.d/two-factor.conf
+sudo rm -f /etc/ssh/sshd_config.d/two-factor.conf
 
 # Restart SSH service
 echo "🔄 Restarting SSH service..."
-systemctl restart ssh
+sudo systemctl restart ssh
 
 echo -e "\n✅ 2FA disabled. Test connection before closing this session!"
 }
