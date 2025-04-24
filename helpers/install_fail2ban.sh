@@ -25,17 +25,16 @@ echo "Key Points:"
 echo "* Monitors log files for suspicious activity (repeated login failures, brute force attacks)"
 echo "* Fail2Ban automatically blocks malicious IPs"
 echo ""
-echo "Do you wish to install? [y|n]"
-read -rsn1 yn
+read -rp "Do you wish to install? [y|n]" yn
 if [[ ! ${yn} = [Yy]* ]]; then
     exit 0
 fi
 
 # Prompt user to change SSH port
-read -p "Do you want to change the SSH port? [y/n] " change_port
+read -rp "Do you want to change the SSH port? [y/n] " change_port
 
 if [[ "$change_port" == "y" ]]; then
-  read -p "Enter the new SSH port: " new_port
+  read -rp "Enter the new SSH port: " new_port
 else
   new_port="22"
 fi
@@ -53,12 +52,6 @@ filter = sshd
 logpath = /var/log/auth.log
 maxretry = 3" > $config_path
 
-# Create SSH config directory if it doesn't exist
-mkdir -p /etc/ssh/sshd_config.d
-
-# Configure SSH port in a separate config file
-echo "Port $new_port" > /etc/ssh/sshd_config.d/port.conf
-
 # Start fail2ban service
 echo "Starting fail2ban service..."
 systemctl start fail2ban
@@ -66,9 +59,6 @@ systemctl start fail2ban
 # Enable fail2ban service to start on boot
 echo "Enabling fail2ban to start on boot..."
 systemctl enable fail2ban
-
-# Restart SSH service to apply port change
-systemctl restart ssh
 
 # Display success message
 echo "SUCCESS: Fail2ban installation complete. SSH port set to $new_port."
