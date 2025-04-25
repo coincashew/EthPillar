@@ -74,7 +74,7 @@ Consensus metrics on port 8008, validator metrics on port 8009
 if ! whiptail --title "$APP_NAME: Installation" --yesno "$MSG_ABOUT" 30 78; then exit; fi
 
 # Get API_KEY
-APIKEY=$(whiptail --title "Machine Name?" --inputbox "Enter your beaconcha.in API-KEY:" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+APIKEY=$(whiptail --title "API-KEY" --inputbox "Enter your beaconcha.in API-KEY" 10 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
 
 # Get MACHINE_NAME
 HOSTNAME=$(hostname)
