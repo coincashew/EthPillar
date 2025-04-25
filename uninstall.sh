@@ -42,6 +42,13 @@ function uninstallPlugins(){
 		sudo userdel dora
 		sudo rm -rf /opt/ethpillar/plugin-dora
 	fi
+	if [[ -d /opt/ethpillar/plugin-client-stats ]]; then
+		sudo systemctl stop client-stats
+		sudo systemctl disable client-stats
+		sudo rm /etc/systemd/system/client-stats.service
+		sudo userdel client-stats
+		sudo rm -rf /opt/ethpillar/plugin-client-stats
+	fi
 }
 
 function cleanupMisc(){
@@ -59,6 +66,7 @@ function cleanupMisc(){
 	if [[ -f /usr/local/bin/ethdo ]]; then sudo rm /usr/local/bin/ethdo; fi
 	if [[ -f $BASE_DIR/.env.overrides ]]; then sudo rm $BASE_DIR/.env.overrides; fi
 	if [[ -d /opt/ethpillar/testnet ]]; then sudo rm -rf /opt/ethpillar/testnet; fi
+	if [[ -d /opt/ethpillar/patches ]]; then sudo rm -rf /opt/ethpillar/patches; fi
 }
 
 function uninstallCL(){
