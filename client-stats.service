@@ -12,9 +12,11 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
+EnvironmentFile=/home/prysm/git/ethpillar/env
+EnvironmentFile=/home/prysm/git/ethpillar/.env.overrides
 ExecStart=/usr/local/bin/client-stats \
-  --beacon-node-metrics-url=http://localhost:8008/metrics \
-  --validator-metrics-url=http://localhost:8009/metrics \
+  --beacon-node-metrics-url=http://localhost:${CL_METRICS_PORT}/metrics \
+  --validator-metrics-url=http://localhost:${VC_METRICS_PORT}/metrics \
   --clientstats-api-url=https://beaconcha.in/api/v1/stats/<YOUR_BEACONCHA.IN_API-KEY>/<YOUR_VALIDATOR_NAME> \
   --scrape-interval 3m
 
