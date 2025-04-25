@@ -50,25 +50,25 @@ if [[ $cols -lt 81 ]]; then
    if [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ -f /etc/systemd/system/validator.service ]]; then
       # Solo Staking Node
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
+           send-keys 'journalctl -fu consensus --no-hostname --no-hostname | ccze -A' C-m \; \
            split-window -v \; \
-           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
+           send-keys 'journalctl -fu validator --no-hostname | ccze -A' C-m \; \
            select-pane -t 0 \; \
            split-window -v \; \
-           send-keys 'journalctl -fu execution | ccze -A' C-m \; \
+           send-keys 'journalctl -fu execution --no-hostname | ccze -A' C-m \; \
            select-layout even-vertical \;
    elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
       # Full Node Only
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
+           send-keys 'journalctl -fu consensus --no-hostname | ccze -A' C-m \; \
            split-window -h \; \
            select-pane -t 1 \; \
-           send-keys 'journalctl -fu execution | ccze -A' C-m \; \
+           send-keys 'journalctl -fu execution --no-hostname | ccze -A' C-m \; \
            select-layout even-vertical \;
    elif [[ -f /etc/systemd/system/validator.service ]]; then
       # Validator Client Only
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
+           send-keys 'journalctl -fu validator --no-hostname | ccze -A' C-m \; \
            split-window -h \; \
            select-pane -t 1 \; \
            send-keys 'btop --utf-force' C-m \; \
@@ -79,27 +79,27 @@ else
    if [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ -f /etc/systemd/system/validator.service ]]; then
       # Solo Staking Node
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
+           send-keys 'journalctl -fu consensus --no-hostname | ccze -A' C-m \; \
            split-window -h \; \
            send-keys 'btop --utf-force' C-m \; \
            split-window -v \; \
-           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
+           send-keys 'journalctl -fu validator --no-hostname | ccze -A' C-m \; \
            select-pane -t 0 \; \
            split-window -v \; \
-           send-keys 'journalctl -fu execution | ccze -A' C-m \;
+           send-keys 'journalctl -fu execution --no-hostname | ccze -A' C-m \;
    elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
       # Full Node Only
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu consensus | ccze -A' C-m \; \
+           send-keys 'journalctl -fu consensus --no-hostname | ccze -A' C-m \; \
            split-window -v \; \
            split-window -h \; \
            send-keys 'btop --utf-force' C-m \; \
            select-pane -t 1 \; \
-           send-keys 'journalctl -fu execution | ccze -A' C-m \;
+           send-keys 'journalctl -fu execution --no-hostname | ccze -A' C-m \;
    elif [[ -f /etc/systemd/system/validator.service ]]; then
       # Validator Client Only
       tmux new-session -d -s logs \; \
-           send-keys 'journalctl -fu validator | ccze -A' C-m \; \
+           send-keys 'journalctl -fu validator --no-hostname | ccze -A' C-m \; \
            split-window -h \; \
            select-pane -t 1 \; \
            send-keys 'btop --utf-force' C-m \; \
