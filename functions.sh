@@ -217,6 +217,7 @@ getNetwork(){
 
 # Gets software version from binary
 getCurrentVersion(){
+    VERSION="NotInstalled"
     case "$CLIENT" in
       Lighthouse)
         VERSION=$(/usr/local/bin/lighthouse --version | head -1 | grep -oE "v[0-9]+.[0-9]+.[0-9]+")
