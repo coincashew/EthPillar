@@ -1,0 +1,22 @@
+[Unit]
+Description=Prysm Client Stats: Collects metrics from your validator or beacon node processes and push them to the beaconcha.in stats service
+Wants=network-online.target
+After=network-online.target
+Requires=validator.service
+
+[Service]
+Type=simple
+User=client-stats
+Group=client-stats
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=900
+ExecStart=/opt/ethpillar/plugin-client-stats/client-stats \
+  --beacon-node-metrics-url=http://localhost:8008/metrics \
+  --validator-metrics-url=http://localhost:8009/metrics \
+  --clientstats-api-url=https://beaconcha.in/api/v1/stats/__APIKEY/__MACHINE_NAME \
+  --scrape-interval 3m
+
+[Install]
+WantedBy=multi-user.target

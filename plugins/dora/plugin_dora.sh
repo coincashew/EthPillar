@@ -33,6 +33,8 @@ _arch=$(get_arch)
 # Gets latest tag
 function getLatestVersion(){
   TAG=$(curl -s $RELEASE_URL | jq -r .tag_name )
+  # Exit in case of null tag
+  [[ -z $TAG ]] || [[ $TAG == "null"  ]] && echo "ERROR: Couldn't find the latest version tag" && exit 1
 }
 
 # Downloads latest release
