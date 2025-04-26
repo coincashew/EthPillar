@@ -43,7 +43,7 @@ menuMain(){
 
 # Define the options for the main menu
 OPTIONS=(
-  1 "View Logs (Exit: CTRL+B D)"
+  📈 "Logging & Monitoring"
   - ""
 )
 test -f /etc/systemd/system/execution.service && OPTIONS+=(2 "Execution Client")
@@ -79,8 +79,8 @@ while true; do
 
     # Handle the user's choice
     case $CHOICE in
-      1)
-        runScript view_logs.sh
+      📈)
+        submenuLogsMonitoring
         ;;
       2)
         submenuExecution
@@ -128,6 +128,55 @@ while true; do
         submenuPlugins
         ;;
       99)
+        break
+        ;;
+    esac
+done
+}
+
+submenuLogsMonitoring(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      📊 "View Log Dashboard: Maximize window, see all. To exit, press CTRL+B D"
+      🔍 "View Rolling Consolidated Logs: All logs in one screen"
+      📜 "Export logs: Save logs to disk for further analysis or sharing"
+      🚨 "Monitoring: Observe Ethereum Metrics. Explore Dashboards. Grafana. Alerts."
+      - ""
+      ❎ "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Logging & Monitoring" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      📊)
+        runScript view_logs.sh
+        ;;
+      🔍)
+        sudo bash -c 'journalctl -u validator -u consensus -u execution -u mevboost -u csm_nimbusvalidator --no-hostname -f | ccze -A'
+        ;;
+      📜)
+        export_logs
+        ;;
+      🚨)
+        # Install monitoring if not installed
+        [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]] && runScript ethereum-metrics-exporter.sh -i
+        submenuMonitoring
+        ;;
+      ❎)
         break
         ;;
     esac
@@ -448,7 +497,6 @@ while true; do
       4 "View software versions"
       5 "View cpu/ram/disk/net (btop)"
       6 "View general node information"
-      7 "Export logs: Save logs to disk"
       - ""
       10 "Update EthPillar"
       11 "About EthPillar"
@@ -507,9 +555,6 @@ while true; do
       ;;
       6)
         print_node_info
-      ;;
-      7)
-        export_logs
       ;;
       10)
         cd $BASE_DIR ; git fetch origin main ; git checkout main ; git pull --ff-only ; git reset --hard ; git clean -xdf
@@ -1227,13 +1272,7 @@ while true; do
         ;;
       2)
         # Install monitoring if not yet installed
-        if [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]]; then
-          if whiptail --title "Install Monitoring" --yesno "Do you want to install Monitoring?\nIncludes: Ethereum Metrics Exporter, grafana, prometheus" 8 78; then
-            runScript ethereum-metrics-exporter.sh -i
-          else
-            break
-          fi
-        fi
+        [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]] && runScript ethereum-metrics-exporter.sh -i
         submenuMonitoring
         ;;
       3)
