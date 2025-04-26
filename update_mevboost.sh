@@ -43,6 +43,8 @@ function getLatestVersion(){
     TAG_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
 	#Get tag name and remove leading 'v'
 	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+	# Exit in case of null tag
+	[[ -z $TAG ]] || [[ $TAG == "null"  ]] && echo "ERROR: Couldn't find the latest version tag" && exit 1
 	CHANGES_URL="https://github.com/flashbots/mev-boost/releases"
 }
 

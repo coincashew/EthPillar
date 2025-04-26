@@ -1154,6 +1154,7 @@ while true; do
       1 "Lido CSM Validator: Activate an extra validator service. Re-use this node's EL/CL."
       2 "CSM-Sentinel: Sends notifications for your CSM Node Operator ID. Self-hosted. Docker. Telegram."
       🔎 "Dora the Explorer: lightweight beaconchain explorer. validator actions. self-hosted. private."
+      🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
       - ""
       99 "Back to main menu"
     )
@@ -1194,6 +1195,13 @@ while true; do
             runScript plugins/dora/plugin_dora.sh -i
         fi
         runScript plugins/dora/menu.sh
+        ;;
+      🌈)
+        export BACKTITLE EDITOR
+        if [[ ! -d /opt/ethpillar/plugin-client-stats ]]; then
+            runScript plugins/client-stats/plugin_client_stats.sh -i
+        fi
+        runScript plugins/client-stats/menu.sh
         ;;
       99)
         break
