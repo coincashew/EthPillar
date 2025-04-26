@@ -58,6 +58,8 @@ CL_P2P_PORT=os.getenv('CL_P2P_PORT')
 CL_REST_PORT=os.getenv('CL_REST_PORT')
 CL_MAX_PEER_COUNT=os.getenv('CL_MAX_PEER_COUNT')
 CL_IP_ADDRESS=os.getenv('CL_IP_ADDRESS')
+CL_METRICS_PORT=os.getenv('CL_METRICS_PORT')
+VC_METRICS_PORT=os.getenv('VC_METRICS_PORT')
 JWTSECRET_PATH=os.getenv('JWTSECRET_PATH')
 GRAFFITI=os.getenv('GRAFFITI')
 FEE_RECIPIENT_ADDRESS=os.getenv('FEE_RECIPIENT_ADDRESS')
@@ -633,7 +635,7 @@ KillSignal=SIGINT
 TimeoutStopSec=900
 Environment=JAVA_OPTS=-Xmx6g
 Environment=TEKU_OPTS=-XX:-HeapDumpOnOutOfMemoryError
-ExecStart=/usr/local/bin/teku/bin/teku --network={eth_network} --data-path=/var/lib/teku --data-storage-mode=minimal --checkpoint-sync-url={sync_url} --ee-endpoint=http://127.0.0.1:8551 --ee-jwt-secret-file={JWTSECRET_PATH} --rest-api-enabled=true --rest-api-port={CL_REST_PORT} --p2p-port={CL_P2P_PORT} --p2p-peer-upper-bound={CL_MAX_PEER_COUNT} --metrics-enabled=true --metrics-port=8008 {_feeparameters} {_mevparameters}
+ExecStart=/usr/local/bin/teku/bin/teku --network={eth_network} --data-path=/var/lib/teku --data-storage-mode=minimal --checkpoint-sync-url={sync_url} --ee-endpoint=http://127.0.0.1:8551 --ee-jwt-secret-file={JWTSECRET_PATH} --rest-api-enabled=true --rest-api-port={CL_REST_PORT} --p2p-port={CL_P2P_PORT} --p2p-peer-upper-bound={CL_MAX_PEER_COUNT} --metrics-enabled=true --metrics-port={CL_METRICS_PORT} {_feeparameters} {_mevparameters}
 
 [Install]
 WantedBy=multi-user.target
@@ -685,7 +687,7 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
-ExecStart=/usr/local/bin/teku/bin/teku validator-client --network={eth_network} --data-path=/var/lib/teku_validator --validator-keys=/var/lib/teku_validator/validator_keys:/var/lib/teku_validator/validator_keys --metrics-enabled=true --metrics-port=8009 --validators-graffiti={GRAFFITI} {_beaconnodeparameters} {_feeparameters} {_mevparameters}
+ExecStart=/usr/local/bin/teku/bin/teku validator-client --network={eth_network} --data-path=/var/lib/teku_validator --validator-keys=/var/lib/teku_validator/validator_keys:/var/lib/teku_validator/validator_keys --metrics-enabled=true --metrics-port={VC_METRICS_PORT} --validators-graffiti={GRAFFITI} {_beaconnodeparameters} {_feeparameters} {_mevparameters}
 
 [Install]
 WantedBy=multi-user.target

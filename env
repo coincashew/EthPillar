@@ -13,6 +13,8 @@ CL_P2P_PORT=9000
 CL_REST_PORT=5052
 CL_MAX_PEER_COUNT=100
 CL_IP_ADDRESS=127.0.0.1
+CL_METRICS_PORT=8008
+VC_METRICS_PORT=8009
 JWTSECRET_PATH="/secrets/jwtsecret"
 
 # Graffiti for validator. Maximum length is 16 characters.
