@@ -7,10 +7,10 @@
 #
 # Made for home and solo stakers 🏠🥩
 
-BASE_DIR=$HOME/git/ethpillar
+BASE_DIR="$HOME"/git/ethpillar
 
 # Load functions
-source $BASE_DIR/functions.sh
+source "$BASE_DIR"/functions.sh
 
 # Get machine info
 _platform=$(get_platform)
@@ -51,18 +51,18 @@ function getLatestVersion(){
 
 # Downloads latest release of ethereum-metrics-exporter
 function downloadClient(){
-	BINARIES_URL="$(curl -s $GITHUB_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}_${_arch}.tar.gz$)"
-	echo Downloading URL: $BINARIES_URL
-	cd $HOME
+	BINARIES_URL="$(curl -s "$GITHUB_URL" | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case "${_platform}"_"${_arch}".tar.gz$)"
+	echo Downloading URL: "$BINARIES_URL"
+	cd "$HOME" || true
 	# Download
-	wget -O ethereum-metrics-exporter.tar.gz $BINARIES_URL
+	wget -O ethereum-metrics-exporter.tar.gz "$BINARIES_URL"
 	# Untar
-	tar -xzvf ethereum-metrics-exporter.tar.gz -C $HOME
+	tar -xzvf ethereum-metrics-exporter.tar.gz -C "$HOME"
 	# Cleanup
 	rm ethereum-metrics-exporter.tar.gz README.md
 	# Install binary
 	if systemctl is-active --quiet ethereum-metrics-exporter ; then sudo systemctl stop ethereum-metrics-exporter; fi
-	sudo mv $HOME/ethereum-metrics-exporter-* /usr/local/bin/ethereum-metrics-exporter
+	sudo mv "$HOME"/ethereum-metrics-exporter-* /usr/local/bin/ethereum-metrics-exporter
 	sudo systemctl start ethereum-metrics-exporter
 }
 
@@ -139,7 +139,7 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
-ExecStart=/usr/local/bin/ethereum-metrics-exporter $(echo ${ETHEREUM_METRICS_EXPORTER_OPTIONS[@]})
+ExecStart=/usr/local/bin/ethereum-metrics-exporter $(echo "${ETHEREUM_METRICS_EXPORTER_OPTIONS[@]}")
 
 [Install]
 WantedBy=multi-user.target
@@ -154,7 +154,7 @@ function allowLocalAccessToGrafana(){
   echo "Allow access to Grafana from within your local network? [y|n]"
   read -rsn1 yn
   if [[ ${yn} = [Yy]* ]]; then
-    sudo ufw allow from $network_current to any port 3000 proto tcp comment 'Allow local LAN access to Grafana Port'
+    sudo ufw allow from "$network_current" to any port 3000 proto tcp comment 'Allow local LAN access to Grafana Port'
   fi
 }
 
@@ -180,7 +180,7 @@ Successfully installed monitoring tools: ethereum-metrics-exporter, grafana, pro
 Access Grafana at:
 http://127.0.0.1:3000
 or
-http://${ip_current}:3000
+http://"${ip_current}":3000
 
 Login to Grafana with:
 Username: admin
@@ -234,7 +234,7 @@ sudo bash -c "wget -qO - $URL | jq 'walk(if . == \"\${DS__VICTORIAMETRICS}\" the
 find $GRAFANA_DIR/provisioning/dashboards -type f -size 0 -delete
 
 # Install default alert rules and restart prometheus
-sudo cp $(dirname $(realpath "${BASH_SOURCE[0]}"))/alert.rules.yml $PROMETHEUS_DIR
+sudo cp "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"/alert.rules.yml $PROMETHEUS_DIR
 sudo systemctl restart prometheus
 }
 
@@ -250,18 +250,35 @@ Options)
 -u    Upgrade ethereum-metrics-exporter, grafana, prometheus, node-exporter
 -r    Remove all monitoring tools
 -h    Display help
-
-About Ethereum Metrics Exporter)
-- This exporter aims to simplify observation across various clients
-- Introduces a unified set of metrics that can be utilized on any dashboard
-- Source repo: https://github.com/ethpandaops/ethereum-metrics-exporter
 EOF
+}
+
+function installMonitoring(){
+MSG_ABOUT="🚨 Monitoring with Ethereum Metrics Exporter & Grafana & Prometheus & node-exporter
+\nFeatures:
+\n- Dashboards: Simplify observation across your node's resources and performance
+\n- Alerts: Customize alerts to notify you of any issues
+\n- Data: Real-time metrics and statistics
+\n- Privacy: Run locally using your node
+\nSource Code: https://github.com/ethpandaops/ethereum-metrics-exporter
+\nContinue to install?"
+
+  if ! whiptail --title "Monitoring: Installation" --yesno "$MSG_ABOUT" 22 78; then exit; fi
+  installGrafanaPrometheus
+  installSystemd
+  configureDataSource
+  provisionDashboards
+  downloadClient
+  getNetworkConfig
+  allowLocalAccessToGrafana
+  showNextSteps
+  promptViewLogs
 }
 
 # Process command line options
 while getopts :iurh opt; do
   case ${opt} in
-    i ) installGrafanaPrometheus ; installSystemd ; configureDataSource ; provisionDashboards ; downloadClient ; getNetworkConfig ; allowLocalAccessToGrafana ; showNextSteps ; promptViewLogs ;;
+    i ) installMonitoring ;;
     u ) upgradeBinaries ;;
     r ) removeAll ;;
     h)
