@@ -180,7 +180,7 @@ Successfully installed monitoring tools: ethereum-metrics-exporter, grafana, pro
 Access Grafana at:
 http://127.0.0.1:3000
 or
-http://"${ip_current}":3000
+http://${ip_current}:3000
 
 Login to Grafana with:
 Username: admin
