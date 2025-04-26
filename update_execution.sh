@@ -31,6 +31,7 @@ function getClient(){
 }
 
 function promptYesNo(){
+	[[ "$VERSION" == "$TAG" ]] && whiptail --title "Already updated" --msgbox "You are already on the latest version: $VERSION" 10 78 && return
     if whiptail --title "Update Execution Client - $EL" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update $EL to $TAG?" 15 78; then
   		updateClient
   		promptViewLogs
