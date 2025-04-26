@@ -633,7 +633,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        sudo bash -c 'journalctl -fu grafana-server -fu prometheus -fu ethereum-metrics-exporter -fu prometheus-node-exporter -n 100 | ccze -A'
+        sudo bash -c 'journalctl -u grafana-server -u prometheus -u ethereum-metrics-exporter -u prometheus-node-exporter --no-hostname -f | ccze -A'
         ;;
       2)
         sudo systemctl start grafana-server prometheus ethereum-metrics-exporter prometheus-node-exporter
