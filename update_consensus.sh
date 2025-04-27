@@ -160,7 +160,7 @@ function updateClient(){
 		cd $HOME
 		prysm_version=$(curl -f -s https://prysmaticlabs.com/releases/latest)
 		# Convert to lower case
-		_platform=$(echo ${_platform} | tr '[:upper:]' '[:lower:]')
+		_platform=${_platform,,}
 		file_beacon=beacon-chain-${prysm_version}-${_platform}-${_arch}
 		file_validator=validator-${prysm_version}-${_platform}-${_arch}
 		file_prysmctl=prysmctl-${prysm_version}-${_platform}-${_arch}

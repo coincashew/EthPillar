@@ -121,7 +121,7 @@ function updateClient(){
 		;;
 	  Geth)
 		# Convert to lower case
-		_platform=$(echo ${_platform} | tr '[:upper:]' '[:lower:]')
+		_platform=${_platform,,}
 		RELEASE_URL="https://geth.ethereum.org/downloads"
 		FILE="https://gethstore.blob.core.windows.net/builds/geth-${_platform}-${_arch}[a-zA-Z0-9./?=_%:-]*.tar.gz"
 		BINARIES_URL="$(curl -s $RELEASE_URL | grep -Eo $FILE | head -1)"
@@ -136,7 +136,7 @@ function updateClient(){
 	    ;;
   	  Reth)
 		# Convert to lower case
-		_platform=$(echo ${_platform} | tr '[:upper:]' '[:lower:]')
+		_platform=${_platform,,}
 		[[ "${_arch}" == "amd64" ]] && _architecture="x86_64" || _architecture="aarch64"
 	    RELEASE_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
 		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
