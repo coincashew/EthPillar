@@ -1,3 +1,5 @@
+### Do you like this software? Star the project and become a [⭐ Stargazer](https://github.com/coincashew/ethpillar/stargazers)
+
 [![Github release](https://img.shields.io/github/v/release/coincashew/ethpillar)](https://github.com/coincashew/ethpillar/releases)
 [![License](https://img.shields.io/github/license/coincashew/EthPillar)](https://github.com/coincashew/EthPillar/blob/main/LICENSE)
 [![GitHub Repo stars](https://img.shields.io/github/stars/coincashew/EthPillar?logo=github&color=yellow)](https://github.com/coincashew/EthPillar/stargazers)
