@@ -134,10 +134,10 @@ check_reboot_required() {
 
 check_listening_ports() {
     ((total_checks++))
-    open_ports=$(sudo ss -tulwnp | grep -c LISTEN)
+    open_ports=$(sudo ss -tunlp | grep -c -E 'LISTEN|UNCONN')
     if [ "$open_ports" -gt 0 ]; then
         echo -e "${BLUE}${BOLD}[INFO] Listening ports:${NC}"
-        sudo ss -tulwnp | grep LISTEN
+        sudo ss -tunlp | grep -E 'LISTEN|UNCONN'
     else
         echo -e "${YELLOW}[WARN] No listening ports.${NC}"
     fi
@@ -304,15 +304,20 @@ check_elcl_listening_ports() {
     detected=0
     declare -a p2p_protocols=("tcp" "udp")
 
-    echo -e "${BLUE}${BOLD}[INFO] Checking for execution & consensus services on ports ${p2p_ports[*]}${NC}"
-
-    for port in "${p2p_ports[@]}"; do
-        for proto in "${p2p_protocols[@]}"; do
-            # Check listening ports
+    # Check if Prysm is running
+    prysm_running=0
+    if pgrep -f "prysm" >/dev/null; then
+        prysm_running=1
+        echo -e "${BLUE}${BOLD}[INFO] Checking consensus service on ports 12000 udp, 13000 tcp, and execution service on port 30303 tcp/udp${NC}"
+        # Check Prysm specific ports
+        for port in "12000" "13000"; do
+            proto="tcp"
+            if [ "$port" = "12000" ]; then
+                proto="udp"
+            fi
             if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
                 echo -e "${GREEN}[PASS] Detected ${proto^^} service on port ${port}${NC}"
                 ((detected++))
-                # Try to identify process
                 if [ "$EUID" -eq 0 ]; then
                     pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
                     if [ -n "$pid" ]; then
@@ -324,12 +329,49 @@ check_elcl_listening_ports() {
                 fi
             fi
         done
+    else
+        echo -e "${BLUE}${BOLD}[INFO] Checking for execution & consensus services on ports 9000 tcp and 30303 tcp/udp${NC}"
+        # Check standard ports for other clients
+        for port in "${p2p_ports[@]}"; do
+            for proto in "${p2p_protocols[@]}"; do
+                if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
+                    echo -e "${GREEN}[PASS] Detected ${proto^^} service on port ${port}${NC}"
+                    ((detected++))
+                    if [ "$EUID" -eq 0 ]; then
+                        pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                        if [ -n "$pid" ]; then
+                            process=$(ps -p "$pid" -o comm=)
+                            echo -e "${YELLOW}     Process: ${process} (PID ${pid})${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}     Run as root to identify process${NC}"
+                    fi
+                fi
+            done
+        done
+    fi
+
+    # Always check Execution client port 30303
+    for proto in "${p2p_protocols[@]}"; do
+        if sudo ss -lntu | grep -qE "${proto}.*:30303"; then
+            echo -e "${GREEN}[PASS] Detected ${proto^^} service on port 30303${NC}"
+            ((detected++))
+            if [ "$EUID" -eq 0 ]; then
+                pid=$(sudo ss -lntup "sport = :30303" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                if [ -n "$pid" ]; then
+                    process=$(ps -p "$pid" -o comm=)
+                    echo -e "${YELLOW}     Process: ${process} (PID ${pid})${NC}"
+                fi
+            else
+                echo -e "${YELLOW}     Run as root to identify process${NC}"
+            fi
+        fi
     done
 
     if [ $detected -gt 0 ]; then
         echo -e "${GREEN}[PASS] Found ${detected} execution & consensus listening p2p ports${NC}"
     else
-        echo -e "${RED}[FAIL] No execution & consensus services detected on ports ${p2p_ports[*]}${NC}"
+        echo -e "${RED}[FAIL] No execution & consensus services detected on expected ports${NC}"
         ((failed_checks++))
     fi
 
@@ -352,23 +394,54 @@ check_elcl_listening_ports() {
 check_open_ports() {
     ((total_checks++))
     open_ports=0
-    concat_ports="${p2p_ports[*]}"
-    concat_ports=${concat_ports/[[:space:]]/,}
+    concat_ports=""
+    
+    # Check if Prysm is running
+    if pgrep -f "prysm" >/dev/null; then
+        tcp_ports="13000,30303"
+        udp_ports="12000,30303"
+    else
+        tcp_ports="9000,30303"
+        udp_ports="30303"
+    fi
+    
+    # Check TCP ports
     checker_url="https://eth2-client-port-checker.vercel.app/api/checker?ports="
-    json=$(curl -s "${checker_url}${concat_ports}")
+    tcp_json=$(curl -s "${checker_url}${tcp_ports}")
+    
+    # Check UDP ports using netcat
+    udp_open_ports=0
+    open_udp_ports=()
+    for port in $(echo "$udp_ports" | tr ',' ' '); do
+        if nc -z -u localhost "$port" &>/dev/null; then
+            ((udp_open_ports++))
+            open_udp_ports+=("$port")
+        fi
+    done
 
     # Parse JSON using jq and check if any open ports exist
-    if echo "$json" | jq -e '.open_ports[]' > /dev/null 2>&1; then
-        echo -e "${BLUE}${BOLD}[INFO] Open ports found:${NC}"
-        echo "$json" | jq -r '.open_ports[]' | while read -r port; do echo "$port"; done
-        open_ports=$(echo "$json" | jq '.open_ports | length')
+    echo -e "${BLUE}${BOLD}[INFO] Open ports found:${NC}"
+    if echo "$tcp_json" | jq -e '.open_ports[]' > /dev/null 2>&1; then
+        echo "$tcp_json" | jq -r '.open_ports[]' | while read -r port; do echo "$port"; done
+        tcp_open_ports=$(echo "$tcp_json" | jq '.open_ports | length')
+        open_ports=$((tcp_open_ports + udp_open_ports))
     fi
+    
+    # Show UDP ports
+    for port in "${open_udp_ports[@]}"; do
+        echo "$port"
+    done
+    
     # Compare expected vs actual number of open ports
-    if [ ${#p2p_ports[*]} -ne "$open_ports" ]; then
-        echo -e "${RED}[FAIL] Ports ${concat_ports} not all open or reachable. Expected ${#p2p_ports[*]}. Actual $open_ports. Check port forwarding on router.${NC}"
+    expected_tcp_ports=$(echo "$tcp_ports" | tr ',' '\n' | wc -l)
+    expected_udp_ports=$(echo "$udp_ports" | tr ',' '\n' | wc -l)
+    expected_ports=$((expected_tcp_ports + expected_udp_ports))
+    
+    if [ "$expected_ports" -ne "$open_ports" ]; then
+        echo -e "${RED}[FAIL] Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check port forwarding on router.${NC}"
         ((failed_checks++))
     else
-        echo -e "${GREEN}[PASS] P2P Ports fully open on ${p2p_ports[*]}${NC}"
+        echo -e "${GREEN}[PASS] P2P Ports fully open on ${tcp_ports} (TCP) and ${udp_ports} (UDP)${NC}"
     fi
 }
 
