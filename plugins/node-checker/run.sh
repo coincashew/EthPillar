@@ -365,23 +365,6 @@ check_elcl_listening_ports() {
         done
     fi
 
-    # Always check Execution client port 30303
-    for proto in "${p2p_protocols[@]}"; do
-        if sudo ss -lntu | grep -qE "${proto}.*:30303"; then
-            echo -e "${GREEN}[PASS] Detected ${proto^^} service on port 30303${NC}"
-            ((detected++))
-            if [ "$EUID" -eq 0 ]; then
-                pid=$(sudo ss -lntup "sport = :30303" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
-                if [ -n "$pid" ]; then
-                    process=$(ps -p "$pid" -o comm=)
-                    echo -e "${YELLOW}     Process: ${process} (PID ${pid})${NC}"
-                fi
-            else
-                echo -e "${YELLOW}     Run as root to identify process${NC}"
-            fi
-        fi
-    done
-
     if [ $detected -gt 0 ]; then
         echo -e "${GREEN}[PASS] Found ${detected} execution & consensus listening p2p ports${NC}"
     else
@@ -409,7 +392,7 @@ check_open_ports() {
     ((total_checks++))
     open_ports=0
     concat_ports=""
-    
+
     # Check if Prysm is running
     if pgrep -f "prysm" >/dev/null; then
         tcp_ports="13000,30303"
@@ -418,11 +401,11 @@ check_open_ports() {
         tcp_ports="9000,30303"
         udp_ports="9000,30303"
     fi
-    
+
     # Check TCP ports
     checker_url="https://eth2-client-port-checker.vercel.app/api/checker?ports="
     tcp_json=$(curl -s "${checker_url}${tcp_ports}")
-    
+
     # Check UDP ports using netcat
     udp_open_ports=0
     open_udp_ports=()
@@ -440,17 +423,17 @@ check_open_ports() {
         tcp_open_ports=$(echo "$tcp_json" | jq '.open_ports | length')
         open_ports=$((tcp_open_ports + udp_open_ports))
     fi
-    
+
     # Show UDP ports
     for port in "${open_udp_ports[@]}"; do
         echo "$port(UDP)"
     done
-    
+
     # Compare expected vs actual number of open ports
     expected_tcp_ports=$(echo "$tcp_ports" | tr ',' '\n' | wc -l)
     expected_udp_ports=$(echo "$udp_ports" | tr ',' '\n' | wc -l)
     expected_ports=$((expected_tcp_ports + expected_udp_ports))
-    
+
     if [ "$expected_ports" -ne "$open_ports" ]; then
         echo -e "${RED}[FAIL] Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check port forwarding on router.${NC}"
         ((failed_checks++))
