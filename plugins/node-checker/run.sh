@@ -14,7 +14,7 @@ p2p_ports=("9000" "30303")
 p2p_processes=("geth" "besu" "teku" "lighthouse" "prysm" "nimbus" "erigon" "nethermind" "reth" "mev-boost")
 services=("consensus" "execution" "validator" "mevboost")
 API_BN_ENDPOINT="http://localhost:5052"
-EL_RPC_ENDPOINT="localhost:8545"
+EL_RPC_ENDPOINT="http://localhost:8545"
 
 # Load environment variables overrides
 if [[ -f "$SOURCE_DIR"/../../.env.overrides ]]; then
@@ -34,7 +34,7 @@ if [[ -f "$SOURCE_DIR"/../../.env.overrides ]]; then
         # Use default values if not overridden
         local_el_ip="${EL_IP_ADDRESS:-localhost}"
         local_el_port="${EL_RPC_PORT:-8545}"
-        EL_RPC_ENDPOINT="${local_el_ip}:${local_el_port}"
+        EL_RPC_ENDPOINT="http://${local_el_ip}:${local_el_port}"
     fi
 fi
 
