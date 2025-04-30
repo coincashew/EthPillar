@@ -402,7 +402,7 @@ check_open_ports() {
         udp_ports="12000,30303"
     else
         tcp_ports="9000,30303"
-        udp_ports="30303"
+        udp_ports="9000,30303"
     fi
     
     # Check TCP ports
@@ -422,14 +422,14 @@ check_open_ports() {
     # Parse JSON using jq and check if any open ports exist
     echo -e "${BLUE}${BOLD}[INFO] Open ports found:${NC}"
     if echo "$tcp_json" | jq -e '.open_ports[]' > /dev/null 2>&1; then
-        echo "$tcp_json" | jq -r '.open_ports[]' | while read -r port; do echo "$port"; done
+        echo "$tcp_json" | jq -r '.open_ports[]' | while read -r port; do echo "$port(TCP)"; done
         tcp_open_ports=$(echo "$tcp_json" | jq '.open_ports | length')
         open_ports=$((tcp_open_ports + udp_open_ports))
     fi
     
     # Show UDP ports
     for port in "${open_udp_ports[@]}"; do
-        echo "$port"
+        echo "$port(UDP)"
     done
     
     # Compare expected vs actual number of open ports
