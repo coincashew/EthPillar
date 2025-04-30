@@ -20,8 +20,22 @@ EL_RPC_ENDPOINT="localhost:8545"
 if [[ -f "$SOURCE_DIR"/../../.env.overrides ]]; then
     # shellcheck source=/dev/null
     source "$SOURCE_DIR"/../../.env.overrides
-    API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
-    EL_RPC_ENDPOINT="${EL_IP_ADDRESS}:${EL_RPC_PORT}"
+    
+    # Handle consensus layer endpoint overrides
+    if [[ -n "${CL_IP_ADDRESS:-}" || -n "${CL_REST_PORT:-}" ]]; then
+        # Use default values if not overridden
+        local_cl_ip="${CL_IP_ADDRESS:-localhost}"
+        local_cl_port="${CL_REST_PORT:-5052}"
+        API_BN_ENDPOINT="http://${local_cl_ip}:${local_cl_port}"
+    fi
+    
+    # Handle execution layer endpoint overrides
+    if [[ -n "${EL_IP_ADDRESS:-}" || -n "${EL_RPC_PORT:-}" ]]; then
+        # Use default values if not overridden
+        local_el_ip="${EL_IP_ADDRESS:-localhost}"
+        local_el_port="${EL_RPC_PORT:-8545}"
+        EL_RPC_ENDPOINT="${local_el_ip}:${local_el_port}"
+    fi
 fi
 
 # Thresholds
