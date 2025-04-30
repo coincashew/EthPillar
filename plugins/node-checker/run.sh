@@ -493,27 +493,32 @@ check_systemd_services() {
     for service in "${services[@]}"; do
         service_installed=0
         ((total_checks+=3))  # Three checks per service (installed + active + enabled)
+        
+        # Print service header
+        echo -e "\n${BLUE}${BOLD}📦 ${service^} Service${NC}"
+        echo -e "${BLUE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        
         # Check installation
         if [ -f /etc/systemd/system/"${service}".service ]; then
             service_installed=1
-            echo -e "${GREEN}[PASS] ${service} is installed${NC}"
+            echo -e "${GREEN}[PASS] 📥 Installed${NC}"
         else
-            echo -e "${BLUE}${BOLD}[INFO] ${service} not installed${NC}"
+            echo -e "${BLUE}${BOLD}[INFO] ❌ Not installed${NC}"
         fi
 
         if [ $service_installed -eq 1 ]; then
             # Check if service is active
             if systemctl is-active --quiet "$service"; then
-                echo -e "${GREEN}[PASS] ${service} is running${NC}"
+                echo -e "${GREEN}[PASS] 🟢 Running${NC}"
             else
-                echo -e "${BLUE}${BOLD}[INFO] ${service} is not running${NC}"
+                echo -e "${BLUE}${BOLD}[INFO] 🔴 Not running${NC}"
             fi
 
             # Check if service is enabled
             if systemctl is-enabled --quiet "$service"; then
-                echo -e "${GREEN}[PASS] ${service} is enabled${NC}"
+                echo -e "${GREEN}[PASS] ⚡ Enabled${NC}"
             else
-                echo -e "${BLUE}${BOLD}[INFO] ${service} is not enabled, will not autostart at boot. To change, go to System Administration.${NC}"
+                echo -e "${BLUE}${BOLD}[INFO] ⚠️ Not enabled, will not autostart at boot. To change, go to System Administration.${NC}"
             fi
         fi
     done
