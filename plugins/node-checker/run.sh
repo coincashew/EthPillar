@@ -85,25 +85,45 @@ EOF
 
 print_section_header() {
     local title="$1"
-    local width=60
+    local width=80
     local padding=$(( (width - ${#title}) / 2 ))
-    echo -e "\n${YELLOW}${BOLD}$(printf '%*s' $padding '')$title${NC}"
-    echo -e "${YELLOW}${BOLD}$(printf '─%.0s' $(seq 1 $width))${NC}\n"
+    echo -e "\n${BLUE}${BOLD}╔$(printf '═%.0s' $(seq 1 $((width-2))))╗${NC}"
+    echo -e "${BLUE}${BOLD}║$(printf '%*s' $padding '')${YELLOW}${BOLD}$title${BLUE}${BOLD}$(printf '%*s' $((width-2-padding-${#title})) '')║${NC}"
+    echo -e "${BLUE}${BOLD}╚$(printf '═%.0s' $(seq 1 $((width-2))))╝${NC}\n"
 }
 
 print_check_result() {
     local status="$1"
     local message="$2"
     local icon=""
+    local color=""
+    local prefix=""
     
     case "$status" in
-        "PASS") icon="✅"; color="$GREEN" ;;
-        "FAIL") icon="❌"; color="$RED" ;;
-        "WARN") icon="⚠️ "; color="$YELLOW"; ((warning_checks++)) ;;
-        "INFO") icon="ℹ️ "; color="$BLUE" ;;
+        "PASS") 
+            icon="✓"; 
+            color="$GREEN"; 
+            prefix="[PASS]"
+            ;;
+        "FAIL") 
+            icon="✗"; 
+            color="$RED"; 
+            prefix="[FAIL]"
+            ;;
+        "WARN") 
+            icon="⚠"; 
+            color="$YELLOW"; 
+            prefix="[WARN]"
+            ((warning_checks++))
+            ;;
+        "INFO") 
+            icon="ℹ"; 
+            color="$BLUE"; 
+            prefix="[INFO]"
+            ;;
     esac
     
-    echo -e "${color}[$status] $icon $message${NC}"
+    echo -e "${color}${prefix} ${icon} ${message}${NC}"
 }
 
 check_firewall() {
@@ -565,6 +585,7 @@ check_swappiness() {
 print_system_information() {
     print_section_header "System Information"
     
+    # Get system information
     os_name=$(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)
     hostname=$(uname -n)
     kernel=$(uname -r)
@@ -585,7 +606,7 @@ print_system_information() {
         *) arch="Unknown architecture"
     esac
 
-    # Output Display with better formatting
+     # Output Display with better formatting
     printf "${BLUE}%-20s${NC} %s\n" "OS Name:" "$os_name"
     printf "${BLUE}%-20s${NC} %s\n" "Hostname:" "$hostname"
     printf "${BLUE}%-20s${NC} %s\n" "Kernel Version:" "$kernel"
