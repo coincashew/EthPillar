@@ -205,8 +205,8 @@ check_resources() {
     print_check_result "INFO" "Resources:"
     # Memory check
     ((total_checks++))
-    memory_usage=$(free | awk '/Mem/{printf("%.2f"), $3/$2*100}')
-    if (( $(echo "$memory_usage > $MEMORY_WARN" | bc -l) )); then
+    memory_usage=$(LC_NUMERIC=C free | LC_NUMERIC=C awk '/Mem/{printf("%.2f"), $3/$2*100}')
+    if (( $(LC_NUMERIC=C echo "$memory_usage > $MEMORY_WARN" | bc -l) )); then
         print_check_result "WARN" "High memory usage: ${memory_usage}%"
         ((warning_checks++))
     else
@@ -215,9 +215,9 @@ check_resources() {
 
     # CPU check
     ((total_checks++))
-    cpu_usage=$(top -bn1 | grep load | awk '{printf "%.2f", $(NF-2)}')
+    cpu_usage=$(LC_NUMERIC=C top -bn1 | LC_NUMERIC=C awk '/load/ {printf "%.2f", $(NF-2)}')
     cpu_cores=$(nproc)
-    if (( $(echo "$cpu_usage > $cpu_cores * $CPU_WARN / 100" | bc -l) )); then
+    if (( $(LC_NUMERIC=C echo "$cpu_usage > $cpu_cores * $CPU_WARN / 100" | bc -l) )); then
         print_check_result "WARN" "High CPU load: ${cpu_usage}"
         ((warning_checks++))
     else
