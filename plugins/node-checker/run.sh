@@ -373,7 +373,7 @@ check_elcl_listening_ports() {
         prysm_running=1
         print_check_result "INFO" "Checking consensus service on ports 12000 udp, 13000 tcp, and execution service on port 30303 tcp/udp"
         # Check Prysm specific ports
-        for port in "12000" "13000"; do
+        for port in "12000" "13000" "30303"; do
             proto="tcp"
             if [ "$port" = "12000" ]; then
                 proto="udp"
