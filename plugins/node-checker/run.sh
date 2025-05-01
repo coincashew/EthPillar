@@ -373,27 +373,58 @@ check_elcl_listening_ports() {
         prysm_running=1
         print_check_result "INFO" "Checking consensus service on ports 12000 udp, 13000 tcp, and execution service on port 30303 tcp/udp"
         # Check Prysm specific ports
-        for port in "12000" "13000" "30303"; do
-            proto="tcp"
+        declare -a prysm_ports=("12000" "13000" "30303")
+        for port in "${prysm_ports[@]}"; do
             if [ "$port" = "12000" ]; then
                 proto="udp"
-            fi
-            if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
-                print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
-                ((detected++))
-                if [ "$EUID" -eq 0 ]; then
-                    pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
-                    if [ -n "$pid" ]; then
-                        process=$(ps -p "$pid" -o comm=)
-                        echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
+                if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
+                    print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
+                    ((detected++))
+                    if [ "$EUID" -eq 0 ]; then
+                        pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                        if [ -n "$pid" ]; then
+                            process=$(ps -p "$pid" -o comm=)
+                            echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}          Run as root to identify process${NC}"
                     fi
-                else
-                    echo -e "${YELLOW}          Run as root to identify process${NC}"
                 fi
+            elif [ "$port" = "13000" ]; then
+                proto="tcp"
+                if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
+                    print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
+                    ((detected++))
+                    if [ "$EUID" -eq 0 ]; then
+                        pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                        if [ -n "$pid" ]; then
+                            process=$(ps -p "$pid" -o comm=)
+                            echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}          Run as root to identify process${NC}"
+                    fi
+                fi
+            elif [ "$port" = "30303" ]; then
+                for proto in "${p2p_protocols[@]}"; do
+                    if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
+                        print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
+                        ((detected++))
+                        if [ "$EUID" -eq 0 ]; then
+                            pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                            if [ -n "$pid" ]; then
+                                process=$(ps -p "$pid" -o comm=)
+                                echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
+                            fi
+                        else
+                            echo -e "${YELLOW}          Run as root to identify process${NC}"
+                        fi
+                    fi
+                done
             fi
         done
     else
-        print_check_result "INFO" "Checking for execution & consensus services on ports 9000 tcp and 30303 tcp/udp"
+        print_check_result "INFO" "Checking for execution & consensus services on ports 9000 tcp/udp and 30303 tcp/udp"
         # Check standard ports for other clients
         for port in "${p2p_ports[@]}"; do
             for proto in "${p2p_protocols[@]}"; do
@@ -415,7 +446,21 @@ check_elcl_listening_ports() {
     fi
 
     if [ $detected -gt 0 ]; then
-        print_check_result "PASS" "Found ${detected} execution & consensus listening p2p ports"
+        if [ $prysm_running -eq 1 ]; then
+            if [ $detected -eq 4 ]; then
+                print_check_result "PASS" "Found all 4 expected ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm"
+            else
+                print_check_result "FAIL" "Found ${detected} ports, expected 4 ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm"
+                ((failed_checks++))
+            fi
+        else
+            if [ $detected -eq 4 ]; then
+                print_check_result "PASS" "Found all 4 expected ports (9000 tcp/udp, 30303 tcp/udp) for execution & consensus services"
+            else
+                print_check_result "FAIL" "Found ${detected} ports, expected 4 ports (9000 tcp/udp, 30303 tcp/udp) for execution & consensus services"
+                ((failed_checks++))
+            fi
+        fi
     else
         print_check_result "FAIL" "No execution & consensus services detected on expected ports"
         ((failed_checks++))
