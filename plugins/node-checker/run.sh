@@ -114,7 +114,6 @@ print_check_result() {
             icon="⚠"; 
             color="$YELLOW"; 
             prefix="[WARN]"
-            ((warning_checks++))
             ;;
         "INFO") 
             icon="ℹ"; 
@@ -173,6 +172,7 @@ check_unattended_upgrades() {
             print_check_result "PASS" "Unattended upgrades configured"
         else
             print_check_result "WARN" "Unattended upgrades installed but not configured"
+            ((warning_checks++))
         fi
     else
         print_check_result "FAIL" "Unattended upgrades not installed. Install found in Toolbox."
@@ -198,6 +198,7 @@ check_listening_ports() {
         sudo ss -tunlp | grep -E 'LISTEN|UNCONN'
     else
         print_check_result "WARN" "No listening ports."
+        ((warning_checks++))
     fi
 }
 
@@ -242,6 +243,7 @@ check_ssh_2fa() {
         print_check_result "PASS" "SSH 2FA configured"
     else
         print_check_result "WARN" "SSH 2FA not configured. Install found in Toolbox."
+        ((warning_checks++))
     fi
 }
 
