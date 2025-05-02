@@ -448,9 +448,9 @@ check_elcl_listening_ports() {
     if [ $detected -gt 0 ]; then
         if [ $prysm_running -eq 1 ]; then
             if [ $detected -eq 4 ]; then
-                print_check_result "PASS" "Found all 4 expected ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm"
+                print_check_result "PASS" "Found all 4 expected ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm and execution services"
             else
-                print_check_result "FAIL" "Found ${detected} ports, expected 4 ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm"
+                print_check_result "FAIL" "Found ${detected} ports, expected 4 ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm and execution services"
                 ((failed_checks++))
             fi
         else
