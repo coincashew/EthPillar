@@ -1156,6 +1156,7 @@ while true; do
       2 "CSM-Sentinel: Sends notifications for your CSM Node Operator ID. Self-hosted. Docker. Telegram."
       🔎 "Dora the Explorer: lightweight beaconchain explorer. validator actions. self-hosted. private."
       🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
+      🐼 "Contributoor: powerful monitoring & data-gathering tool. enhances network transparency"
       - ""
       99 "Back to main menu"
     )
@@ -1206,6 +1207,13 @@ while true; do
             runScript plugins/client-stats/plugin_client_stats.sh -i
         fi
         runScript plugins/client-stats/menu.sh
+        ;;
+      🐼)
+        export BACKTITLE EDITOR _platform _arch
+        if [[ ! -d /opt/ethpillar/plugin-contributoor ]]; then
+            runScript plugins/contributoor/plugin_contributoor.sh -i
+        fi
+        runScript plugins/contributoor/menu.sh
         ;;
       99)
         break

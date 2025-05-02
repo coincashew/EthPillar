@@ -1,0 +1,37 @@
+#If you encounter configuration issues, you can:
+#Compare your config with the example below
+#Remove the config file and re-run "contributoor install" to generate a fresh one
+#Check the debug logs for detailed error messages
+
+# The address of your beacon node's HTTP API.
+beaconNodeAddress: http://127.0.0.1:5052
+
+# The address to serve metrics on (optional, disabled if empty).
+metricsAddress: ""
+
+# The address to serve a health check on (optional, disabled if empty).
+healthCheckAddress: ""
+
+# The log level (debug, info, warn, error).
+logLevel: info
+
+# Specifies a network name override. This is only used when connecting to testnets where 
+# the beacon node reports a generic network name like "testnet". For known networks 
+# (mainnet, sepolia, holesky, hoodi, etc.), the network is always derived automatically from 
+# the beacon node's configuration.
+#networkName:
+
+# The output server configuration (credentials are base64 encoded and required if a pandaops server is used).
+outputServer:
+    address: xatu.primary.production.platform.ethpandaops.io:443
+    credentials: <base64-encoded-value>
+    tls: true
+
+# The contributoor version to use.
+#version: 0.0.63
+
+# The directory where contributoor stores its configuration and data.
+contributoorDirectory: /opt/ethpillar/plugin-contributoor
+
+# The method to run contributoor (RUN_METHOD_DOCKER, RUN_METHOD_BINARY, RUN_METHOD_SYSTEMD).
+runMethod: RUN_METHOD_SYSTEMD
