@@ -45,6 +45,7 @@ DISK_WARN=90
 
 total_checks=0
 failed_checks=0
+warning_checks=0
 
 # Colors for output
 RED='\033[0;31m'
@@ -56,7 +57,7 @@ NC='\033[0m' # No Color
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
-    echo -e "${YELLOW}Warning: Some checks require root privileges${NC}"
+    print_check_result "WARN" "Some checks require root privileges"
 fi
 
 display_banner() {
@@ -82,12 +83,54 @@ cat << 'EOF'
 EOF
 }
 
+print_section_header() {
+    local title="$1"
+    local width=80
+    local padding=$(( (width - ${#title}) / 2 ))
+    echo -e "\n${BLUE}${BOLD}╔$(printf '═%.0s' $(seq 1 $((width-2))))╗${NC}"
+    echo -e "${BLUE}${BOLD}║$(printf '%*s' $padding '')${YELLOW}${BOLD}$title${BLUE}${BOLD}$(printf '%*s' $((width-2-padding-${#title})) '')║${NC}"
+    echo -e "${BLUE}${BOLD}╚$(printf '═%.0s' $(seq 1 $((width-2))))╝${NC}\n"
+}
+
+print_check_result() {
+    local status="$1"
+    local message="$2"
+    local icon=""
+    local color=""
+    local prefix=""
+    
+    case "$status" in
+        "PASS") 
+            icon="✓"; 
+            color="$GREEN"; 
+            prefix="[PASS]"
+            ;;
+        "FAIL") 
+            icon="✗"; 
+            color="$RED"; 
+            prefix="[FAIL]"
+            ;;
+        "WARN") 
+            icon="⚠"; 
+            color="$YELLOW"; 
+            prefix="[WARN]"
+            ;;
+        "INFO") 
+            icon="ℹ"; 
+            color="$BLUE"; 
+            prefix="[INFO]"
+            ;;
+    esac
+    
+    echo -e "${color}${prefix} ${icon} ${message}${NC}"
+}
+
 check_firewall() {
     ((total_checks++))
     if sudo ufw status | grep -q "Status: active"; then
-        echo -e "${GREEN}[PASS] Firewall is active${NC}"
+        print_check_result "PASS" "Firewall is active"
     else
-        echo -e "${RED}[FAIL] Firewall is not active. Install found in Toolbox.${NC}"
+        print_check_result "FAIL" "Firewall is not active. Install found in Toolbox."
         ((failed_checks++))
     fi
 }
@@ -95,18 +138,18 @@ check_firewall() {
 check_ssh_keys() {
     ((total_checks++))
     if grep -q "^PasswordAuthentication no" /etc/ssh/sshd_config; then
-        echo -e "${GREEN}[PASS] SSH key authentication enforced${NC}"
+        print_check_result "PASS" "SSH key authentication enforced"
     else
-        echo -e "${YELLOW}[WARN] Password authentication allowed. SSH key authentication is best.${NC}"
+        print_check_result "WARN" "Password authentication allowed. SSH key authentication is best."
     fi
 }
 
 check_fail2ban() {
     ((total_checks++))
     if systemctl is-active --quiet fail2ban; then
-        echo -e "${GREEN}[PASS] Fail2ban is running${NC}"
+        print_check_result "PASS" "Fail2ban is running"
     else
-        echo -e "${RED}[FAIL] Fail2ban not active. Install found in Toolbox.${NC}"
+        print_check_result "FAIL" "Fail2ban not active. Install found in Toolbox."
         ((failed_checks++))
     fi
 }
@@ -115,10 +158,10 @@ check_updates() {
     ((total_checks++))
     updates=$(apt list --upgradable 2>/dev/null | wc -l)
     if [ "$updates" -gt 1 ]; then
-        echo -e "${RED}[FAIL] $((updates-1)) pending system updates. Go to System Admin > Update system${NC}"
+        print_check_result "FAIL" "$((updates-1)) pending system updates. Go to System Admin > Update system"
         ((failed_checks++))
     else
-        echo -e "${GREEN}[PASS] System up to date${NC}"
+         print_check_result "PASS" "System up to date"
     fi
 }
 
@@ -126,12 +169,13 @@ check_unattended_upgrades() {
     ((total_checks++))
     if dpkg -l | grep -q unattended-upgrades; then
         if grep -q "Unattended-Upgrade::Allowed-Origins" /etc/apt/apt.conf.d/50unattended-upgrades; then
-            echo -e "${GREEN}[PASS] Unattended upgrades configured${NC}"
+            print_check_result "PASS" "Unattended upgrades configured"
         else
-            echo -e "${YELLOW}[WARN] Unattended upgrades installed but not configured${NC}"
+            print_check_result "WARN" "Unattended upgrades installed but not configured"
+            ((warning_checks++))
         fi
     else
-        echo -e "${RED}[FAIL] Unattended upgrades not installed. Install found in Toolbox.${NC}"
+        print_check_result "FAIL" "Unattended upgrades not installed. Install found in Toolbox."
         ((failed_checks++))
     fi
 }
@@ -139,10 +183,10 @@ check_unattended_upgrades() {
 check_reboot_required() {
     ((total_checks++))
     if [ -f /var/run/reboot-required ]; then
-        echo -e "${RED}[FAIL] Restart needed to apply updates${NC}"
+        print_check_result "FAIL" "Restart needed to apply updates"
         ((failed_checks++))
     else
-        echo -e "${GREEN}[PASS] System reboot not required${NC}"
+        print_check_result "PASS" "System reboot not required"
     fi
 }
 
@@ -150,52 +194,56 @@ check_listening_ports() {
     ((total_checks++))
     open_ports=$(sudo ss -tunlp | grep -c -E 'LISTEN|UNCONN')
     if [ "$open_ports" -gt 0 ]; then
-        echo -e "${BLUE}${BOLD}[INFO] Listening ports:${NC}"
+        print_check_result "INFO" "Listening ports:"
         sudo ss -tunlp | grep -E 'LISTEN|UNCONN'
     else
-        echo -e "${YELLOW}[WARN] No listening ports.${NC}"
+        print_check_result "WARN" "No listening ports."
+        ((warning_checks++))
     fi
 }
 
 check_resources() {
+    print_check_result "INFO" "Resources:"
     # Memory check
     ((total_checks++))
-    memory_usage=$(free | awk '/Mem/{printf("%.2f"), $3/$2*100}')
-    if (( $(echo "$memory_usage > $MEMORY_WARN" | bc -l) )); then
-        echo -e "${RED}[FAIL] High memory usage: ${memory_usage}%${NC}"
-        ((failed_checks++))
+    memory_usage=$(LC_NUMERIC=C free | LC_NUMERIC=C awk '/Mem/{printf("%.2f"), $3/$2*100}')
+    if (( $(LC_NUMERIC=C echo "$memory_usage > $MEMORY_WARN" | bc -l) )); then
+        print_check_result "WARN" "High memory usage: ${memory_usage}%"
+        ((warning_checks++))
     else
-        echo -e "${GREEN}[PASS] Memory usage: ${memory_usage}%${NC}"
+        print_check_result "PASS" "Memory usage: ${memory_usage}%"
     fi
 
     # CPU check
     ((total_checks++))
-    cpu_usage=$(top -bn1 | grep load | awk '{printf "%.2f", $(NF-2)}')
+    cpu_usage=$(LC_NUMERIC=C top -bn1 | LC_NUMERIC=C awk '/load/ {printf "%.2f", $(NF-2)}')
     cpu_cores=$(nproc)
-    if (( $(echo "$cpu_usage > $cpu_cores * $CPU_WARN / 100" | bc -l) )); then
-        echo -e "${RED}[FAIL] High CPU load: ${cpu_usage}${NC}"
-        ((failed_checks++))
+    if (( $(LC_NUMERIC=C echo "$cpu_usage > $cpu_cores * $CPU_WARN / 100" | bc -l) )); then
+        print_check_result "WARN" "High CPU load: ${cpu_usage}"
+        ((warning_checks++))
     else
-        echo -e "${GREEN}[PASS] CPU load: ${cpu_usage}${NC}"
+        print_check_result "PASS" "CPU load: ${cpu_usage}"
     fi
 
     # Disk check
     ((total_checks++))
     disk_usage=$(df / | awk '/\// {print $5}' | tr -d '%')
     if [ "$disk_usage" -gt $DISK_WARN ]; then
-        echo -e "${RED}[FAIL] High disk usage: ${disk_usage}%${NC}"
-        ((failed_checks++))
+        print_check_result "WARN" "High disk usage: ${disk_usage}%"
+        ((warning_checks++))
     else
-        echo -e "${GREEN}[PASS] Disk usage: ${disk_usage}%${NC}"
+        print_check_result "PASS" "Disk usage: ${disk_usage}%"
     fi
 }
 
 check_ssh_2fa() {
+    print_check_result "INFO" "SSH keys:"
     ((total_checks++))
     if grep -q "auth required pam_google_authenticator.so" /etc/pam.d/sshd; then
-        echo -e "${GREEN}[PASS] SSH 2FA configured${NC}"
+        print_check_result "PASS" "SSH 2FA configured"
     else
-        echo -e "${YELLOW}[WARN] SSH 2FA not configured. Install found in Toolbox.${NC}"
+        print_check_result "WARN" "SSH 2FA not configured. Install found in Toolbox."
+        ((warning_checks++))
     fi
 }
 
@@ -211,7 +259,7 @@ check_ssh_key_presence() {
             # Check permissions
             perms=$(stat -c %a /root/.ssh/authorized_keys)
             if [ "$perms" -ne 600 ] && [ "$perms" -ne 644 ]; then
-                echo -e "${RED}[FAIL] Root SSH key has insecure permissions: ${perms}${NC}. Change to 600."
+                print_check_result "FAIL" "Root SSH key has insecure permissions: ${perms}. Change to 600."
                 ((problematic_perms++))
             fi
         fi
@@ -226,11 +274,11 @@ check_ssh_key_presence() {
                 # Check permissions
                 perms=$(stat -c %a "$auth_file")
                 if [ "$perms" -ne 600 ] && [ "$perms" -ne 644 ]; then
-                    echo -e "${RED}[FAIL] Insecure permissions (${perms}) on ${auth_file}. Change to 600.${NC}"
+                    print_check_result "FAIL" "Insecure permissions (${perms}) on ${auth_file}. Change to 600."
                     ((problematic_perms++))
                 fi
             else
-                echo -e "${RED}[FAIL] Empty authorized_keys file in ${user_dir}/.ssh${NC}"
+                print_check_result "FAIL" "Empty authorized_keys file in ${user_dir}/.ssh"
                 ((failed_checks++))
             fi
         fi
@@ -238,17 +286,18 @@ check_ssh_key_presence() {
 
     if [ $found_keys -eq 1 ]; then
         if [ $problematic_perms -eq 0 ]; then
-            echo -e "${GREEN}[PASS] SSH keys present with proper permissions${NC}"
+            print_check_result "PASS" "🔑 SSH keys present with proper permissions"
         else
             ((failed_checks+=problematic_perms))
         fi
     else
-        echo -e "${RED}[FAIL] No SSH keys found in the authorized_keys file. Add your SSH public key to the file${NC}"
+        print_check_result "FAIL" "No SSH keys found in the authorized_keys file. Add your SSH public key to the file"
         ((failed_checks++))
     fi
 }
 
 check_chrony() {
+    print_check_result "INFO" "Time synchronization:"
     ((total_checks++))
     chrony_installed=0
     conflicts_found=0
@@ -256,9 +305,9 @@ check_chrony() {
     # Check Chrony installation
     if command -v chronyc &> /dev/null; then
         chrony_installed=1
-        echo -e "${GREEN}[PASS] Chrony is installed${NC}"
+        print_check_result "PASS" "📥 Chrony is installed"
     else
-        echo -e "${RED}[FAIL] Chrony not installed${NC}"
+        print_check_result "FAIL" "❌ Chrony not installed"
         ((failed_checks++))
     fi
 
@@ -266,27 +315,27 @@ check_chrony() {
         # Service status check
         ((total_checks++))
         if systemctl is-active --quiet chrony; then
-            echo -e "${GREEN}[PASS] Chrony service is running${NC}"
+            print_check_result "PASS" "🏃 RunningChrony service is running"
         else
-            echo -e "${RED}[FAIL] Chrony service is not running${NC}"
+            print_check_result "FAIL" "🛑 Chrony service is not running"
             ((failed_checks++))
         fi
 
         # Service enabled check
         ((total_checks++))
         if systemctl is-enabled --quiet chrony; then
-            echo -e "${GREEN}[PASS] Chrony service is enabled${NC}"
+            print_check_result "PASS" "⚡ Chrony service is enabled"
         else
-            echo -e "${RED}[FAIL] Chrony service is not enabled on boot${NC}"
+            print_check_result "FAIL" "⚠️ Chrony service is not enabled on boot"
             ((failed_checks++))
         fi
 
         # Time sync status check
         ((total_checks++))
         if chronyc tracking | grep -q "Leap status\s*:\s*Normal"; then
-            echo -e "${GREEN}[PASS] Chrony time synchronization active${NC}"
+            print_check_result "PASS" "🕺 Chrony time synchronization active"
         else
-            echo -e "${RED}[FAIL] Chrony not synchronized${NC}"
+            print_check_result "FAIL" "⏳ Chrony not synchronized"
             ((failed_checks++))
         fi
     fi
@@ -296,20 +345,20 @@ check_chrony() {
     for service in "${conflicting_services[@]}"; do
         ((total_checks++))
         if systemctl is-active --quiet "$service" &> /dev/null; then
-            echo -e "${RED}[FAIL] Conflicting time service running: ${service}${NC}"
+            print_check_result "FAIL" "Conflicting time service running: ${service}"
             ((failed_checks++))
             conflicts_found=1
         fi
         ((total_checks++))
         if systemctl is-enabled --quiet "$service" &> /dev/null; then
-            echo -e "${RED}[FAIL] Conflicting time service enabled: ${service}${NC}"
+            print_check_result "FAIL" "Conflicting time service enabled: ${service}"
             ((failed_checks++))
             conflicts_found=1
         fi
     done
 
     if [ $conflicts_found -eq 0 ] && [ $chrony_installed -eq 1 ]; then
-        echo -e "${GREEN}[PASS] No conflicting time services detected${NC}"
+        print_check_result "PASS" "🕒 No conflicting time services detected"
     fi
 }
 
@@ -322,43 +371,74 @@ check_elcl_listening_ports() {
     prysm_running=0
     if pgrep -f "prysm" >/dev/null; then
         prysm_running=1
-        echo -e "${BLUE}${BOLD}[INFO] Checking consensus service on ports 12000 udp, 13000 tcp, and execution service on port 30303 tcp/udp${NC}"
+        print_check_result "INFO" "Checking consensus service on ports 12000 udp, 13000 tcp, and execution service on port 30303 tcp/udp"
         # Check Prysm specific ports
-        for port in "12000" "13000"; do
-            proto="tcp"
+        declare -a prysm_ports=("12000" "13000" "30303")
+        for port in "${prysm_ports[@]}"; do
             if [ "$port" = "12000" ]; then
                 proto="udp"
-            fi
-            if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
-                echo -e "${GREEN}[PASS] Detected ${proto^^} service on port ${port}${NC}"
-                ((detected++))
-                if [ "$EUID" -eq 0 ]; then
-                    pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
-                    if [ -n "$pid" ]; then
-                        process=$(ps -p "$pid" -o comm=)
-                        echo -e "${YELLOW}     Process: ${process} (PID ${pid})${NC}"
-                    fi
-                else
-                    echo -e "${YELLOW}     Run as root to identify process${NC}"
-                fi
-            fi
-        done
-    else
-        echo -e "${BLUE}${BOLD}[INFO] Checking for execution & consensus services on ports 9000 tcp and 30303 tcp/udp${NC}"
-        # Check standard ports for other clients
-        for port in "${p2p_ports[@]}"; do
-            for proto in "${p2p_protocols[@]}"; do
                 if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
-                    echo -e "${GREEN}[PASS] Detected ${proto^^} service on port ${port}${NC}"
+                    print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
                     ((detected++))
                     if [ "$EUID" -eq 0 ]; then
                         pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
                         if [ -n "$pid" ]; then
                             process=$(ps -p "$pid" -o comm=)
-                            echo -e "${YELLOW}     Process: ${process} (PID ${pid})${NC}"
+                            echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
                         fi
                     else
-                        echo -e "${YELLOW}     Run as root to identify process${NC}"
+                        echo -e "${YELLOW}          Run as root to identify process${NC}"
+                    fi
+                fi
+            elif [ "$port" = "13000" ]; then
+                proto="tcp"
+                if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
+                    print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
+                    ((detected++))
+                    if [ "$EUID" -eq 0 ]; then
+                        pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                        if [ -n "$pid" ]; then
+                            process=$(ps -p "$pid" -o comm=)
+                            echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}          Run as root to identify process${NC}"
+                    fi
+                fi
+            elif [ "$port" = "30303" ]; then
+                for proto in "${p2p_protocols[@]}"; do
+                    if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
+                        print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
+                        ((detected++))
+                        if [ "$EUID" -eq 0 ]; then
+                            pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                            if [ -n "$pid" ]; then
+                                process=$(ps -p "$pid" -o comm=)
+                                echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
+                            fi
+                        else
+                            echo -e "${YELLOW}          Run as root to identify process${NC}"
+                        fi
+                    fi
+                done
+            fi
+        done
+    else
+        print_check_result "INFO" "Checking for execution & consensus services on ports 9000 tcp/udp and 30303 tcp/udp"
+        # Check standard ports for other clients
+        for port in "${p2p_ports[@]}"; do
+            for proto in "${p2p_protocols[@]}"; do
+                if sudo ss -lntu | grep -qE "${proto}.*:${port}"; then
+                    print_check_result "PASS" "Detected ${proto^^} service on port ${port}"
+                    ((detected++))
+                    if [ "$EUID" -eq 0 ]; then
+                        pid=$(sudo ss -lntup "sport = :${port}" | awk -Fpid= '/users:/ {print $2}' | cut -d, -f1 | head -1)
+                        if [ -n "$pid" ]; then
+                            process=$(ps -p "$pid" -o comm=)
+                            echo -e "${YELLOW}          Process: ${process} (PID ${pid})${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}          Run as root to identify process${NC}"
                     fi
                 fi
             done
@@ -366,25 +446,41 @@ check_elcl_listening_ports() {
     fi
 
     if [ $detected -gt 0 ]; then
-        echo -e "${GREEN}[PASS] Found ${detected} execution & consensus listening p2p ports${NC}"
+        if [ $prysm_running -eq 1 ]; then
+            if [ $detected -eq 4 ]; then
+                print_check_result "PASS" "Found all 4 expected ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm and execution services"
+            else
+                print_check_result "FAIL" "Found ${detected} ports, expected 4 ports (12000 udp, 13000 tcp, 30303 tcp/udp) for Prysm and execution services"
+                ((failed_checks++))
+            fi
+        else
+            if [ $detected -eq 4 ]; then
+                print_check_result "PASS" "Found all 4 expected ports (9000 tcp/udp, 30303 tcp/udp) for execution & consensus services"
+            else
+                print_check_result "FAIL" "Found ${detected} ports, expected 4 ports (9000 tcp/udp, 30303 tcp/udp) for execution & consensus services"
+                ((failed_checks++))
+            fi
+        fi
     else
-        echo -e "${RED}[FAIL] No execution & consensus services detected on expected ports${NC}"
+        print_check_result "FAIL" "No execution & consensus services detected on expected ports"
         ((failed_checks++))
     fi
 
+echo
+    print_check_result "INFO" "Ethereum node processes:"
     # Additional check for running processes
     running_p2p=0
     for process in "${p2p_processes[@]}"; do
         if pgrep -f "$process" >/dev/null; then
-            echo -e "${BLUE}${BOLD}[INFO] Detected Ethereum node process: ${process}${NC}"
+            echo -e "${BLUE} 🔍 Detected Ethereum node process: ${process} ${NC}"
             ((running_p2p++))
         fi
     done
 
     if [ $running_p2p -gt 0 ]; then
-        echo -e "${GREEN}[PASS] Found ${running_p2p} Ethereum node processes running${NC}"
+        print_check_result "PASS" "Found ${running_p2p} Ethereum node processes running"
     else
-        echo -e "${PASS}[FAILED] No Ethereum node processes detected${NC}"
+        print_check_result "FAIL" "No Ethereum node processes detected"
     fi
 }
 
@@ -392,7 +488,7 @@ check_open_ports() {
     ((total_checks++))
     open_ports=0
     concat_ports=""
-
+    
     # Check if Prysm is running
     if pgrep -f "prysm" >/dev/null; then
         tcp_ports="13000,30303"
@@ -401,11 +497,11 @@ check_open_ports() {
         tcp_ports="9000,30303"
         udp_ports="9000,30303"
     fi
-
+    
     # Check TCP ports
     checker_url="https://eth2-client-port-checker.vercel.app/api/checker?ports="
     tcp_json=$(curl -s "${checker_url}${tcp_ports}")
-
+    
     # Check UDP ports using netcat
     udp_open_ports=0
     open_udp_ports=()
@@ -416,29 +512,31 @@ check_open_ports() {
         fi
     done
 
+echo
+
     # Parse JSON using jq and check if any open ports exist
-    echo -e "${BLUE}${BOLD}[INFO] Open ports found:${NC}"
+    print_check_result "INFO" "Open ports found:"
     if echo "$tcp_json" | jq -e '.open_ports[]' > /dev/null 2>&1; then
         echo "$tcp_json" | jq -r '.open_ports[]' | while read -r port; do echo "$port(TCP)"; done
         tcp_open_ports=$(echo "$tcp_json" | jq '.open_ports | length')
         open_ports=$((tcp_open_ports + udp_open_ports))
     fi
-
+    
     # Show UDP ports
     for port in "${open_udp_ports[@]}"; do
         echo "$port(UDP)"
     done
-
+    
     # Compare expected vs actual number of open ports
     expected_tcp_ports=$(echo "$tcp_ports" | tr ',' '\n' | wc -l)
     expected_udp_ports=$(echo "$udp_ports" | tr ',' '\n' | wc -l)
     expected_ports=$((expected_tcp_ports + expected_udp_ports))
-
+    
     if [ "$expected_ports" -ne "$open_ports" ]; then
-        echo -e "${RED}[FAIL] Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check port forwarding on router.${NC}"
+        print_check_result "FAIL" "Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check port forwarding on router."
         ((failed_checks++))
     else
-        echo -e "${GREEN}[PASS] P2P Ports fully open on ${tcp_ports} (TCP) and ${udp_ports} (UDP)${NC}"
+        print_check_result "PASS" "P2P Ports fully open on ${tcp_ports} (TCP) and ${udp_ports} (UDP)"
     fi
 }
 
@@ -453,8 +551,11 @@ check_peer_count() {
     _json_cl=$(curl -m 1 -s "${API_BN_ENDPOINT}"/eth/v1/node/peers | jq -c '.data')
     _peer_status["Consensus_Layer_Known_Inbound_Peers"]=$(jq -c '.[] | select(.direction == "inbound")' <<< "$_json_cl" | wc -l)
     _peer_status["Consensus_Layer_Known_Outbound_Peers"]=$(jq -c '.[] | select(.direction == "outbound")' <<< "$_json_cl" | wc -l)
+
+    echo
+
     # Print each peer status
-    echo -e "${BLUE}${BOLD}[INFO] Peer counts:${NC}"
+    print_check_result "INFO" "Peer counts:"
     for _key in ${!_peer_status[*]}; do
         if [[ ${_peer_status[$_key]} -gt 0 ]]; then
             echo -e "[${GREEN}✔${NC}]${BLUE}${BOLD}[$_key]: ${_peer_status[$_key]} peers${NC}"
@@ -464,10 +565,10 @@ check_peer_count() {
         fi
     done
      if [ -n "${_warn}" ]; then
-        echo -e "${RED}[FAIL] Suboptimal connectivity may affect validating nodes. To resolve, restart the service and check port forwarding, firewall-router settings, public IP, ENR.${NC}"
+        print_check_result "FAIL" "Suboptimal connectivity may affect validating nodes. To resolve, restart the service and check port forwarding, firewall-router settings, public IP, ENR."
         ((failed_checks++))
     else
-        echo -e "${GREEN}[PASS] Consensus and execution client's peer count appear healthy.${NC}"
+        print_check_result "PASS" "Consensus and execution client's peer count appear healthy."
     fi
 }
 
@@ -492,9 +593,9 @@ check_systemd_services() {
         if [ $service_installed -eq 1 ]; then
             # Check if service is active
             if systemctl is-active --quiet "$service"; then
-                echo -e "${GREEN}[PASS] 🟢 Running${NC}"
+                echo -e "${GREEN}[PASS] 🏃 Running${NC}"
             else
-                echo -e "${BLUE}${BOLD}[INFO] 🔴 Not running${NC}"
+                echo -e "${BLUE}${BOLD}[INFO] 🛑 Not running${NC}"
             fi
 
             # Check if service is enabled
@@ -510,9 +611,9 @@ check_systemd_services() {
 check_noatime() {
     ((total_checks++))
     if grep -q "noatime" /etc/fstab; then
-        echo -e "${GREEN}[PASS] noatime is active${NC}"
+        print_check_result "PASS" "noatime is active"
     else
-        echo -e "${RED}[FAIL] noatime is not active. To change, use Toolbox.${NC}"
+        print_check_result "FAIL" "noatime is not active. To change, use Toolbox."
         ((failed_checks++))
     fi
 }
@@ -521,14 +622,17 @@ check_swappiness() {
     ((total_checks++))
     swappiness=$(cat /proc/sys/vm/swappiness)
     if [ "$swappiness" -le 10 ] ; then
-        echo -e "${GREEN}[PASS] swappiness is good. value is $swappiness ${NC}"
+        print_check_result "PASS" "swappiness is good. value is $swappiness "
     else
-        echo -e "${RED}[FAIL] swappiness is not optimized. value is $swappiness. To change, use Toolbox.${NC}"
+        print_check_result "FAIL" "swappiness is not optimized. value is $swappiness. To change, use Toolbox."
         ((failed_checks++))
     fi
 }
 
 print_system_information() {
+    print_section_header "System Information"
+    
+    # Get system information
     os_name=$(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)
     hostname=$(uname -n)
     kernel=$(uname -r)
@@ -549,30 +653,30 @@ print_system_information() {
         *) arch="Unknown architecture"
     esac
 
-    # Output Display
-    cat << EOF
-OS Name:        $os_name
-Hostname:       $hostname
-Kernel Version: $kernel
-Uptime:         $uptime (since $uptime_since)
-CPU Model:      $cpu_name
-CPU Cores:      $cores
-CPU Speed:      $freq
-Architecture:   $arch
-Load Average:   $load
-IP Address:     $ip
-Total RAM:      $ram_total
-Swap:           $swap
-Disk Space:     $disk_total
-I/O Speed:      $io
-EOF
+     # Output Display with better formatting
+    printf "${BLUE}%-20s${NC} %s\n" "OS Name:" "$os_name"
+    printf "${BLUE}%-20s${NC} %s\n" "Hostname:" "$hostname"
+    printf "${BLUE}%-20s${NC} %s\n" "Kernel Version:" "$kernel"
+    printf "${BLUE}%-20s${NC} %s\n" "Uptime:" "$uptime"
+    printf "${BLUE}%-20s${NC} %s\n" "Since:" "$uptime_since"
+    printf "${BLUE}%-20s${NC} %s\n" "CPU Model:" "$cpu_name"
+    printf "${BLUE}%-20s${NC} %s\n" "CPU Cores:" "$cores"
+    printf "${BLUE}%-20s${NC} %s MHz\n" "CPU Speed:" "$freq"
+    printf "${BLUE}%-20s${NC} %s\n" "Architecture:" "$arch"
+    printf "${BLUE}%-20s${NC} %s\n" "Load Average:" "$load"
+    printf "${BLUE}%-20s${NC} %s\n" "IP Address:" "$ip"
+    printf "${BLUE}%-20s${NC} %s\n" "Total RAM:" "$ram_total"
+    printf "${BLUE}%-20s${NC} %s\n" "Swap:" "$swap"
+    printf "${BLUE}%-20s${NC} %s\n" "Disk Space:" "$disk_total"
+    printf "${BLUE}%-20s${NC} %s\n" "I/O Speed:" "$io"
 }
 
 start_time=$(date +%s)
-echo -e "\n${YELLOW}=== Starting Node Security Scanner and Health Checkup ===${NC}\n"
+echo -e "\n${YELLOW}${BOLD}=== Starting Node Security Scanner and Health Checkup ===${NC}\n"
 display_banner
+
 # Execute checks
-echo -e "\n${YELLOW}=== Security Checks ===${NC}"
+print_section_header "Security Checks"
 check_firewall
 check_ssh_keys
 check_fail2ban
@@ -580,33 +684,37 @@ check_updates
 check_unattended_upgrades
 check_reboot_required
 
-echo -e "\n${YELLOW}=== Node Health Checks ===${NC}"
+print_section_header "Node Health Checks"
 check_listening_ports
 check_open_ports
 check_peer_count
+echo
 check_resources
+echo
 check_ssh_2fa
 check_ssh_key_presence
+echo
 check_chrony
+echo
 check_elcl_listening_ports
 check_systemd_services
 
-echo -e "\n${YELLOW}=== Performance Tuning Checks ===${NC}"
+print_section_header "Performance Tuning Checks"
 check_swappiness
 check_noatime
 
-echo -e "\n${YELLOW}=== System Information ===${NC}"
 print_system_information
 
 # Summary
-echo -e "\n${YELLOW}=== Summary ===${NC}"
-echo -e "${BLUE}${BOLD}Total checks: ${total_checks}${NC}"
-echo -e "${GREEN}Passed checks: $((total_checks - failed_checks))${NC}"
-echo -e "${RED}Failed checks: ${failed_checks}${NC}"
+print_section_header "Summary"
+printf "${BLUE}${BOLD}%-20s${NC} %d\n" "Total checks:" "$total_checks"
+printf "${GREEN}%-20s${NC} %d\n" "Passed checks:" "$((total_checks - failed_checks - warning_checks))"
+printf "${YELLOW}%-20s${NC} %d\n" "Warning checks:" "$warning_checks"
+printf "${RED}%-20s${NC} %d\n" "Failed checks:" "$failed_checks"
 
 # Duration
 end_time=$(date +%s)
 duration=$((end_time - start_time))
-echo -e "\n${YELLOW}=== Duration: $duration seconds  ===${NC}"
-echo -e "\n${GREEN}=== Node Checker Complete: Press enter to exit  ===${NC}"
+echo -e "\n${YELLOW}${BOLD}Duration: $duration seconds${NC}"
+echo -e "\n${GREEN}${BOLD}=== Node Checker Complete: Press enter to exit ===${NC}"
 read -r
