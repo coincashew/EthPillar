@@ -11,7 +11,7 @@ SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Node configuration
 p2p_ports=("9000" "30303")
-p2p_processes=("geth" "besu" "teku" "lighthouse" "prysm" "nimbus" "erigon" "nethermind" "reth" "mev-boost")
+p2p_processes=("geth" "besu" "teku" "lighthouse" "prysm" "nimbus_beacon_node" "nimbus_validator" "lodestar" "erigon" "nethermind" "reth" "mev-boost")
 services=("consensus" "execution" "validator" "mevboost")
 API_BN_ENDPOINT="http://localhost:5052"
 EL_RPC_ENDPOINT="http://localhost:8545"
@@ -20,7 +20,7 @@ EL_RPC_ENDPOINT="http://localhost:8545"
 if [[ -f "$SOURCE_DIR"/../../.env.overrides ]]; then
     # shellcheck source=/dev/null
     source "$SOURCE_DIR"/../../.env.overrides
-    
+
     # Handle consensus layer endpoint overrides
     if [[ -n "${CL_IP_ADDRESS:-}" || -n "${CL_REST_PORT:-}" ]]; then
         # Use default values if not overridden
@@ -28,7 +28,7 @@ if [[ -f "$SOURCE_DIR"/../../.env.overrides ]]; then
         local_cl_port="${CL_REST_PORT:-5052}"
         API_BN_ENDPOINT="http://${local_cl_ip}:${local_cl_port}"
     fi
-    
+
     # Handle execution layer endpoint overrides
     if [[ -n "${EL_IP_ADDRESS:-}" || -n "${EL_RPC_PORT:-}" ]]; then
         # Use default values if not overridden
@@ -52,6 +52,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[35m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
@@ -98,30 +99,30 @@ print_check_result() {
     local icon=""
     local color=""
     local prefix=""
-    
+
     case "$status" in
-        "PASS") 
-            icon="✓"; 
-            color="$GREEN"; 
+        "PASS")
+            icon="✓"
+            color="$GREEN"
             prefix="[PASS]"
             ;;
-        "FAIL") 
-            icon="✗"; 
-            color="$RED"; 
+        "FAIL")
+            icon="✗"
+            color="$RED"
             prefix="[FAIL]"
             ;;
-        "WARN") 
-            icon="⚠"; 
-            color="$YELLOW"; 
+        "WARN")
+            icon="⚠"
+            color="$YELLOW"
             prefix="[WARN]"
             ;;
-        "INFO") 
-            icon="ℹ"; 
-            color="$BLUE"; 
+        "INFO")
+            icon="ℹ"
+            color="$PURPLE"
             prefix="[INFO]"
             ;;
     esac
-    
+
     echo -e "${color}${prefix} ${icon} ${message}${NC}"
 }
 
@@ -315,7 +316,7 @@ check_chrony() {
         # Service status check
         ((total_checks++))
         if systemctl is-active --quiet chrony; then
-            print_check_result "PASS" "🏃 RunningChrony service is running"
+            print_check_result "PASS" "🏃 Chrony service is running"
         else
             print_check_result "FAIL" "🛑 Chrony service is not running"
             ((failed_checks++))
@@ -488,7 +489,7 @@ check_open_ports() {
     ((total_checks++))
     open_ports=0
     concat_ports=""
-    
+
     # Check if Prysm is running
     if pgrep -f "prysm" >/dev/null; then
         tcp_ports="13000,30303"
@@ -497,11 +498,11 @@ check_open_ports() {
         tcp_ports="9000,30303"
         udp_ports="9000,30303"
     fi
-    
+
     # Check TCP ports
     checker_url="https://eth2-client-port-checker.vercel.app/api/checker?ports="
     tcp_json=$(curl -s "${checker_url}${tcp_ports}")
-    
+
     # Check UDP ports using netcat
     udp_open_ports=0
     open_udp_ports=()
@@ -521,17 +522,17 @@ echo
         tcp_open_ports=$(echo "$tcp_json" | jq '.open_ports | length')
         open_ports=$((tcp_open_ports + udp_open_ports))
     fi
-    
+
     # Show UDP ports
     for port in "${open_udp_ports[@]}"; do
         echo "$port(UDP)"
     done
-    
+
     # Compare expected vs actual number of open ports
     expected_tcp_ports=$(echo "$tcp_ports" | tr ',' '\n' | wc -l)
     expected_udp_ports=$(echo "$udp_ports" | tr ',' '\n' | wc -l)
     expected_ports=$((expected_tcp_ports + expected_udp_ports))
-    
+
     if [ "$expected_ports" -ne "$open_ports" ]; then
         print_check_result "FAIL" "Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check port forwarding on router."
         ((failed_checks++))
@@ -561,7 +562,7 @@ check_peer_count() {
             echo -e "[${GREEN}✔${NC}]${BLUE}${BOLD}[$_key]: ${_peer_status[$_key]} peers${NC}"
         else
             echo -e "[${RED}✗${NC}]${BLUE}${BOLD}[$_key]: ${_peer_status[$_key]} peers${NC}"
-            _warn="1";
+            _warn="1"
         fi
     done
      if [ -n "${_warn}" ]; then
@@ -577,11 +578,11 @@ check_systemd_services() {
     for service in "${services[@]}"; do
         service_installed=0
         ((total_checks+=3))  # Three checks per service (installed + active + enabled)
-        
+
         # Print service header
         echo -e "\n${BLUE}${BOLD}📦 ${service^} Service${NC}"
         echo -e "${BLUE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        
+
         # Check installation
         if [ -f /etc/systemd/system/"${service}".service ]; then
             service_installed=1
@@ -631,7 +632,7 @@ check_swappiness() {
 
 print_system_information() {
     print_section_header "System Information"
-    
+
     # Get system information
     os_name=$(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)
     hostname=$(uname -n)
@@ -654,21 +655,21 @@ print_system_information() {
     esac
 
      # Output Display with better formatting
-    printf "${BLUE}%-20s${NC} %s\n" "OS Name:" "$os_name"
-    printf "${BLUE}%-20s${NC} %s\n" "Hostname:" "$hostname"
-    printf "${BLUE}%-20s${NC} %s\n" "Kernel Version:" "$kernel"
-    printf "${BLUE}%-20s${NC} %s\n" "Uptime:" "$uptime"
-    printf "${BLUE}%-20s${NC} %s\n" "Since:" "$uptime_since"
-    printf "${BLUE}%-20s${NC} %s\n" "CPU Model:" "$cpu_name"
-    printf "${BLUE}%-20s${NC} %s\n" "CPU Cores:" "$cores"
-    printf "${BLUE}%-20s${NC} %s MHz\n" "CPU Speed:" "$freq"
-    printf "${BLUE}%-20s${NC} %s\n" "Architecture:" "$arch"
-    printf "${BLUE}%-20s${NC} %s\n" "Load Average:" "$load"
-    printf "${BLUE}%-20s${NC} %s\n" "IP Address:" "$ip"
-    printf "${BLUE}%-20s${NC} %s\n" "Total RAM:" "$ram_total"
-    printf "${BLUE}%-20s${NC} %s\n" "Swap:" "$swap"
-    printf "${BLUE}%-20s${NC} %s\n" "Disk Space:" "$disk_total"
-    printf "${BLUE}%-20s${NC} %s\n" "I/O Speed:" "$io"
+    printf "${PURPLE}%-20s${NC} %s\n" "OS Name:" "$os_name"
+    printf "${PURPLE}%-20s${NC} %s\n" "Hostname:" "$hostname"
+    printf "${PURPLE}%-20s${NC} %s\n" "Kernel Version:" "$kernel"
+    printf "${PURPLE}%-20s${NC} %s\n" "Uptime:" "$uptime"
+    printf "${PURPLE}%-20s${NC} %s\n" "Since:" "$uptime_since"
+    printf "${PURPLE}%-20s${NC} %s\n" "CPU Model:" "$cpu_name"
+    printf "${PURPLE}%-20s${NC} %s\n" "CPU Cores:" "$cores"
+    printf "${PURPLE}%-20s${NC} %s MHz\n" "CPU Speed:" "$freq"
+    printf "${PURPLE}%-20s${NC} %s\n" "Architecture:" "$arch"
+    printf "${PURPLE}%-20s${NC} %s\n" "Load Average:" "$load"
+    printf "${PURPLE}%-20s${NC} %s\n" "IP Address:" "$ip"
+    printf "${PURPLE}%-20s${NC} %s\n" "Total RAM:" "$ram_total"
+    printf "${PURPLE}%-20s${NC} %s\n" "Swap:" "$swap"
+    printf "${PURPLE}%-20s${NC} %s\n" "Disk Space:" "$disk_total"
+    printf "${PURPLE}%-20s${NC} %s\n" "I/O Speed:" "$io"
 }
 
 start_time=$(date +%s)
