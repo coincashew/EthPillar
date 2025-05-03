@@ -47,7 +47,10 @@ function downloadClient(){
 # Upgrade function
 function upgrade(){
   getLatestVersion
-  if whiptail --title "Update $APP_NAME" --yesno "Installed Version is: $(cat $PLUGIN_INSTALL_PATH/current_version)\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $GITHUB_RELEASE_NODES\n\nDo you want to update to $TAG?" 12 78; then
+  VERSION=$(cat $PLUGIN_INSTALL_PATH/current_version)
+  # Remove front v if present and compare versions
+  [[ "${VERSION#v}" == "${TAG#v}" ]] && whiptail --title "Already updated" --msgbox "You are already on the latest version: $VERSION" 10 78 && return
+  if whiptail --title "Update $APP_NAME" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $GITHUB_RELEASE_NODES\n\nDo you want to update to $TAG?" 12 78; then
       sudo systemctl stop $SERVICE_NAME
       downloadClient
       sudo systemctl start $SERVICE_NAME
