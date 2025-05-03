@@ -27,7 +27,7 @@ fi
 # Variables
 GITHUB_URL=https://api.github.com/repos/TobiWo/eth-duties/releases/latest
 GITHUB_RELEASE_NODES=https://github.com/TobiWo/eth-duties/releases
-RELEASE_SUFFIX="ubuntu2204-${_arch}.tar.gz"
+RELEASE_SUFFIX="ubuntu22.04-${_arch}.tar.gz"
 DESCRIPTION="eth-duties logs upcoming validator duties to the console. Developed mainly for home stakers."
 DOCUMENTATION=https://tobiwo.github.io/eth-duties
 SOURCE_CODE=https://github.com/TobiWo/eth-duties
