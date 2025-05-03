@@ -1189,6 +1189,7 @@ while true; do
       💧 "Lido CSM Validator: Activate an extra validator service. Re-use this node's EL/CL."
       ⛑️ "CSM-Sentinel: Sends notifications for your CSM Node Operator ID. Self-hosted. Docker. Telegram."
       🔎 "Dora the Explorer: lightweight beaconchain explorer. validator actions. self-hosted. private."
+      🔧 "eth-validator-cli by TobiWo: managing validators via execution layer requests"
       🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
       🐼 "Contributoor: powerful monitoring & data-gathering tool. enhances network transparency"
       - ""
@@ -1246,6 +1247,13 @@ while true; do
             runScript plugins/contributoor/plugin_contributoor.sh -i
         fi
         runScript plugins/contributoor/menu.sh
+        ;;
+      🔧)
+        export BACKTITLE EDITOR _platform _arch
+        if [[ ! -d /opt/ethpillar/plugin-eth-validator-cli ]]; then
+            runScript plugins/eth-validator-cli/plugin_eth-validator-cli.sh -i
+        fi
+        runScript plugins/eth-validator-cli/menu.sh
         ;;
       99)
         break
