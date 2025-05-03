@@ -11,7 +11,8 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-set -e
+set -euo pipefail
+trap 'echo -e "\n❌ Operation aborted."; exit 1' INT
 
 clear
 echo "########################################################################################"
@@ -21,86 +22,109 @@ echo "Key Points:"
 echo "* Enhanced Access Control: Requires two verification factors (e.g., SSH key + time-based code)."
 echo "* Mitigates Credential Theft: Renders stolen passwords/SSH keys useless without the second factor."
 echo "* Phishing/Keylogger Resistance: Time-sensitive codes prevent reuse, thwarting most phishing and keylogging attacks."
-echo "* ⚠️ Critical Note: Always test 2FA in a parallel session to avoid accidental lockouts."
+echo "* ⚠️  Critical Note: Always test 2FA in a parallel session to avoid accidental lockouts."
 echo ""
 
-function install(){
-echo "Do you wish to install? [y|n]"
-read -rsn1 yn
-[[ ! ${yn} = [Yy]* ]] && exit 0
+function check_ssh_config() {
+    echo "🧪 Validating SSH configuration..."
+    if ! sudo sshd -t; then
+        echo "❌ SSH configuration is invalid. Aborting to avoid lockout."
+        exit 1
+    fi
+}
 
-# Install required package
-echo "🔧 Installing libpam-google-authenticator..."
-sudo apt-get update -qq && sudo apt-get install -y libpam-google-authenticator
+function install() {
+    echo "🔐 SSH 2FA Setup: Proceed with installation? [y/N]"
+    read -rsn1 yn
+    [[ ! ${yn:-n} =~ ^[Yy]$ ]] && exit 0
 
-# Generate Google Authenticator credentials
-echo "🔐 Generating 2FA credentials..."
-google-authenticator -C -t -d -f -r 3 -R 30 -w 3
+    echo "🔧 Installing required package..."
+    sudo apt-get update -qq
+    sudo apt-get install -y libpam-google-authenticator
 
-# Create SSH config directory if it doesn't exist
-echo "🔧 Creating SSH config directory..."
-sudo mkdir -p /etc/ssh/sshd_config.d
+    echo "🔐 Generating 2FA credentials..."
+    if [[ -f ~/.google_authenticator ]]; then
+        echo "⚠️  Existing 2FA config detected for this user."
+        echo "Overwrite? This will invalidate your current setup. [y/N]"
+        read -rsn1 ow
+        [[ ! ${ow:-n} =~ ^[Yy]$ ]] && exit 0
+    fi
+    google-authenticator -t -d -f -r 3 -R 30 -w 3
 
-# Backup original PAM config
-sudo cp /etc/pam.d/sshd /etc/pam.d/sshd.bak
+    echo "📁 Ensuring SSH config directory exists..."
+    sudo mkdir -p /etc/ssh/sshd_config.d
 
-# Configure PAM
-echo "📝 Configuring PAM..."
-sudo sh -c 'echo "auth required pam_google_authenticator.so" >> /etc/pam.d/sshd'
-sudo sh -c 'sed -i "s/^@include common-auth/#@include common-auth/" /etc/pam.d/sshd'
-echo "📝 PAM configuration saved to /etc/pam.d/sshd"
+    echo "📝 Backing up PAM SSH config..."
+    sudo cp /etc/pam.d/sshd /etc/pam.d/sshd.bak
 
-# Configure SSH
-echo "🔧 Creating custom SSH configuration..."
-echo "ChallengeResponseAuthentication yes
+    echo "🔧 Configuring PAM for 2FA..."
+    if ! grep -q "pam_google_authenticator.so" /etc/pam.d/sshd; then
+        echo "auth required pam_google_authenticator.so" | sudo tee -a /etc/pam.d/sshd
+    fi
+    sudo sed -i "s/^@include common-auth/#@include common-auth/" /etc/pam.d/sshd
+
+    echo "🛡️  Creating SSH 2FA config..."
+    sudo tee /etc/ssh/sshd_config.d/two-factor.conf > /dev/null <<EOF
+ChallengeResponseAuthentication yes
 UsePAM yes
-AuthenticationMethods publickey,keyboard-interactive" | sudo tee /etc/ssh/sshd_config.d/two-factor.conf
-echo "🔧 SSH configuration saved to /etc/ssh/sshd_config.d/two-factor.conf"
+AuthenticationMethods publickey,keyboard-interactive
+EOF
 
-# Restart SSH service
-echo "🔄 Restarting SSH service..."
-sudo systemctl restart ssh
+    check_ssh_config
 
-echo -e "\n✅ Setup complete! Scan the QR code above with your 2FA app (i.e. Aegis, Google Authenticator)"
-echo "⚠️  IMPORTANT: Keep your backup codes safe!"
-echo "⚠️  Test connection in new terminal before closing this session!"
+    echo "🔄 Restarting SSH service..."
+    sudo systemctl restart ssh
+
+    echo -e "\n✅ 2FA setup complete!"
+    echo "⚠️  Verify login in another terminal before logging out of this session!"
 }
 
-function uninstall(){
-# Safety warning
-echo "🔐 2FA is currently ENABLED!"
-echo "WARNING: Disabling 2FA reduces security!"
-read -p "Continue to uninstall 2FA? (y/N) " -n 1 -r
-echo
-[[ ! $REPLY =~ ^[Yy]$ ]] && exit 0
+function uninstall() {
+    echo "🔐 2FA is currently ENABLED."
+    echo "⚠️  WARNING: Disabling 2FA reduces security!"
+    echo "⚠️  Proceed to uninstall and disable 2FA? [y/N]"
+    read -rsn1 yn
+    [[ ! ${yn:-n} =~ ^[Yy]$ ]] && exit 0
 
-# Restore original PAM config
-if [ -f /etc/pam.d/sshd.bak ]; then
-    echo "🔙 Restoring PAM configuration..."
-    sudo mv /etc/pam.d/sshd.bak /etc/pam.d/sshd
-else
-    echo "🔧 Removing 2FA from PAM..."
-    sudo sh -c 'sed -i "/pam_google_authenticator.so/d" /etc/pam.d/sshd'
-    sudo sh -c 'sed -i "s/^#@include common-auth/@include common-auth/" /etc/pam.d/sshd'
-fi
+    if [[ -f /etc/pam.d/sshd.bak ]]; then
+        echo "🔙 Restoring original PAM configuration..."
+        sudo mv /etc/pam.d/sshd.bak /etc/pam.d/sshd
+    else
+        echo "🔧 Cleaning PAM config manually..."
+        sudo sed -i "/pam_google_authenticator.so/d" /etc/pam.d/sshd
+        sudo sed -i "s/^#@include common-auth/@include common-auth/" /etc/pam.d/sshd
+    fi
 
-# Remove custom SSH config
-echo "🔙 Removing custom SSH configuration..."
-sudo rm -f /etc/ssh/sshd_config.d/two-factor.conf
+    echo "🧹 Removing SSH 2FA config..."
+    sudo rm -f /etc/ssh/sshd_config.d/two-factor.conf
 
-# Restart SSH service
-echo "🔄 Restarting SSH service..."
-sudo systemctl restart ssh
+    echo "🗑️  Do you also want to delete your 2FA secret file? (~/.google_authenticator)?"
+    echo "⚠️  WARNING: This will invalidate your current 2FA setup! - This is irreversible!!"
+    echo "⚠️  Proceed to delete your 2FA secret file? [y/N]"
+    read -rsn1 del
+    echo
+    if [[ ${del:-n} =~ ^[Yy]$ ]]; then
+        rm -f ~/.google_authenticator
+        echo "✅ 2FA secret file deleted."
+    else
+        echo "ℹ️  2FA config file retained."
+    fi
 
-echo -e "\n✅ 2FA disabled. Test connection before closing this session!"
+    check_ssh_config
+
+    echo "🔄 Restarting SSH service..."
+    sudo systemctl restart ssh
+
+    echo -e "\n✅ 2FA has been disabled."
+    echo "⚠️  Verify login in another terminal before logging out of this session!"
 }
 
-# Check for 2FA installation and offer to uninstall, otherwise install.
-if grep -q --ignore-case -oE "pam_google_authenticator.so" /etc/pam.d/sshd || \
-   [ -f /etc/ssh/sshd_config.d/two-factor.conf ]; then
+# Entry point
+if grep -q "pam_google_authenticator.so" /etc/pam.d/sshd || [[ -f /etc/ssh/sshd_config.d/two-factor.conf ]]; then
     uninstall
 else
     install
 fi
+
 echo "Press ENTER to return to menu"
 read
