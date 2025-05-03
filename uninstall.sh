@@ -49,6 +49,13 @@ function uninstallPlugins(){
 		sudo userdel client-stats
 		sudo rm -rf /opt/ethpillar/plugin-client-stats
 	fi
+	if [[ -d /opt/ethpillar/plugin-contributoor ]]; then
+		sudo systemctl stop contributoor
+		sudo systemctl disable contributoor
+		sudo rm /etc/systemd/system/contributoor.service
+		sudo userdel contributoor
+		sudo rm -rf /opt/ethpillar/plugin-contributoor
+	fi
 }
 
 function cleanupMisc(){
