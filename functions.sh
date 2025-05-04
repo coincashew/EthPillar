@@ -21,7 +21,8 @@ declare -a INDICES
 getNetworkConfig() {
     ip_current=$( hostname --all-ip-address | awk '{print $1}')
     interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
-    network_current="$(ip route | grep $interface_current | grep -v default | head -1 | awk '{print $1}')"
+    network_current="$(ip route | grep "$interface_current" | grep -v default | head -1 | awk '{print $1}')"
+    export ip_current interface_current network_current
 }
 
 exit_on_error() {
@@ -213,6 +214,7 @@ getNetwork(){
         NETWORK="Custom Network"
       fi
     esac
+    export NETWORK
 }
 
 # Gets software version from binary

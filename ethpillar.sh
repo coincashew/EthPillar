@@ -15,7 +15,7 @@
 EP_VERSION="4.5.0"
 
 # Default text editor
-EDITOR="nano"
+export EDITOR="nano"
 
 # VARIABLES
 export BASE_DIR="$HOME/git/ethpillar" && cd $BASE_DIR
@@ -38,6 +38,7 @@ export EL_RPC_ENDPOINT="${EL_IP_ADDRESS}:${EL_RPC_PORT}"
 # Get machine info
 _platform=$(get_platform)
 _arch=$(get_arch)
+export _platform _arch
 
 menuMain(){
 
@@ -1244,21 +1245,19 @@ while true; do
         ;;
       🔎)
         getNetworkConfig
-        export ip_current network_current BACKTITLE EDITOR NETWORK
+        getNetwork
         if [[ ! -d /opt/ethpillar/plugin-dora ]]; then
             runScript plugins/dora/plugin_dora.sh -i
         fi
         runScript plugins/dora/menu.sh
         ;;
       🌈)
-        export BACKTITLE EDITOR
         if [[ ! -d /opt/ethpillar/plugin-client-stats ]]; then
             runScript plugins/client-stats/plugin_client_stats.sh -i
         fi
         runScript plugins/client-stats/menu.sh
         ;;
       🐼)
-        export BACKTITLE EDITOR _platform _arch
         if [[ ! -d /opt/ethpillar/plugin-contributoor ]]; then
             runScript plugins/contributoor/plugin_contributoor.sh -i
         fi
@@ -1453,6 +1452,7 @@ function getBackTitle(){
     if [[ ${PLUGIN_MODE:-false} == true ]]; then
     BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT} | $CL-$EL$VC_TEXT$CSM_TEXT | Public Goods by CoinCashew.eth"
     fi
+    export BACKTITLE
 }
 
 function checkV1StakingSetup(){

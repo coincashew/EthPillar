@@ -551,7 +551,6 @@ done
 }
 
 [[ $# -eq 1 ]] && skip="$1" || skip=""
-setWhiptailColors
 setMessage
 downloadEthstakerDepositCli
 checkLido

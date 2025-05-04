@@ -68,7 +68,6 @@ function updateClient(){
 	sudo systemctl start mevboost
 }
 
-setWhiptailColors
 getCurrentVersion
 getLatestVersion
 promptYesNo

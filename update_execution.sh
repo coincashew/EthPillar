@@ -171,7 +171,6 @@ function updateJRE(){
 	fi
 }
 
-setWhiptailColors
 getClient
 getCurrentVersion
 getLatestVersion
