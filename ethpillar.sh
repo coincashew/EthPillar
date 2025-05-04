@@ -1275,28 +1275,27 @@ while true; do
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
-      1 "eth-duties: Show upcoming block proposals, attestations, sync duties"
-      2 "Monitoring: Observe Ethereum Metrics. Explore Dashboards."
-      3 "NCDU: Find large files. Analyze disk usage."
-      4 "Port Checker: Test for Incoming Connections"
-      5 "ethdo: Conduct Common Validator Tasks"
-      6 "Peer Count: Show # peers connected to EL & CL"
-      7 "Beaconcha.in Validator Dashboard: Create a link for my validators"
-      8 "Beaconcha.in: Check Validator Entry/Exit Queue time"
-      9 "EL: Switch Execution Clients"
-      10 "Timezone: Update machine's timezone"
-      11 "Locales: Fix terminal formatting issues"
-      12 "Privacy: Clear bash shell history"
-      13 "Swapfile: Use disk space as extra RAM"
-      14 "UFW Firewall: Control network traffic against unauthorized access"
-      15 "Speedtest: Test internet bandwidth using speedtest.net"
-      16 "Yet-Another-Bench-Script: Test node performance. Automated Benchmarking."
+      ⚙️ "eth-duties: Show upcoming block proposals, attestations, sync duties"
+      🧰 "ethdo: Conduct Common Validator Tasks"
+      💾 "NCDU: Find large files. Analyze disk usage."
+      🧱 "UFW Firewall: Control network traffic against unauthorized access"
+      🤗 "Peer Count: Show # peers connected to EL & CL"
+      🔄 "Port Checker: Test for Incoming Connections"
+      🔗 "Beaconcha.in Validator Dashboard: Create a link for my validators"
+      🚪 "Beaconcha.in: Check Validator Entry/Exit Queue time"
+      💻 "EL: Switch Execution Clients"
+      ⌚ "Timezone: Update machine's timezone"
+      🌐 "Locales: Fix terminal formatting issues"
+      🥷 "Privacy: Clear bash shell history"
+      📁 "Swapfile: Use disk space as extra RAM"
+      🚄 "Speedtest: Test internet bandwidth using speedtest.net"
+      💪 "Yet-Another-Bench-Script: Test node performance. Automated Benchmarking."
       🚀 "Performance Tuning: Optimize your nodes with OS tweaks"
       🔐 "Fail2Ban: Automatically protecting your node from common attack patterns"
       🛠️ "Unattended-upgrades: Automatically install security updates"
       🔒 "2FA: Secure your SSH access with two-factor authentication"
       - ""
-      99 "Back to main menu"
+      ❎ "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -1314,7 +1313,7 @@ while true; do
 
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
-      1)
+      ⚙️)
         # Skip if no validators installed
         if [[ ! -f /etc/systemd/system/validator.service ]]; then echo "No validator(s) installed. Press ENTER to continue."; read; break; fi
         # Skip if arm64
@@ -1330,40 +1329,35 @@ while true; do
         fi
         submenuEthduties
         ;;
-      2)
-        # Install monitoring if not yet installed
-        [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]] && runScript ethereum-metrics-exporter.sh -i
-        submenuMonitoring
-        ;;
-      3)
+      💾)
         findLargestDiskUsage
         ;;
-      4)
+      🔄)
         checkOpenPorts
         ;;
-      5)
+      🧰)
         installEthdo
         submenuEthdo
         ;;
-      6)
+      🤗)
         getPeerCount
         ;;
-      7)
+      🔗)
         createBeaconChainDashboardLink
         ;;
-      8)
+      🚪)
         checkValidatorQueue
         ;;
-      9)
+      💻)
         [[ "${_arch}" == "arm64" ]] && echo "EL Switcher not available for arm64. Press ENTER to continue." && read && break
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
         ;;
-      10)
+      ⌚)
         sudo dpkg-reconfigure tzdata
         ohai "Timezone updated. Press ENTER to continue."
         read
         ;;
-      11)
+      🌐)
         sudo update-locale "LANG=en_US.UTF-8"
         sudo locale-gen --purge "en_US.UTF-8"
         sudo dpkg-reconfigure --frontend noninteractive locales
@@ -1371,21 +1365,21 @@ while true; do
         ohai "Logout and login for terminal locale updates to take effect. Press ENTER to continue."
         read
         ;;
-      12)
+      🥷)
         history -c && history -w
         ohai "Cleared bash history"
         read
         ;;
-      13)
+      📁)
         addSwapfile
         ;;
-      14)
+      🧱)
         submenuUFW
         ;;
-      15)
+      🚄)
         testBandwidth
         ;;
-      16)
+      💪)
         testYetAnotherBenchScript
         ;;
       🚀)
@@ -1402,7 +1396,7 @@ while true; do
         [[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
         runScript ./helpers/install_2fa.sh
         ;;
-      99)
+      ❎)
         break
         ;;
     esac
