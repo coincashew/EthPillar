@@ -566,7 +566,7 @@ while true; do
         git fetch origin main
         
         # Get latest version from remote
-        latest_version=$(git show origin/main:ethpillar.sh | grep 'EP_VERSION=' | cut -d'"' -f2)
+        latest_version=$(git show origin/main:ethpillar.sh | grep '^EP_VERSION=' | cut -d'"' -f2)
         
         if [[ "$current_version" == "$latest_version" ]]; then
           if whiptail --title "EthPillar Update" --yesno "You are already on the latest version ($current_version).\n\nWould you like to pull the latest changes anyway?" 10 78; then
