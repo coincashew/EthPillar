@@ -28,6 +28,15 @@ function getLatestVersion(){
   TAG=$(curl -f -s https://prysmaticlabs.com/releases/latest)
 }
 
+# Gets current installed version
+function getCurrentVersion(){
+  if [ -f "$PLUGIN_INSTALL_PATH/client-stats" ]; then
+    CURRENT_VERSION=$($PLUGIN_INSTALL_PATH/client-stats --version 2>/dev/null | grep -oP 'v\d+\.\d+\.\d+' || echo "unknown")
+  else
+    CURRENT_VERSION="client-stats not installed"
+  fi
+}
+
 # Downloads latest release
 function downloadClient(){
 	cd $HOME
@@ -40,17 +49,15 @@ function downloadClient(){
 	curl -f -L "https://prysmaticlabs.com/releases/${file_client_stats}" -o client-stats
 	chmod +x client-stats
 	sudo mv client-stats $PLUGIN_INSTALL_PATH
- 	# Store current version
-	echo "$TAG" > current_version && sudo mv current_version $PLUGIN_INSTALL_PATH
 }
 
 # Upgrade function
 function upgrade(){
   getLatestVersion
-  VERSION=$(cat $PLUGIN_INSTALL_PATH/current_version)
+  getCurrentVersion
   # Remove front v if present and compare versions
-  [[ "${VERSION#v}" == "${TAG#v}" ]] && whiptail --title "Already updated" --msgbox "You are already on the latest version: $VERSION" 10 78 && return
-  if whiptail --title "Update $APP_NAME" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $GITHUB_RELEASE_NODES\n\nDo you want to update to $TAG?" 12 78; then
+  [[ "${CURRENT_VERSION#v}" == "${TAG#v}" ]] && whiptail --title "Already updated" --msgbox "You are already on the latest version: $CURRENT_VERSION" 10 78 && return
+  if whiptail --title "Update $APP_NAME" --yesno "Installed Version is: $CURRENT_VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $GITHUB_RELEASE_NODES\n\nDo you want to update to $TAG?" 12 78; then
       sudo systemctl stop $SERVICE_NAME
       downloadClient
       sudo systemctl start $SERVICE_NAME
