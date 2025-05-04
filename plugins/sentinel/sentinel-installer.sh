@@ -8,24 +8,6 @@
 # Made for home and solo stakers 🏠🥩
 
 set -e
-set -x
-
-setWhiptailColors(){
-    export NEWT_COLORS='root=,black
-border=green,black
-title=green,black
-roottext=red,black
-window=red,black
-textbox=white,black
-button=black,green
-compactbutton=white,black
-listbox=white,black
-actlistbox=black,white
-actsellistbox=black,green
-checkbox=green,black
-actcheckbox=black,green'
-}
-setWhiptailColors
 
 MSG_ABOUT="About: CSM Sentinel is a telegram bot that sends you notifications for your CSM Node Operator events.
 \nMaintainer: This bot was developed and is maintained by @skhomuti, a member of the Lido Protocol community, to simplify the process of subscribing to the important events for CSM.
