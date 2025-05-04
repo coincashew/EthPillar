@@ -1202,8 +1202,8 @@ while true; do
     # Define the options for the submenu
     SUBOPTIONS=(
       🛡️ "Node Checker: Automated security and health checks for your node."
-      1 "Lido CSM Validator: Activate an extra validator service. Re-use this node's EL/CL."
-      2 "CSM-Sentinel: Sends notifications for your CSM Node Operator ID. Self-hosted. Docker. Telegram."
+      💧 "Lido CSM Validator: Activate an extra validator service. Re-use this node's EL/CL."
+      ⛑️ "CSM-Sentinel: Sends notifications for your CSM Node Operator ID. Self-hosted. Docker. Telegram."
       🔎 "Dora the Explorer: lightweight beaconchain explorer. validator actions. self-hosted. private."
       🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
       🐼 "Contributoor: powerful monitoring & data-gathering tool. enhances network transparency"
@@ -1229,7 +1229,7 @@ while true; do
       🛡️)
         sudo bash -c './plugins/node-checker/run.sh'
         ;;
-      1)
+      💧)
         if [[ ! -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then
           if whiptail --title "Install Lido CSM Validator" --yesno "Do you want to install an extra Nimbus validator service for Lido's CSM?" 8 78; then
             runScript plugins/csm/plugin_csm_validator.sh -i
@@ -1237,7 +1237,7 @@ while true; do
         fi
         submenuPluginCSMValidator
         ;;
-      2)
+      ⛑️)
         if [[ ! -d /opt/ethpillar/plugin-sentinel ]]; then
             runScript plugins/sentinel/plugin_csm_sentinel.sh -i
         fi
