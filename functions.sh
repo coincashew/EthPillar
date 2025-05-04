@@ -111,7 +111,7 @@ print_node_info() {
   validator_status=$(if systemctl is-active --quiet validator ; then printf "Online" ; elif [ -f /etc/systemd/system/validator.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   mevboost_status=$(if systemctl is-active --quiet mevboost ; then printf "Online" ; elif [ -f /etc/systemd/system/mevboost.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   ethpillar_commit=$(git -C "${BASE_DIR}" rev-parse HEAD)
-  ethpillar_version=$(grep EP_VERSION= $BASE_DIR/ethpillar.sh | sed 's/EP_VERSION=//g')
+  ethpillar_version=$(grep ^EP_VERSION= $BASE_DIR/ethpillar.sh | sed 's/EP_VERSION=//g')
   SERVICES=(execution consensus validator mevboost)
   autostart_status=()
   for UNIT in ${SERVICES[@]}
