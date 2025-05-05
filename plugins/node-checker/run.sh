@@ -664,6 +664,7 @@ check_execution_version() {
 check_consensus_version() {
     ((total_checks++))
     CL_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+    CL_VERSION=$(echo $CL_VERSION | sed -n 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
     if [[ $CL_VERSION ]]; then
         # Get client type from service file
         CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
@@ -706,6 +707,7 @@ check_consensus_version() {
 check_validator_version() {
     ((total_checks++))
     VALIDATOR_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+    VALIDATOR_VERSION=$(echo $VALIDATOR_VERSION | sed -n 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
     if [[ $VALIDATOR_VERSION ]]; then
         # Get client type from service file
         VAL=$(cat /etc/systemd/system/validator.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
