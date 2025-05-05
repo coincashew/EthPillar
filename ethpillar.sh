@@ -42,26 +42,38 @@ export _platform _arch
 
 menuMain(){
 
+# Define systemctl services
+_SERVICES=("execution" "consensus" "validator" "mevboost" "csm_nimbusvalidator")
+_SERVICES_NAME=("Execution Client" "Consensus Client" "Validator Client" "MEV-Boost" "CSM Nimbus Validator Plugin")
+_SERVICES_ICON=("🔗" "🧠" "🚀" "⚡" "💧")
+
+function testAndServiceCommand() {
+  for _service in "${!_SERVICES[@]}"; do
+    test -f /etc/systemd/system/"${_service}".service && sudo service "${_service}" "$1"
+  done
+}
+
+function buildMenu() {
+  for (( i=0; i<${#_SERVICES[@]}; i++ )); do
+    test -f /etc/systemd/system/"${_SERVICES[i]}".service && OPTIONS+=("${_SERVICES_ICON[i]}" "${_SERVICES_NAME[i]}")
+  done
+}
 # Define the options for the main menu
 OPTIONS=(
   📈 "Logging & Monitoring"
   - ""
 )
-test -f /etc/systemd/system/execution.service && OPTIONS+=(2 "Execution Client")
-test -f /etc/systemd/system/consensus.service && OPTIONS+=(3 "Consensus Client")
-test -f /etc/systemd/system/validator.service && OPTIONS+=(4 "Validator Client")
-test -f /etc/systemd/system/mevboost.service && OPTIONS+=(5 "MEV-Boost")
-test -f /etc/systemd/system/csm_nimbusvalidator.service && OPTIONS+=(6 "CSM Nimbus Validator Plugin")
+buildMenu
 OPTIONS+=(
   - ""
-  10 "Start all clients"
-  11 "Stop all clients"
-  12 "Restart all clients"
+  ✅ "Start all clients"
+  🛑 "Stop all clients"
+  🔄 "Restart all clients"
   - ""
-  20 "System Administration"
-  21 "Toolbox"
-  22 "Plugins"
-  99 "Quit"
+  🖥️ "System Administration"
+  🛠️ "Toolbox"
+  🧩 "Plugins"
+  👋 "Quit"
 )
 
 while true; do
@@ -83,52 +95,40 @@ while true; do
       📈)
         submenuLogsMonitoring
         ;;
-      2)
+      🔗)
         submenuExecution
         ;;
-      3)
+      🧠)
         submenuConsensus
         ;;
-      4)
+      🚀)
         submenuValidator
         ;;
-      5)
+      ⚡)
         submenuMEV-Boost
         ;;
-      6)
+      💧)
         submenuPluginCSMValidator
         ;;
-      10)
-        test -f /etc/systemd/system/execution.service && sudo service execution start
-        test -f /etc/systemd/system/consensus.service && sudo service consensus start
-        test -f /etc/systemd/system/validator.service && sudo service validator start
-        test -f /etc/systemd/system/mevboost.service && sudo service mevboost start
-        test -f /etc/systemd/system/csm_nimbusvalidator.service && sudo service csm_nimbusvalidator start
+      ✅)
+        testAndServiceCommand start
         ;;
-      11)
-        test -f /etc/systemd/system/execution.service && sudo service execution stop
-        test -f /etc/systemd/system/consensus.service && sudo service consensus stop
-        test -f /etc/systemd/system/validator.service && sudo service validator stop
-        test -f /etc/systemd/system/mevboost.service && sudo service mevboost stop
-        test -f /etc/systemd/system/csm_nimbusvalidator.service && sudo service csm_nimbusvalidator stop
+      🛑)
+        testAndServiceCommand stop
         ;;
-      12)
-        test -f /etc/systemd/system/execution.service && sudo service execution restart
-        test -f /etc/systemd/system/consensus.service && sudo service consensus restart
-        test -f /etc/systemd/system/validator.service && sudo service validator restart
-        test -f /etc/systemd/system/mevboost.service && sudo service mevboost restart
-        test -f /etc/systemd/system/csm_nimbusvalidator.service && sudo service csm_nimbusvalidator restart
+      🔄)
+        testAndServiceCommand restart
         ;;
-      20)
+      🖥️)
         submenuAdminstrative
         ;;
-      21)
+      🛠️)
         submenuTools
         ;;
-      22)
+      🧩)
         submenuPlugins
         ;;
-      99)
+      👋)
         break
         ;;
     esac
@@ -145,7 +145,7 @@ while true; do
       📜 "Export logs: Save logs to disk for further analysis or sharing"
       🚨 "Monitoring: Observe Ethereum Metrics. Explore Dashboards. Grafana. Alerts."
       - ""
-      ❎ "Back to main menu"
+      👋 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -177,7 +177,7 @@ while true; do
         [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]] && runScript ethereum-metrics-exporter.sh -i
         submenuMonitoring
         ;;
-      ❎)
+      👋)
         break
         ;;
     esac
@@ -1279,7 +1279,7 @@ while true; do
       🛠️ "Unattended-upgrades: Automatically install security updates"
       🔒 "2FA: Secure your SSH access with two-factor authentication"
       - ""
-      ❎ "Back to main menu"
+      👋 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -1380,7 +1380,7 @@ while true; do
         [[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
         runScript ./helpers/install_2fa.sh
         ;;
-      ❎)
+      👋)
         break
         ;;
     esac
