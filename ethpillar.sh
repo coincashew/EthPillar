@@ -48,7 +48,7 @@ _SERVICES_NAME=("Execution Client" "Consensus Client" "Validator Client" "MEV-Bo
 _SERVICES_ICON=("🔗" "🧠" "🚀" "⚡" "💧")
 
 function testAndServiceCommand() {
-  for _service in "${!_SERVICES[@]}"; do
+  for _service in "${_SERVICES[@]}"; do
     test -f /etc/systemd/system/"${_service}".service && sudo service "${_service}" "$1"
   done
 }
