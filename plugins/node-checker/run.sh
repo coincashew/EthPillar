@@ -685,8 +685,6 @@ check_consensus_version() {
             ;;
           Prysm)
             TAG_URL="https://api.github.com/repos/OffchainLabs/prysm/releases/latest"
-            # Extract version from Prysm's format "Prysm/vX.X.X (linux amd64)"
-            CL_VERSION=$(echo "$CL_VERSION" | sed -n 's/.*Prysm\/v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
             ;;
         esac
         
@@ -728,8 +726,6 @@ check_validator_version() {
             ;;
           Prysm)
             TAG_URL="https://api.github.com/repos/OffchainLabs/prysm/releases/latest"
-            # Extract version from Prysm's format "Prysm/vX.X.X (linux amd64)"
-            VALIDATOR_VERSION=$(echo "$VALIDATOR_VERSION" | sed -n 's/.*Prysm\/v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
             ;;
         esac
         
