@@ -491,23 +491,23 @@ while true; do
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
-      1 "Update system"
-      2 "Restart system"
-      3 "Shutdown system"
+      ⬆️ "Update system"
+      🔄 "Restart system"
+      ⏻ "Shutdown system"
       - ""
-      4 "View software versions"
-      5 "View cpu/ram/disk/net (btop)"
-      6 "View general node information"
+      📦 "View software versions"
+      📊 "View cpu/ram/disk/net (btop)"
+      ℹ️ "View general node information"
       - ""
-      10 "Update EthPillar"
-      11 "About EthPillar"
+      ⬆️ "Update EthPillar"
+      ℹ️ "About EthPillar"
       - ""
-      20 "Configure autostart"
-      21 "Uninstall node"
-      22 "Reinstall node: Change installation type, network"
-      23 "Override environment variables"
+      ⚙️ "Configure autostart"
+      🗑️ "Uninstall node"
+      🔁 "Reinstall node: Change installation type, network"
+      🔧 "Override environment variables"
       - ""
-      99 "Back to main menu"
+      👋 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -525,16 +525,16 @@ while true; do
 
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
-      1)
+      🔄)
         sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
         ;;
-      2)
+      🔁)
         if whiptail --title "Reboot" --defaultno --yesno "Are you sure you want to reboot?" 8 78; then sudo reboot now; fi
         ;;
-      3)
+      ⏻)
         if whiptail --title "Shutdown" --defaultno --yesno "Are you sure you want to shutdown?" 8 78; then sudo shutdown now; fi
         ;;
-      4)
+      📦)
         test -f /etc/systemd/system/validator.service && getClient && getCurrentVersion && VC="Validator client: $CLIENT $VERSION"
         test -f /etc/systemd/system/consensus.service && CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
         test -f /etc/systemd/system/execution.service && EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq -r '.result')
@@ -547,17 +547,17 @@ while true; do
         fi
         whiptail --title "Installed versions" --msgbox "Consensus client: ${CL}\nExecution client: ${EL}\n${VC}\n${MB}" 10 78
         ;;
-      5)
+      📊)
         # Install btop process monitoring
         if ! command -v btop &> /dev/null; then
             sudo apt-get install btop -y
         fi
         btop --utf-force
       ;;
-      6)
+      ℹ️)
         print_node_info
       ;;
-      10)
+      ⬆️)
         # Get current version
         local current_version=$EP_VERSION
         
@@ -594,7 +594,7 @@ while true; do
             whiptail --title "Updated EthPillar" --msgbox "$MSG2" 10 78
         fi
         ;;
-      11)
+      ℹ️)
         MSG_ABOUT="🫰 Created as a Public Good by CoinCashew.eth since Pre-Genesis 2020
         \n🫶 Make improvements and suggestions on GitHub: https://github.com/coincashew/ethpillar
         \n🙌 Ask questions on Discord: https://discord.gg/dEpAVWgFNB
@@ -602,13 +602,13 @@ while true; do
         \nOur donation address is 0xCF83d0c22dd54475cC0C52721B0ef07d9756E8C0 or coincashew.eth"
         whiptail --title "About EthPillar" --msgbox "$MSG_ABOUT" 20 78
         ;;
-      20)
+      ⚙️)
         configureAutoStart
       ;;
-      21)
+      🗑️)
         runScript uninstall.sh
         ;;
-      22)
+      🔄)
         if whiptail --title "Reinstall EthPillar" --defaultno --yesno "Are you sure you want to reinstall?\nAll current node data will be removed." 9 78; then
            if runScript uninstall.sh; then
               installNode
@@ -616,7 +616,7 @@ while true; do
            fi
         fi
         ;;
-      23)
+      🔧)
         if [[ ! -f ${BASE_DIR}/.env.overrides ]]; then
            # Create from template
            cp .env.overrides.example .env.overrides
@@ -625,7 +625,7 @@ while true; do
         # Reload environment variables overrides
         [[ -f ./.env.overrides ]] && source ./.env.overrides
         ;;
-      99)
+      👋)
         break
         ;;
     esac
