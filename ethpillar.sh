@@ -559,41 +559,28 @@ while true; do
       ;;
       10)
         # Get current version
-        current_version=$EP_VERSION
+        local current_version=$EP_VERSION
         
         # Fetch latest version from remote
-        cd $BASE_DIR
+        cd "$BASE_DIR" || true
         git fetch origin main
         
         # Get latest version from remote
         latest_version=$(git show origin/main:ethpillar.sh | grep '^EP_VERSION=' | cut -d'"' -f2)
         
+        # Format msgs
         if [[ "$current_version" == "$latest_version" ]]; then
-          if whiptail --title "EthPillar Update" --yesno "You are already on the latest version ($current_version).\n\nWould you like to pull the latest changes anyway?" 10 78; then
-            # Backup .env.overrides if it exists
-            if [[ -f .env.overrides ]]; then
-              cp .env.overrides /tmp/env.overrides.backup
-            fi
-            
-            # Update to latest
-            git checkout main
-            git pull --ff-only
-            git reset --hard
-            git clean -xdf
-            
-            # Restore .env.overrides if it was backed up
-            if [[ -f /tmp/env.overrides.backup ]]; then
-              mv /tmp/env.overrides.backup .env.overrides
-            fi
-            
-            whiptail --title "Updated EthPillar" --msgbox "Restart EthPillar for latest version." 10 78
-          fi
+          local MSG1="You are already on the latest version ($current_version).\n\nWould you like to pull the latest changes anyway?"
+          local MSG2="Restart EthPillar for latest version."
         else
-          if whiptail --title "EthPillar Update" --yesno "Current version: $current_version\nLatest version: $latest_version\n\nWould you like to update?" 12 78; then
+          local MSG1="Current version: $current_version\nLatest version: $latest_version\n\nWould you like to update?"
+          local MSG2="Updated from $current_version to $latest_version.\nRestart EthPillar for latest version."
+        fi
+
+        # Prompt to update
+        if whiptail --title "EthPillar Update" --yesno "$MSG1" 10 78; then
             # Backup .env.overrides if it exists
-            if [[ -f .env.overrides ]]; then
-              cp .env.overrides /tmp/env.overrides.backup
-            fi
+            [[ -f .env.overrides ]] && cp .env.overrides /tmp/env.overrides.backup
             
             # Update to latest
             git checkout main
@@ -602,12 +589,9 @@ while true; do
             git clean -xdf
             
             # Restore .env.overrides if it was backed up
-            if [[ -f /tmp/env.overrides.backup ]]; then
-              mv /tmp/env.overrides.backup .env.overrides
-            fi
+            [[ -f /tmp/env.overrides.backup ]] && mv /tmp/env.overrides.backup .env.overrides
             
-            whiptail --title "Updated EthPillar" --msgbox "Updated from $current_version to $latest_version.\nRestart EthPillar for latest version." 12 78
-          fi
+            whiptail --title "Updated EthPillar" --msgbox "$MSG2" 10 78
         fi
         ;;
       11)
