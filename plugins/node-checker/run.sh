@@ -145,6 +145,16 @@ check_ssh_keys() {
     fi
 }
 
+check_ssh_port() {
+    ((total_checks++))
+    if grep -q "^Port 22" /etc/ssh/sshd_config; then
+        print_check_result "WARN" "SSH is using default port 22. Consider changing to a non-standard port for better security."
+        ((warning_checks++))
+    else
+        print_check_result "PASS" "SSH is not using default port 22"
+    fi
+}
+
 check_fail2ban() {
     ((total_checks++))
     if systemctl is-active --quiet fail2ban; then
@@ -609,6 +619,157 @@ check_systemd_services() {
     done
 }
 
+# Add these new functions before the main execution flow
+check_execution_version() {
+    ((total_checks++))
+    EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
+    if [[ $EL_INSTALLED ]]; then
+        VERSION=$(echo $EL_INSTALLED | sed 's/.*[v\/]\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
+        # Get client type from service file
+        EL=$(cat /etc/systemd/system/execution.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
+        
+        # Get latest version based on client
+        case $EL in
+          Nethermind)
+            TAG_URL="https://api.github.com/repos/NethermindEth/nethermind/releases/latest"
+            ;;
+          Besu)
+            TAG_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
+            ;;
+          Erigon)
+            TAG_URL="https://api.github.com/repos/erigontech/erigon/releases/latest"
+            ;;
+          Geth)
+            TAG_URL="https://api.github.com/repos/ethereum/go-ethereum/releases/latest"
+            ;;
+          Reth)
+            TAG_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
+            ;;
+        esac
+        
+        LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*[v\/]\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
+        
+        if [[ "${VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
+            print_check_result "PASS" "Execution client ($EL) version: $VERSION (latest)"
+        else
+            print_check_result "WARN" "Execution client ($EL) version: $VERSION (latest: $LATEST_VERSION)"
+            ((warning_checks++))
+        fi
+    else
+        print_check_result "FAIL" "Execution client not running or unable to query version"
+        ((failed_checks++))
+    fi
+}
+
+check_consensus_version() {
+    ((total_checks++))
+    CL_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+    if [[ $CL_VERSION ]]; then
+        # Get client type from service file
+        CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
+        
+        # Get latest version based on client
+        case "$CL" in
+          Lighthouse)
+            TAG_URL="https://api.github.com/repos/sigp/lighthouse/releases/latest"
+            ;;
+          Lodestar)
+            TAG_URL="https://api.github.com/repos/ChainSafe/lodestar/releases/latest"
+            ;;
+          Teku)
+            TAG_URL="https://api.github.com/repos/ConsenSys/teku/releases/latest"
+            ;;
+          Nimbus)
+            TAG_URL="https://api.github.com/repos/status-im/nimbus-eth2/releases/latest"
+            ;;
+          Prysm)
+            TAG_URL="https://api.github.com/repos/OffchainLabs/prysm/releases/latest"
+            # Extract version from Prysm's format "Prysm/vX.X.X (linux amd64)"
+            CL_VERSION=$(echo "$CL_VERSION" | sed -n 's/.*Prysm\/v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+            ;;
+        esac
+        
+        LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*\(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
+        
+        if [[ "${CL_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
+            print_check_result "PASS" "Consensus client ($CL) version: $CL_VERSION (latest)"
+        else
+            print_check_result "WARN" "Consensus client ($CL) version: $CL_VERSION (latest: $LATEST_VERSION)"
+            ((warning_checks++))
+        fi
+    else
+        print_check_result "FAIL" "Consensus client not running or unable to query version"
+        ((failed_checks++))
+    fi
+}
+
+check_validator_version() {
+    ((total_checks++))
+    VALIDATOR_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+    if [[ $VALIDATOR_VERSION ]]; then
+        # Get client type from service file
+        VAL=$(cat /etc/systemd/system/validator.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
+        
+        # Get latest version based on client
+        case "$VAL" in
+          Lighthouse)
+            TAG_URL="https://api.github.com/repos/sigp/lighthouse/releases/latest"
+            ;;
+          Lodestar)
+            TAG_URL="https://api.github.com/repos/ChainSafe/lodestar/releases/latest"
+            ;;
+          Teku)
+            TAG_URL="https://api.github.com/repos/ConsenSys/teku/releases/latest"
+            ;;
+          Nimbus)
+            TAG_URL="https://api.github.com/repos/status-im/nimbus-eth2/releases/latest"
+            ;;
+          Prysm)
+            TAG_URL="https://api.github.com/repos/OffchainLabs/prysm/releases/latest"
+            # Extract version from Prysm's format "Prysm/vX.X.X (linux amd64)"
+            VALIDATOR_VERSION=$(echo "$VALIDATOR_VERSION" | sed -n 's/.*Prysm\/v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+            ;;
+        esac
+        
+        LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*\(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
+        
+        if [[ "${VALIDATOR_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
+            print_check_result "PASS" "Validator client ($VAL) version: $VALIDATOR_VERSION (latest)"
+        else
+            print_check_result "WARN" "Validator client ($VAL) version: $VALIDATOR_VERSION (latest: $LATEST_VERSION)"
+            ((warning_checks++))
+        fi
+    else
+        print_check_result "FAIL" "Validator client not running or unable to query version"
+        ((failed_checks++))
+    fi
+}
+
+check_mevboost_version() {
+    ((total_checks++))
+    if command -v mev-boost &> /dev/null; then
+        MEV_VERSION=$(mev-boost --version 2>&1 | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')
+        if [[ $MEV_VERSION ]]; then
+            # Get latest version
+            TAG_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
+            LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+            
+            if [[ "${MEV_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
+                print_check_result "PASS" "MEV-Boost version: $MEV_VERSION (latest)"
+            else
+                print_check_result "WARN" "MEV-Boost version: $MEV_VERSION (latest: $LATEST_VERSION)"
+                ((warning_checks++))
+            fi
+        else
+            print_check_result "FAIL" "MEV-Boost installed but unable to query version"
+            ((failed_checks++))
+        fi
+    else
+        print_check_result "WARN" "MEV-Boost not installed"
+        ((warning_checks++))
+    fi
+}
+
 check_noatime() {
     ((total_checks++))
     if grep -q "noatime" /etc/fstab; then
@@ -680,6 +841,7 @@ display_banner
 print_section_header "Security Checks"
 check_firewall
 check_ssh_keys
+check_ssh_port
 check_fail2ban
 check_updates
 check_unattended_upgrades
@@ -700,6 +862,12 @@ echo
 check_elcl_listening_ports
 check_systemd_services
 
+print_section_header "Client Version Checks"
+check_execution_version
+check_consensus_version
+check_validator_version
+check_mevboost_version
+
 print_section_header "Performance Tuning Checks"
 check_swappiness
 check_noatime
@@ -719,3 +887,4 @@ duration=$((end_time - start_time))
 echo -e "\n${YELLOW}${BOLD}Duration: $duration seconds${NC}"
 echo -e "\n${GREEN}${BOLD}=== Node Checker Complete: Press enter to exit ===${NC}"
 read -r
+
