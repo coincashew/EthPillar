@@ -248,7 +248,6 @@ check_resources() {
 }
 
 check_ssh_2fa() {
-    print_check_result "INFO" "SSH keys:"
     ((total_checks++))
     if grep -q "auth required pam_google_authenticator.so" /etc/pam.d/sshd; then
         print_check_result "PASS" "SSH 2FA configured"
@@ -476,14 +475,16 @@ check_elcl_listening_ports() {
         print_check_result "FAIL" "No execution & consensus services detected on expected ports"
         ((failed_checks++))
     fi
+}
 
-echo
+check_elcl_processes() {
     print_check_result "INFO" "Ethereum node processes:"
     # Additional check for running processes
     running_p2p=0
+    ((total_checks++))
     for process in "${p2p_processes[@]}"; do
         if pgrep -f "$process" >/dev/null; then
-            echo -e "${BLUE} 🔍 Detected Ethereum node process: ${process} ${NC}"
+            echo -e "${BLUE}${BOLD} 🔍 Detected Ethereum node process: ${process} ${NC}"
             ((running_p2p++))
         fi
     done
@@ -491,6 +492,7 @@ echo
     if [ $running_p2p -gt 0 ]; then
         print_check_result "PASS" "Found ${running_p2p} Ethereum node processes running"
     else
+        ((failed_checks++))
         print_check_result "FAIL" "No Ethereum node processes detected"
     fi
 }
@@ -584,7 +586,9 @@ check_peer_count() {
 }
 
 check_systemd_services() {
-    echo -e "\n${YELLOW}=== Checking Systemd Services ===${NC}"
+check_elcl_processes
+echo
+    print_check_result "INFO" "Systemd Services:"
     for service in "${services[@]}"; do
         service_installed=0
         ((total_checks+=3))  # Three checks per service (installed + active + enabled)
@@ -834,10 +838,21 @@ display_banner
 
 # Execute checks
 print_section_header "Security Checks"
+
+# Network Security
+print_check_result "INFO" "Network Security:"
 check_firewall
+check_fail2ban
+echo
+# SSH Security
+print_check_result "INFO" "SSH Security:"
+check_ssh_key_presence
 check_ssh_keys
 check_ssh_port
-check_fail2ban
+check_ssh_2fa
+echo
+# System Updates
+print_check_result "INFO" "System Updates:"
 check_updates
 check_unattended_upgrades
 check_reboot_required
@@ -845,16 +860,10 @@ check_reboot_required
 print_section_header "Node Health Checks"
 check_listening_ports
 check_open_ports
-check_peer_count
-echo
-check_resources
-echo
-check_ssh_2fa
-check_ssh_key_presence
-echo
-check_chrony
 echo
 check_elcl_listening_ports
+check_peer_count
+echo
 check_systemd_services
 
 print_section_header "Client Version Checks"
@@ -863,7 +872,12 @@ check_consensus_version
 check_validator_version
 check_mevboost_version
 
-print_section_header "Performance Tuning Checks"
+print_section_header "Performance Checks"
+check_resources
+echo
+check_chrony
+echo
+print_check_result "INFO" "Tuning:"
 check_swappiness
 check_noatime
 
