@@ -622,9 +622,8 @@ check_systemd_services() {
 # Add these new functions before the main execution flow
 check_execution_version() {
     ((total_checks++))
-    EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
+    EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' "${EL_RPC_ENDPOINT}" | jq -r '.result' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
     if [[ $EL_INSTALLED ]]; then
-        VERSION=$(echo $EL_INSTALLED | sed 's/.*[v\/]\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
         # Get client type from service file
         EL=$(cat /etc/systemd/system/execution.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
         
@@ -649,10 +648,10 @@ check_execution_version() {
         
         LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*[v\/]\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
         
-        if [[ "${VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
-            print_check_result "PASS" "Execution client ($EL) version: $VERSION (latest)"
+        if [[ "${EL_INSTALLED#v}" == "${LATEST_VERSION#v}" ]]; then
+            print_check_result "PASS" "Execution client ($EL) version: $EL_INSTALLED (latest)"
         else
-            print_check_result "WARN" "Execution client ($EL) version: $VERSION (latest: $LATEST_VERSION)"
+            print_check_result "WARN" "Execution client ($EL) version: $EL_INSTALLED (latest: $LATEST_VERSION)"
             ((warning_checks++))
         fi
     else
@@ -663,8 +662,7 @@ check_execution_version() {
 
 check_consensus_version() {
     ((total_checks++))
-    CL_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
-    CL_VERSION=$(echo $CL_VERSION | sed -n 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+    CL_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
     if [[ $CL_VERSION ]]; then
         # Get client type from service file
         CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
@@ -690,7 +688,7 @@ check_consensus_version() {
         
         LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*\(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
         
-        if [[ "${CL_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
+        if [[ -n "$LATEST_VERSION" && "${CL_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
             print_check_result "PASS" "Consensus client ($CL) version: $CL_VERSION (latest)"
         else
             print_check_result "WARN" "Consensus client ($CL) version: $CL_VERSION (latest: $LATEST_VERSION)"
@@ -704,8 +702,7 @@ check_consensus_version() {
 
 check_validator_version() {
     ((total_checks++))
-    VALIDATOR_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
-    VALIDATOR_VERSION=$(echo $VALIDATOR_VERSION | sed -n 's/.*v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+    VALIDATOR_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
     if [[ $VALIDATOR_VERSION ]]; then
         # Get client type from service file
         VAL=$(cat /etc/systemd/system/validator.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
@@ -731,7 +728,7 @@ check_validator_version() {
         
         LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*\(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
         
-        if [[ "${VALIDATOR_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
+        if [[ -n "$LATEST_VERSION" && "${VALIDATOR_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
             print_check_result "PASS" "Validator client ($VAL) version: $VALIDATOR_VERSION (latest)"
         else
             print_check_result "WARN" "Validator client ($VAL) version: $VALIDATOR_VERSION (latest: $LATEST_VERSION)"
@@ -752,7 +749,7 @@ check_mevboost_version() {
             TAG_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
             LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
             
-            if [[ "${MEV_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
+            if [[ -n "$LATEST_VERSION" && "${MEV_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
                 print_check_result "PASS" "MEV-Boost version: $MEV_VERSION (latest)"
             else
                 print_check_result "WARN" "MEV-Boost version: $MEV_VERSION (latest: $LATEST_VERSION)"
