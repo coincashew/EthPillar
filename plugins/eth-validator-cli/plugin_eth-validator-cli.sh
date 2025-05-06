@@ -22,17 +22,24 @@ PLUGIN_SOURCE_PATH="$SOURCE_DIR"
 # Gets latest tag
 function getLatestVersion(){
   TAG=$(curl -s $RELEASE_URL | jq -r .tag_name )
+  if [[ -z "$TAG" ]]; then echo "Failed to fetch latest version"; exit 1; fi
 }
 
 # Downloads latest release
 function downloadClient(){
   local _custom
   # Handle custom naming convention
-  [[ $_arch == "amd64" ]] && _custom="x64"
-  # Exit if anything but amd64
-  [[ -z $_custom ]] && echo "Unsupported arch: $_arch" && exit 1
+  [[ "$_arch" == "amd64" ]] && _custom="x64"
+  if [[ -z "$_custom" ]]; then
+    echo "Unsupported architecture: $_arch"
+    exit 1
+  fi
   json=$(curl -s $RELEASE_URL) || true
   BINARIES_URL=$(echo "$json" | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case "${_platform}"-"${_custom}")
+  if [[ -z "$BINARIES_URL" ]]; then
+    echo "Error: No download URL found for ${_platform}-${_custom}"
+    exit 1
+  fi
   echo Downloading URL: "$BINARIES_URL"
   # Make temporary directory
   TEMP_DIR=$(mktemp -d)
@@ -70,12 +77,13 @@ MSG_ABOUT="🔧 eth-validator-cli by TobiWo: CLI tool for managing validators vi
 - This cli currently only supports validator related features included in the Pectra hardfork. 
 - The tool is especially useful if you need to manage multiple validators at once.
 - Currently it only supports private keys as secret. This will change soon with e.g. hardware ledger support.
+- ⚠️ Tool is very early. Use on Hoodi only. Not recommend to use it on mainnet yet!
 \nDocumentation: $DOCUMENTATION
 Source Code:   $SOURCE_CODE
 \nContinue to install?"
 
 # Intro screen
-if ! whiptail --title "$APP_NAME: Installation" --yesno "$MSG_ABOUT" 27 78; then exit; fi
+if ! whiptail --title "$APP_NAME: Installation" --yesno "$MSG_ABOUT" 28 78; then exit; fi
 
 # Setup installation directory
 sudo mkdir -p $PLUGIN_INSTALL_PATH
@@ -114,7 +122,7 @@ Usage: $(basename "$0") [-i] [-u] [-r]
 
 $APP_NAME Helper Script
 
-Options)
+Options:
 -i    Install $APP_NAME
 -u    Upgrade $APP_NAME
 -r    Remove $APP_NAME

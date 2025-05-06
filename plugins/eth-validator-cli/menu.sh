@@ -7,13 +7,10 @@
 #
 # Made for home and solo stakers 🏠🥩
 
-#set -e
+set -euo pipefail
 
 # Colors
 g="\033[32m" # Green
-y="\033[33m" # Yellow
-b="\033[34m" # Blue
-p="\033[35m" # Purple
 r="\033[31m" # Red
 nc="\033[0m" # No-color
 bold="\033[1m"
@@ -36,9 +33,15 @@ PLUGIN_INSTALL_PATH=/opt/ethpillar/plugin-eth-validator-cli
 [[ -f $PLUGIN_INSTALL_PATH/env ]] && source $PLUGIN_INSTALL_PATH/env
 [[ -f $PLUGIN_INSTALL_PATH/current_version ]] && VERSION=$(cat $PLUGIN_INSTALL_PATH/current_version)
 
-cli_options=(
-  --json-rpc-url="$JSON_RPC_URL"
+# Validate that required env vars are set
+: "${JSON_RPC_URL:?JSON_RPC_URL must be set}"
+: "${BEACON_API_URL:?BEACON_API_URL must be set}"
+: "${MAX_REQUESTS_PER_BLOCK:?MAX_REQUESTS_PER_BLOCK must be set}"
+
+global_options=(
+  --network="${NETWORK,,}"
   --beacon-api-url="$BEACON_API_URL"
+  --json-rpc-url="$JSON_RPC_URL"
   --max-requests-per-block="$MAX_REQUESTS_PER_BLOCK"
 )
 
@@ -46,12 +49,14 @@ function consolidateCommand(){
     local s t
     s=$(question "Space separated list of validator pubkeys which will be consolidated into the target validator: ")
     t=$(question "Target validator pubkey: ")
-    cli_options+=(--source=\""$s"\")
+    cli_options=()
     cli_options+=(--target="$t")
-    info "Executing command > eth-validator-cli consolidate ${cli_options[*]}"
+    cli_options+=(--source="$s")
+    local cmd=( "$PLUGIN_INSTALL_PATH/eth-validator-cli" "consolidate" "${global_options[@]}" "${cli_options[@]}" )
+    info "Executing command > ${cmd[*]}"
     yn=$(question "Please double-check your inputs before executing a command. Is the above correct? [y|n]")
     if [[ $yn = [Yy]* ]]; then
-      exec $PLUGIN_INSTALL_PATH/eth-validator-cli consolidate "${cli_options[*]}" || error "Error running command"
+      "${cmd[@]}" || error "Error running command"
     fi
     read -p "Press ENTER to return to menu" -r
 }
@@ -59,11 +64,13 @@ function consolidateCommand(){
 function exitCommand(){
     local v
     v=$(question "Space separated list of validator pubkeys which will be exited: ")
-    cli_options+=(--validator=\""$v"\")
-    info "Executing command > eth-validator-cli exit ${cli_options[*]}"
+    cli_options=()
+    cli_options+=(--validator="$v")
+    local cmd=( "$PLUGIN_INSTALL_PATH/eth-validator-cli" "exit" "${global_options[@]}" "${cli_options[@]}" )
+    info "Executing command > ${cmd[*]}"
     yn=$(question "Please double-check your inputs before executing a command. Is the above correct? [y|n]")
     if [[ $yn = [Yy]* ]]; then
-      exec $PLUGIN_INSTALL_PATH/eth-validator-cli exit "${cli_options[*]}" || error "Error running command"
+      "${cmd[@]}" || error "Error running command"
     fi
     read -p "Press ENTER to return to menu" -r
 }
@@ -71,11 +78,13 @@ function exitCommand(){
 function switchWithdrawalCredentialTypeCommand(){
     local v
     v=$(question "Space separated list of validator pubkeys for which the withdrawal credential type will be changed to 0x02: ")
-    cli_options+=(--validator=\""$v"\")
-    info "Executing command > eth-validator-cli switch ${cli_options[*]}"
+    cli_options=()
+    cli_options+=(--validator="$v")
+    local cmd=( "$PLUGIN_INSTALL_PATH/eth-validator-cli" "switch" "${global_options[@]}" "${cli_options[@]}" )
+    info "Executing command > ${cmd[*]}"
     yn=$(question "Please double-check your inputs before executing a command. Is the above correct? [y|n]")
     if [[ $yn = [Yy]* ]]; then
-      exec $PLUGIN_INSTALL_PATH/eth-validator-cli switch "${cli_options[*]}" || error "Error running command"
+      "${cmd[@]}" || error "Error running command"
     fi
     read -p "Press ENTER to return to menu" -r
 }
@@ -84,12 +93,14 @@ function withdrawCommand(){
     local v a
     v=$(question "Space separated list of validator pubkeys for which the withdrawal will be executed: ")
     a=$(question "Amount of ETH which will be withdrawn from the validator(s) (in ETH notation e.g. 0.001): ")
-    cli_options+=(--validator=\""$v"\")
+    cli_options=()
     cli_options+=(--amount="$a")
-    info "Executing command > eth-validator-cli withdraw ${cli_options[*]}"
+    cli_options+=(--validator="$v")
+    local cmd=( "$PLUGIN_INSTALL_PATH/eth-validator-cli" "withdraw" "${global_options[@]}" "${cli_options[@]}" )
+    info "Executing command > ${cmd[*]}"
     yn=$(question "Please double-check your inputs before executing a command. Is the above correct? [y|n]")
     if [[ $yn = [Yy]* ]]; then
-      exec $PLUGIN_INSTALL_PATH/eth-validator-cli withdraw "${cli_options[*]}" || error "Error running command"
+      "${cmd[@]}" || error "Error running command"
     fi
     read -p "Press ENTER to return to menu" -r
 }
