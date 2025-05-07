@@ -112,7 +112,7 @@ while true; do
       2 "Switch: Switch withdrawal credential type from 0x01 to 0x02 for one or many validators"
       3 "Consolidate: Consolidate one or many source validators into one target validator"
       4 "Withdraw: Partially withdraw ETH from one or many validators"
-      5 "Exit: Space separated list of validator pubkeys which will be exited"
+      5 "Exit: Exit one or many validators"
       6 "Update to latest release"
       7 "Uninstall plugin"
       - ""
