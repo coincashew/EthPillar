@@ -642,6 +642,11 @@ check_execution_version() {
     tag_url=${client_github_url["$EL"]}
     name="Execution client ($EL)"
 
+    if [[ -z "$tag_url" ]]; then
+      print_check_result "FAIL" "$name no GitHub URL mapping found"
+      ((failed_checks++))
+      return
+    fi
     check_client_version "$name" "$tag_url"
 }
 
@@ -666,19 +671,36 @@ check_validator_version() {
 check_client_version() {
   ((total_checks++))
   local name=$1 tag_url=$2
+  # Validate mapping
+  if [[ -z "$tag_url" ]]; then
+    print_check_result "FAIL" "$name no GitHub URL mapping found"
+    ((failed_checks++))
+    return
+  fi
 
   if [[ "$name" =~ "Consensus" || "$name" =~ "Validator" ]]; then
-    version=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+    version=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" \
+      -H "accept: application/json" \
+      | jq -r '.data.version' \
+      | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
   else
-    version=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' "${EL_RPC_ENDPOINT}" | jq -r '.result' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+    version=$(curl -s -X POST \
+      -H "Content-Type: application/json" \
+      --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' \
+      "${EL_RPC_ENDPOINT}" \
+      | jq -r '.result' \
+      | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
   fi
 
   if [[ -z $version ]]; then
     print_check_result "FAIL" "$name not running or unable to query version"
     ((failed_checks++))
+    return
   fi
 
-  latest=$(curl -s "$tag_url" | jq -r .tag_name | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+  latest=$(curl -s "$tag_url" \
+    | jq -r .tag_name \
+    | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 
   if [[ -n "$latest" && "${version#v}" == "${latest#v}" ]]; then
     print_check_result "PASS" "$name version: $version (latest)"
