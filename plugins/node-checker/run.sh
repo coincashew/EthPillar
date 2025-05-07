@@ -16,6 +16,19 @@ services=("consensus" "execution" "validator" "mevboost")
 API_BN_ENDPOINT="http://localhost:5052"
 EL_RPC_ENDPOINT="http://localhost:8545"
 
+declare -A client_github_url
+client_github_url['Lighthouse']='https://api.github.com/repos/sigp/lighthouse/releases/latest'
+client_github_url['Lodestar']='https://api.github.com/repos/ChainSafe/lodestar/releases/latest'
+client_github_url['Teku']='https://api.github.com/repos/ConsenSys/teku/releases/latest'
+client_github_url['Nimbus']='https://api.github.com/repos/status-im/nimbus-eth2/releases/latest'
+client_github_url['Prysm']='https://api.github.com/repos/OffchainLabs/prysm/releases/latest'
+client_github_url['Nethermind']='https://api.github.com/repos/NethermindEth/nethermind/releases/latest'
+client_github_url['Besu']='https://api.github.com/repos/hyperledger/besu/releases/latest'
+client_github_url['Erigon']='https://api.github.com/repos/erigontech/erigon/releases/latest'
+client_github_url['Geth']='https://api.github.com/repos/ethereum/go-ethereum/releases/latest'
+client_github_url['Reth']='https://api.github.com/repos/paradigmxyz/reth/releases/latest'
+client_github_url['mev-boost']='https://api.github.com/repos/flashbots/mev-boost/releases/latest'
+
 # Load environment variables overrides
 if [[ -f "$SOURCE_DIR"/../../.env.overrides ]]; then
     # shellcheck source=/dev/null
@@ -623,125 +636,56 @@ echo
     done
 }
 
-# Add these new functions before the main execution flow
 check_execution_version() {
-    ((total_checks++))
-    EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' "${EL_RPC_ENDPOINT}" | jq -r '.result' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
-    if [[ $EL_INSTALLED ]]; then
-        # Get client type from service file
-        EL=$(cat /etc/systemd/system/execution.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
-        
-        # Get latest version based on client
-        case $EL in
-          Nethermind)
-            TAG_URL="https://api.github.com/repos/NethermindEth/nethermind/releases/latest"
-            ;;
-          Besu)
-            TAG_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
-            ;;
-          Erigon)
-            TAG_URL="https://api.github.com/repos/erigontech/erigon/releases/latest"
-            ;;
-          Geth)
-            TAG_URL="https://api.github.com/repos/ethereum/go-ethereum/releases/latest"
-            ;;
-          Reth)
-            TAG_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
-            ;;
-        esac
-        
-        LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*[v\/]\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
-        
-        if [[ "${EL_INSTALLED#v}" == "${LATEST_VERSION#v}" ]]; then
-            print_check_result "PASS" "Execution client ($EL) version: $EL_INSTALLED (latest)"
-        else
-            print_check_result "WARN" "Execution client ($EL) version: $EL_INSTALLED (latest: $LATEST_VERSION)"
-            ((warning_checks++))
-        fi
-    else
-        print_check_result "FAIL" "Execution client not running or unable to query version"
-        ((failed_checks++))
-    fi
+    [[ ! -f /etc/systemd/system/execution.service ]] && return
+    EL=$(grep "Description=" /etc/systemd/system/execution.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    tag_url=${client_github_url["$EL"]}
+    name="Execution client ($EL)"
+
+    check_client_version "$name" "$tag_url"
 }
 
 check_consensus_version() {
-    ((total_checks++))
-    CL_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
-    if [[ $CL_VERSION ]]; then
-        # Get client type from service file
-        CL=$(cat /etc/systemd/system/consensus.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
-        
-        # Get latest version based on client
-        case "$CL" in
-          Lighthouse)
-            TAG_URL="https://api.github.com/repos/sigp/lighthouse/releases/latest"
-            ;;
-          Lodestar)
-            TAG_URL="https://api.github.com/repos/ChainSafe/lodestar/releases/latest"
-            ;;
-          Teku)
-            TAG_URL="https://api.github.com/repos/ConsenSys/teku/releases/latest"
-            ;;
-          Nimbus)
-            TAG_URL="https://api.github.com/repos/status-im/nimbus-eth2/releases/latest"
-            ;;
-          Prysm)
-            TAG_URL="https://api.github.com/repos/OffchainLabs/prysm/releases/latest"
-            ;;
-        esac
-        
-        LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*\(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
-        
-        if [[ -n "$LATEST_VERSION" && "${CL_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
-            print_check_result "PASS" "Consensus client ($CL) version: $CL_VERSION (latest)"
-        else
-            print_check_result "WARN" "Consensus client ($CL) version: $CL_VERSION (latest: $LATEST_VERSION)"
-            ((warning_checks++))
-        fi
-    else
-        print_check_result "FAIL" "Consensus client not running or unable to query version"
-        ((failed_checks++))
-    fi
+    [[ ! -f /etc/systemd/system/consensus.service ]] && return
+    CL=$(grep "Description=" /etc/systemd/system/consensus.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    tag_url=${client_github_url["$CL"]}
+    name="Consensus client ($CL)"
+
+    check_client_version "$name" "$tag_url"
 }
 
 check_validator_version() {
-    ((total_checks++))
-    VALIDATOR_VERSION=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
-    if [[ $VALIDATOR_VERSION ]]; then
-        # Get client type from service file
-        VAL=$(cat /etc/systemd/system/validator.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
-        
-        # Get latest version based on client
-        case "$VAL" in
-          Lighthouse)
-            TAG_URL="https://api.github.com/repos/sigp/lighthouse/releases/latest"
-            ;;
-          Lodestar)
-            TAG_URL="https://api.github.com/repos/ChainSafe/lodestar/releases/latest"
-            ;;
-          Teku)
-            TAG_URL="https://api.github.com/repos/ConsenSys/teku/releases/latest"
-            ;;
-          Nimbus)
-            TAG_URL="https://api.github.com/repos/status-im/nimbus-eth2/releases/latest"
-            ;;
-          Prysm)
-            TAG_URL="https://api.github.com/repos/OffchainLabs/prysm/releases/latest"
-            ;;
-        esac
-        
-        LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*\(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
-        
-        if [[ -n "$LATEST_VERSION" && "${VALIDATOR_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
-            print_check_result "PASS" "Validator client ($VAL) version: $VALIDATOR_VERSION (latest)"
-        else
-            print_check_result "WARN" "Validator client ($VAL) version: $VALIDATOR_VERSION (latest: $LATEST_VERSION)"
-            ((warning_checks++))
-        fi
-    else
-        print_check_result "FAIL" "Validator client not running or unable to query version"
-        ((failed_checks++))
-    fi
+    [[ ! -f /etc/systemd/system/validator.service ]] && return
+    VAL=$(grep "Description=" /etc/systemd/system/validator.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    tag_url=${client_github_url["$VAL"]}
+    name="Validator client ($VAL)"
+
+    check_client_version "$name" "$tag_url"
+}
+
+check_client_version() {
+  ((total_checks++))
+  local name=$1 tag_url=$2
+
+  if [[ "$name" =~ "Consensus" || "$name" =~ "Validator" ]]; then
+    version=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+  else
+    version=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' "${EL_RPC_ENDPOINT}" | jq -r '.result' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+  fi
+
+  if [[ -z $version ]]; then
+    print_check_result "FAIL" "$name not running or unable to query version"
+    ((failed_checks++))
+  fi
+
+  latest=$(curl -s "$tag_url" | jq -r .tag_name | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+
+  if [[ -n "$latest" && "${version#v}" == "${latest#v}" ]]; then
+    print_check_result "PASS" "$name version: $version (latest)"
+  else
+    print_check_result "WARN" "$name version: $version (latest: $latest)"
+    ((warning_checks++))
+  fi
 }
 
 check_mevboost_version() {
@@ -750,8 +694,8 @@ check_mevboost_version() {
         MEV_VERSION=$(mev-boost --version 2>&1 | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')
         if [[ $MEV_VERSION ]]; then
             # Get latest version
-            TAG_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
-            LATEST_VERSION=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+            TAG_URL=${client_github_url["mev-boost"]}
+            LATEST_VERSION=$(curl -s "$TAG_URL" | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
             
             if [[ -n "$LATEST_VERSION" && "${MEV_VERSION#v}" == "${LATEST_VERSION#v}" ]]; then
                 print_check_result "PASS" "MEV-Boost version: $MEV_VERSION (latest)"
@@ -896,4 +840,3 @@ duration=$((end_time - start_time))
 echo -e "\n${YELLOW}${BOLD}Duration: $duration seconds${NC}"
 echo -e "\n${GREEN}${BOLD}=== Node Checker Complete: Press enter to exit ===${NC}"
 read -r
-
