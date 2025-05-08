@@ -978,54 +978,102 @@ ethdoWithdrawalAddress(){
     read
 }
 
+calculate_days_hours_and_minutes() {
+    local total_days=$1
+
+    # Check if the input is a valid number
+    if ! [[ "$total_days" =~ ^([0-9]+)?(\.[0-9]+)?$ ]]; then
+        echo "Error: Input must be a valid number."
+        return 1
+    fi
+
+    # Calculate the total number of minutes
+    local total_minutes
+    total_minutes=$(echo "$total_days * 24 * 60" | bc)
+
+    # Calculate the number of days, hours, and remaining minutes
+    local days
+    days=$(echo "$total_days / 1" | bc)
+    local remaining_minutes
+    remaining_minutes=$(echo "$total_minutes % (24 * 60)" | bc)
+    local hours
+    hours=$(echo "$remaining_minutes / 60" | bc)
+    local minutes
+    minutes=$(echo "$remaining_minutes % 60" | bc)
+
+     # Ensure minutes is an integer
+    minutes=$(echo "$minutes / 1" | bc)
+
+    # Format the output
+    if (( $(echo "$days >= 1" | bc -l) )); then
+        echo "$days days, $hours hours and $minutes minutes"
+    elif (( $(echo "$hours >= 1" | bc -l) )); then
+        echo "$hours hours and $minutes minutes"
+    else
+        echo "$minutes minutes"
+    fi
+}
+
 # Checks validator queue by querying beaconcha.in
 checkValidatorQueue(){
-    #Variables
     BEACONCHAIN_VALIDATOR_QUEUE_API_URL="/api/v1/validators/queue"
-    declare -A BEACONCHAIN_URLS=()
-    BEACONCHAIN_URLS["Mainnet"]="https://beaconcha.in"
-    BEACONCHAIN_URLS["Holesky"]="https://holesky.beaconcha.in"
-    BEACONCHAIN_URLS["Hoodi"]="https://hoodi.beaconcha.in"
-    BEACONCHAIN_URLS["Ephemery"]="https://beaconchain.ephemery.dev"
-    # Dencun entry churn cap
-    CHURN_ENTRY_PER_EPOCH=8
-    CHURN_RATE_CONSTANT=65536
-    EPOCHS_PER_DAY_CONSTANT=225
+    declare -A BEACONCHAIN_URLS=(
+        ["Mainnet"]="https://beaconcha.in"
+        ["Holesky"]="https://holesky.beaconcha.in"
+        ["Hoodi"]="https://hoodi.beaconcha.in"
+        ["Ephemery"]="https://beaconchain.ephemery.dev"
+    )
+    # Validate network mapping
+    if [[ -z "${BEACONCHAIN_URLS["${NETWORK}"]}" ]]; then
+        echo "Error: Unsupported Network '${NETWORK}' for validator queue queries." >&2
+        return 1
+    fi
+
+    # Pectra churn values
+    local CHURN_LIMIT_PER_EPOCH=256
+    local CHURN_LIMIT_PER_DAY=57600
+
+    # helper function
+    display_queue() {
+      local label=$1 count=$2 wait_time
+      ohai "${label} Queue"
+      echo "ETH ${label}: $count"
+      if (( count > 0 )); then
+        wait_time=$(calculate_days_hours_and_minutes "$(echo "scale=6; $count / $CHURN_LIMIT_PER_DAY" | bc)")
+      else
+        wait_time="No wait"
+      fi
+      echo "Estimated wait time: $wait_time"
+      echo "Churn: ${CHURN_LIMIT_PER_EPOCH} ETH per epoch or ${CHURN_LIMIT_PER_DAY} ETH per day"
+    }
 
     # Query for data
-    json=$(curl -s ${BEACONCHAIN_URLS["${NETWORK}"]}${BEACONCHAIN_VALIDATOR_QUEUE_API_URL})
+    local json entering exiting count
+    if ! json=$(curl -fsSL "${BEACONCHAIN_URLS["${NETWORK}"]}"${BEACONCHAIN_VALIDATOR_QUEUE_API_URL}); then
+        echo "ERROR: Validator Queue API request failed." >&2
+        return 1
+    fi
 
     # Parse JSON using jq and print data
-    if $(echo "$json" | jq -e '.data[]' > /dev/null 2>&1); then
-        CHURN_ENTRY_PER_DAY=$(echo "scale=0; $CHURN_ENTRY_PER_EPOCH * $EPOCHS_PER_DAY_CONSTANT" | bc)
-        CHURN_EXIT_PER_EPOCH=$(echo "scale=0; $(echo "$json" | jq -r '.data.validatorscount') / $CHURN_RATE_CONSTANT" | bc)
-        CHURN_EXIT_PER_DAY=$(echo "scale=0; $CHURN_EXIT_PER_EPOCH * $EPOCHS_PER_DAY_CONSTANT" | bc)
+    if echo "$json" | jq -e 'has("data") and .data.beaconchain_entering != null' > /dev/null; then
+        entering=$(echo "$json" | jq -r '.data.beaconchain_entering')
+        exiting=$(echo "$json" | jq -r '.data.beaconchain_exiting')
+        count=$(echo "$json" | jq -r '.data.validatorscount')
         echo "#######################################################"
-        ohai "${NETWORK} Validator Entry/Exit Queue Stats"
+        ohai "${NETWORK} ETH Entry/Exit Queue Stats"
         echo "#######################################################"
         ohai "Reminder: Important Timing Consideration"
         echo "- Wait for Beacon Node Sync: Before making a deposit, ensure your beacon node is synced to avoid missing rewards."
-        echo "- Timing of Validator Activation: After depositing, it takes about 15 hours for a validator to be activated unless there's a long entry queue."
+        echo "- Timing of Validator Activation: After depositing, it takes about ~13 minutes for a validator to be activated unless there's a long entry queue."
         echo "- Timing of Validator Exiting: After initiating an exit by broadcasting a VEM, it takes validator a minimum of 4 epochs to be exited unless there's a long exit queue."
-        ohai "Entry Queue"
-        echo "Validators Entering: $(echo $json | jq -r '.data.beaconchain_entering')"
-        echo "Estimated wait time: $(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_entering') / $CHURN_ENTRY_PER_DAY" | bc) days"
-        echo "Churn: ${CHURN_ENTRY_PER_EPOCH} per epoch"
-        ohai "Exit Queue"
-        echo "Validators Exiting: $(echo $json | jq -r '.data.beaconchain_exiting')"
-        if [[ $(echo $json | jq -r '.data.beaconchain_exiting') -gt 0 ]]; then
-            _waittime=$(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_exiting') / $CHURN_EXIT_PER_DAY" | bc)
-        else
-            _waittime="0"
-        fi
-        echo "Estimated wait time: $_waittime days"
-        echo "Churn: ${CHURN_EXIT_PER_EPOCH} per epoch"
-        ohai "Total Active Validator Count: $(echo $json | jq -r '.data.validatorscount')"
+        display_queue "Entering" "$entering"
+        display_queue "Exiting" "$exiting"
+        ohai "Total Active Validator Count: $count"
     else
       ohai "Unable to query beaconcha.in for $NETWORK validator queue data."
     fi
     ohai "Press ENTER to continue."
-    read
+    read -r
 }
 
 # Checks local latency of relays found in mevboost.service file
