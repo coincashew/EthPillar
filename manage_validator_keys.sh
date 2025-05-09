@@ -16,9 +16,9 @@ isLido=""
 # Base directory with scripts
 BASE_DIR=$HOME/git/ethpillar
 # Load functions
-source $BASE_DIR/functions.sh
+source "$BASE_DIR"/functions.sh
 # Load Lido CSM withdrawal address and fee recipient
-source $BASE_DIR/env
+source "$BASE_DIR"/env
 
 # Pinned version of ethstaker-deposit-cli
 edc_version="1.1.0"
@@ -29,13 +29,13 @@ _platform=$(get_platform)
 _arch=$(get_arch)
 
 function downloadEthstakerDepositCli(){
-    if [ -d $STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli ]; then
-        edc_version_installed=$($STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli/deposit --version)
+    if [ -d "$DEPOSIT_CLI_PATH" ]; then
+        edc_version_installed=$("$DEPOSIT_CLI_PATH"/deposit --version)
         if [[ "${edc_version_installed}" =~ .*"${edc_version}".* ]]; then
             echo "ethstaker_deposit-cli is up-to-date"
             return
         else
-            rm -rf $STAKING_DEPOSIT_CLI_DIR/ethstaker_deposit-cli
+            rm "$DEPOSIT_CLI_PATH"/deposit
             echo "ethstaker_deposit-cli update available"
             echo "Updating to v${edc_version}"
             echo "from ${edc_version_installed}"
@@ -46,26 +46,30 @@ function downloadEthstakerDepositCli(){
     sudo apt install jq curl -y
 
     #Setup variables
-    RELEASE_URL="https://api.github.com/repos/eth-educators/ethstaker-deposit-cli/releases/latest"
     BINARIES_URL="https://github.com/eth-educators/ethstaker-deposit-cli/releases/download/v${edc_version}/ethstaker_deposit-cli-${edc_hash}-${_platform}-${_arch}.tar.gz"
     BINARY_FILE="ethstaker_deposit-cli.tar.gz"
 
-    [[ -z $BINARIES_URL ]] && echo "Error: Unable to determine BINARIES URL" && exit 1
     ohai "Downloading URL: $BINARIES_URL"
-    # Dir to install ethstaker_deposit-cli
-    cd $STAKING_DEPOSIT_CLI_DIR
-    # Download binary
-    wget -O $BINARY_FILE $BINARIES_URL
-    # Extract archive
-    tar -xzvf $BINARY_FILE -C $STAKING_DEPOSIT_CLI_DIR
-    # Cleanup
-    rm ethstaker_deposit-cli.tar.gz
-    # Rename
-    mv ethstaker_deposit-cli*${_arch} ethstaker_deposit-cli
+    # Make temporary directory and ensure cleanup
+    TEMP_DIR=$(mktemp -d)
+    trap 'rm -rf "$TEMP_DIR"' EXIT
+
+    # Download
+    if ! curl -fSL "$BINARIES_URL" -o "${TEMP_DIR}/${BINARY_FILE}"; then
+        echo "ERROR: Unable to download $BINARIES_URL" >&2
+        exit 1
+    fi
+    mkdir -p "$TEMP_DIR/extracted"
+    tar -xzf "$TEMP_DIR/${BINARY_FILE}" -C "$TEMP_DIR/extracted"
+
+    # Install path
+    mkdir -p "$DEPOSIT_CLI_PATH"
+    # Install binary
+    mv "$TEMP_DIR"/extracted/ethstaker_deposit-cli-*/deposit "$DEPOSIT_CLI_PATH"
 }
 
 function generateNewValidatorKeys(){
-    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
+    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido "$1" || ARGUMENT="default"
     if network_isConnected; then
         if whiptail --title "Offline Key Generation" --defaultno --yesno "$MSG_OFFLINE" 20 78; then
             network_down
@@ -87,7 +91,7 @@ function generateNewValidatorKeys(){
     NUMBER_NEW_KEYS=$(whiptail --title "# of New Keys" --inputbox "How many keys to generate?" 8 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     _setKeystorePassword
 
-    cd $DEPOSIT_CLI_PATH
+    cd "$DEPOSIT_CLI_PATH" || true
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
     ./deposit --non_interactive new-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --num_validators "$NUMBER_NEW_KEYS" --keystore_password "$_KEYSTOREPASSWORD" --folder "$KEYFOLDER" "$_VALIDATORTYPE" "$_AMOUNT"
@@ -95,7 +99,7 @@ function generateNewValidatorKeys(){
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
         # $1 is argument for CSM Validator Plugin
-        loadKeys $ARGUMENT
+        loadKeys "$ARGUMENT"
         if [ $OFFLINE_MODE == true ]; then
             network_up
             ohai "Network is online"
@@ -122,8 +126,8 @@ function _getNetwork(){
     NETWORK=$(whiptail --title "Network" --menu \
           "For which network are you generating validator keys?" 10 78 4 \
           "mainnet" "Ethereum - Real ETH. Real staking rewards." \
-          "hoodi" "long term Testnet - Suitable for staking practice." \
           "ephemery" "short term Testnet - Ideal for staking practice. Monthly resets." \
+          "hoodi" "long term Testnet - Suitable for staking practice." \
           "holesky" "long term Testnet - Deprecated" \
           3>&1 1>&2 2>&3)
 }
@@ -134,9 +138,9 @@ function _getValidatorType(){
         return
     fi
     _VALIDATORTYPE=$(whiptail --title "Validator Type" --menu \
-          "Type of Validator? After Pectra, compounding validators are recommended." 10 88 2 \
-          "regular-withdrawal" "32 ETH max effective balance. 0x01 withdrawal credentials" \
-          "compounding" "Up to 2048 ETH max effective balance. 0x02 withdrawal credentials" \
+          "Type of Validator?" 10 88 2 \
+          "compounding" "Accumulating. Up to 2048 ETH max balance. 0x02 withdrawal credentials" \
+          "regular-withdrawal" "Distributing. 32 ETH max balance. 0x01 withdrawal credentials" \
           3>&1 1>&2 2>&3)
     if [ -z "$_VALIDATORTYPE" ]; then exit; fi # pressed cancel
     _VALIDATORTYPE="--$_VALIDATORTYPE"
@@ -160,7 +164,7 @@ function _getAmount(){
 }
 
 function importValidatorKeys(){
-    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
+    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido "$1" || ARGUMENT="default"
     KEYFOLDER=$(whiptail --title "Import Validator Keys from Offline Generation or Backup" --inputbox "$MSG_PATH" 16 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
     if [ -d "$KEYFOLDER" ]; then
         _getNetwork
@@ -171,7 +175,7 @@ function importValidatorKeys(){
         if whiptail --title "Important Information" --defaultno --yesno "$MSG_IMPORT" 20 78; then
             _KEYSTOREPASSWORD=""
             # $1 is argument for CSM Validator Plugin
-            loadKeys $ARGUMENT
+            loadKeys "$ARGUMENT"
         fi
     else
         ohai "$KEYFOLDER does not exist. Try again."
@@ -180,7 +184,7 @@ function importValidatorKeys(){
 }
 
 function addRestoreValidatorKeys(){
-    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido $1 || ARGUMENT="default"
+    [[ $# -eq 1 ]] && local ARGUMENT=$1 && checkLido "$1" || ARGUMENT="default"
     if whiptail --title "Offline Key Generation" --defaultno --yesno "$MSG_OFFLINE" 20 78; then
         network_down
         OFFLINE_MODE=true
@@ -201,7 +205,7 @@ function addRestoreValidatorKeys(){
     whiptail --title "Keystore Password" --msgbox "Reminder to use the same keystore password as existing validators." 10 78
     _setKeystorePassword
 
-    cd $DEPOSIT_CLI_PATH
+    cd "$DEPOSIT_CLI_PATH" || true
     KEYFOLDER="${DEPOSIT_CLI_PATH}/$(date +%F-%H%M%S)"
     mkdir -p "$KEYFOLDER"
     ./deposit --non_interactive existing-mnemonic --chain "$NETWORK" --execution_address "$ETHADDRESS" --folder "$KEYFOLDER" --keystore_password "$_KEYSTOREPASSWORD" --validator_start_index "$START_INDEX" --num_validators "$NUMBER_NEW_KEYS" "$_VALIDATORTYPE" "$_AMOUNT"
@@ -209,7 +213,7 @@ function addRestoreValidatorKeys(){
         #Update path
         KEYFOLDER="$KEYFOLDER/validator_keys"
         # $1 is argument for CSM Validator Plugin
-        loadKeys $ARGUMENT
+        loadKeys "$ARGUMENT"
         if [ $OFFLINE_MODE == true ]; then
             network_up
             ohai "Network is online"
@@ -243,7 +247,6 @@ function setConfig(){
           mainnet)
             LAUNCHPAD_URL="https://launchpad.ethereum.org"
             LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_MAINNET}
-            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_MAINNET}
             CSM_SENTINEL_URL="https://t.me/CSMSentinel_bot"
             FAUCET=""
@@ -253,7 +256,6 @@ function setConfig(){
           holesky)
             LAUNCHPAD_URL="https://holesky.launchpad.ethstaker.cc"
             LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOLESKY}
-            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHolesky_bot"
             FAUCET="https://holesky-faucet.pk910.de"
@@ -263,7 +265,6 @@ function setConfig(){
           hoodi)
             LAUNCHPAD_URL="https://hoodi.launchpad.ethstaker.cc"
             LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOODI}
-            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOODI}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOODI}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelHoodi_bot"
             FAUCET="https://hoodi-faucet.pk910.de"
@@ -273,7 +274,6 @@ function setConfig(){
           ephemery)
             LAUNCHPAD_URL="https://launchpad.ephemery.dev"
             LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOLESKY}
-            CSM_FEE_RECIPIENT_ADDRESS=${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}
             CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelTBD"
             FAUCET="https://faucet.bordel.wtf"
@@ -322,17 +322,17 @@ function loadKeys(){
       Lighthouse)
         sudo lighthouse account validator import \
           --datadir /var/lib/lighthouse \
-          --directory=$KEYFOLDER \
+          --directory="$KEYFOLDER" \
           --reuse-password
         sudo chown -R validator:validator /var/lib/lighthouse/validators
         sudo chmod 700 /var/lib/lighthouse/validators
       ;;
      Lodestar)
         sudo mkdir -p /var/lib/lodestar/validators
-        cd /usr/local/bin/lodestar
+        cd /usr/local/bin/lodestar || true
         sudo ./lodestar validator import \
           --dataDir="/var/lib/lodestar/validators" \
-          --keystore=$KEYFOLDER
+          --keystore="$KEYFOLDER"
         sudo chown -R validator:validator /var/lib/lodestar/validators
         sudo chmod 700 /var/lib/lodestar/validators
       ;;
@@ -350,24 +350,24 @@ function loadKeys(){
                 fi
             done
         fi
-        echo $_KEYSTOREPASSWORD > $HOME/validators-password.txt
+        echo "$_KEYSTOREPASSWORD" > "$HOME"/validators-password.txt
         # Create password file for each keystore
-        for f in $KEYFOLDER/keystore*.json; do sudo cp $HOME/validators-password.txt $KEYFOLDER/$(basename $f .json).txt; done
+        for f in "$KEYFOLDER"/keystore*.json; do sudo cp "$HOME"/validators-password.txt "$KEYFOLDER"/"$(basename "$f" .json)".txt; done
         sudo mkdir -p /var/lib/teku_validator/validator_keys
-        sudo cp $KEYFOLDER/keystore* /var/lib/teku_validator/validator_keys
+        sudo cp "$KEYFOLDER"/keystore* /var/lib/teku_validator/validator_keys
         sudo chown -R validator:validator /var/lib/teku_validator
         sudo chmod -R 700 /var/lib/teku_validator
-        rm $HOME/validators-password.txt
+        rm "$HOME"/validators-password.txt
       ;;
      Nimbus)
         if [[ "$1" = "plugin_csm_validator" ]]; then
             sudo "${__BINARY_PATH}"/nimbus_beacon_node deposits import \
-            --data-dir="${__DATA_DIR}" $KEYFOLDER
-            sudo chown -R ${__SERVICE_USER}:${__SERVICE_USER} "${__DATA_DIR}"
+            --data-dir="${__DATA_DIR}" "$KEYFOLDER"
+            sudo chown -R "${__SERVICE_USER}":"${__SERVICE_USER}" "${__DATA_DIR}"
             sudo chmod -R 700 "${__DATA_DIR}"
         else
             sudo /usr/local/bin/nimbus_beacon_node deposits import \
-                --data-dir=/var/lib/nimbus_validator $KEYFOLDER
+                --data-dir=/var/lib/nimbus_validator "$KEYFOLDER"
             sudo chown -R validator:validator /var/lib/nimbus_validator
             sudo chmod -R 700 /var/lib/nimbus_validator
         fi
@@ -376,20 +376,20 @@ function loadKeys(){
         sudo /usr/local/bin/validator accounts import \
           --accept-terms-of-use \
           --wallet-dir=/var/lib/prysm/validators \
-          --keys-dir=$KEYFOLDER
+          --keys-dir="$KEYFOLDER"
         sudo chown -R validator:validator /var/lib/prysm/validators
         sudo chmod 700 /var/lib/prysm/validators
       ;;
      esac
      ohai "Starting validator"
      [[ $1 == "default" ]] && sudo systemctl start validator
-     [[ $1 == "plugin_csm_validator" ]] && sudo systemctl start ${__SERVICE_NAME}
-     queryValidatorQueue
+     [[ $1 == "plugin_csm_validator" ]] && sudo systemctl start "${__SERVICE_NAME}"
+     queryEntryQueue
      setLaunchPadMessage
      whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 24 95
      whiptail --title "Tips: Things to Know" --msgbox "$MSG_TIPS" 24 78
      ohai "Finished loading keys"
-     promptViewLogs $1
+     promptViewLogs "$1"
 }
 
 function setLaunchPadMessage(){
@@ -441,28 +441,41 @@ $MSG_FAUCET"
     fi
 }
 
-function queryValidatorQueue(){
+function queryEntryQueue(){
     #Variables
     BEACONCHAIN_VALIDATOR_QUEUE_API_URL="/api/v1/validators/queue"
-    declare -A BEACONCHAIN_URLS=()
-    BEACONCHAIN_URLS["mainnet"]="https://beaconcha.in"
-    BEACONCHAIN_URLS["holesky"]="https://holesky.beaconcha.in"
-    BEACONCHAIN_URLS["hoodi"]="https://hoodi.beaconcha.in"
-    BEACONCHAIN_URLS["ephemery"]="https://beaconchain.ephemery.dev"
+    declare -A BEACONCHAIN_URLS=(
+        ["mainnet"]="https://beaconcha.in"
+        ["holesky"]="https://holesky.beaconcha.in"
+        ["hoodi"]="https://hoodi.beaconcha.in"
+        ["ephemery"]="https://beaconchain.ephemery.dev"
+    )
 
-    # Dencun entry churn cap
-    CHURN_ENTRY_PER_EPOCH=8
-    EPOCHS_PER_DAY_CONSTANT=225
+    # Validate network mapping
+    if [[ -z "${BEACONCHAIN_URLS["${NETWORK}"]}" ]]; then
+        echo "Error: Unsupported Network '${NETWORK}' for validator queue queries." >&2
+        return 1
+    fi
+
+    # Pectra churn values
+    local CHURN_LIMIT_PER_DAY=57600
 
     # Query for data
-    json=$(curl -s ${BEACONCHAIN_URLS["${NETWORK}"]}${BEACONCHAIN_VALIDATOR_QUEUE_API_URL})
+    local json
+    if ! json=$(curl -fsSL "${BEACONCHAIN_URLS["${NETWORK}"]}"${BEACONCHAIN_VALIDATOR_QUEUE_API_URL}); then
+        echo "ERROR: Beaconchain Entry Queue API request failed." >&2
+        return 1
+    fi
 
     # Parse JSON using jq and print data
-    if $(echo "$json" | jq -e '.data[]' > /dev/null 2>&1); then
-        CHURN_ENTRY_PER_DAY=$(echo "scale=0; $CHURN_ENTRY_PER_EPOCH * $EPOCHS_PER_DAY_CONSTANT" | bc)
-        _val_joining=$(echo $json | jq -r '.data.beaconchain_entering')
-        _val_wait_days=$(echo "scale=1; $(echo "$json" | jq -r '.data.beaconchain_entering') / $CHURN_ENTRY_PER_DAY" | bc)
-        MSG_VALIDATOR_QUEUE="For ${NETWORK}, currently ${_val_joining} validators waiting to join. ETA: ${_val_wait_days} days."
+    if echo "$json" | jq -e 'has("data") and .data.beaconchain_entering != null' > /dev/null; then
+        entering=$(echo "$json" | jq -r '.data.beaconchain_entering')
+      if (( entering > 0 )); then
+        wait_time=$(calculate_days_hours_and_minutes "$(echo "scale=6; $entering / $CHURN_LIMIT_PER_DAY" | bc)")
+      else
+        wait_time="No wait"
+      fi
+        MSG_VALIDATOR_QUEUE="For ${NETWORK}, currently $entering ETH waiting to join. ETA: $wait_time"
     else
       echo "DEBUG: Unable to query beaconcha.in for $NETWORK validator queue data."
       MSG_VALIDATOR_QUEUE=""
@@ -470,7 +483,7 @@ function queryValidatorQueue(){
 }
 
 function getClientVC(){
-    VC=$(cat /etc/systemd/system/validator.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
+    VC=$(grep "Description=" /etc/systemd/system/validator.service | awk -F'=' '{print $2}' | awk '{print $1}')
 }
 
 function promptViewLogs(){
@@ -485,7 +498,7 @@ function promptViewLogs(){
 }
 
 function setMessage(){
-    MSG_INTRO="During this step, your Secret Recovery Phrase (also known as a "mnemonic") and an accompanying set of validator keys will be generated specifically for you. For comprehensive information regarding these keys, please refer to: https://kb.beaconcha.in/ethereum-staking/ethereum-2-keys
+    MSG_INTRO="During this step, your Secret Recovery Phrase (also known as a \"mnemonic\") and an accompanying set of validator keys will be generated specifically for you. For comprehensive information regarding these keys, please refer to: https://kb.beaconcha.in/ethereum-staking/ethereum-2-keys
 \nThe importance of safeguarding both the Secret Recovery Phrase and the validator keys cannot be overstated, as they are essential for accessing your funds. Exposure of these keys may lead to theft. To learn how to securely store them, visit: https://www.ledger.com/blog/how-to-protect-your-seed-phrase
 \nFor enhanced security, it is strongly recommended that you create the Wagyu Key Gen (https://wagyu.gg) application on an entirely disconnected offline machine. A viable approach to this includes transferring the application onto a USB stick, connecting it to an isolated offline computer, and running it from there. Afterwards, copy your keys back to this machine and import. Continue?"
     MSG_OFFLINE="To ensure maximum security of your secret recovery phrase, it's important to operate this tool in an offline environment.
