@@ -61,6 +61,7 @@ function buildMenu() {
 # Define the options for the main menu
 OPTIONS=(
   📈 "Logging & Monitoring"
+  🛡️ "Security & Node Checks"
   - ""
 )
 buildMenu
@@ -94,6 +95,9 @@ while true; do
     case $CHOICE in
       📈)
         submenuLogsMonitoring
+        ;;
+      🛡️)
+        submenuSecurityNodeChecks
         ;;
       🔗)
         submenuExecution
@@ -176,6 +180,73 @@ while true; do
         # Install monitoring if not installed
         [[ ! -f /etc/systemd/system/ethereum-metrics-exporter.service ]] && runScript ethereum-metrics-exporter.sh -i
         submenuMonitoring
+        ;;
+      👋)
+        break
+        ;;
+    esac
+done
+}
+
+submenuSecurityNodeChecks(){
+while true; do
+    getBackTitle
+    # Define the options for the submenu
+    SUBOPTIONS=(
+      🛡️ "Node Checker: Automated security and health checks for your node."
+      🧱 "UFW Firewall: Control network traffic against unauthorized access"
+      🤗 "Peer Count: Show # peers connected to EL & CL"
+      🔄 "Port Checker: Test for Incoming Connections"
+      🥷 "Privacy: Clear bash shell history"
+      🛠️ "Unattended-upgrades: Automatically install security updates"
+      🔐 "Fail2Ban: Automatically protecting your node from common attack patterns"
+      🔒 "2FA: Secure your SSH access with two-factor authentication"
+      - ""
+      👋 "Back to main menu"
+    )
+
+    # Display the submenu and get the user's choice
+    SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
+      --backtitle "$BACKTITLE" \
+      --title "Security & Node Checks" \
+      --menu "Choose one of the following options:" \
+      0 0 0 \
+      "${SUBOPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+
+    if [ $? -gt 0 ]; then # user pressed <Cancel> button
+        break
+    fi
+
+    # Handle the user's choice from the submenu
+    case $SUBCHOICE in
+      🛡️)
+        sudo bash -c './plugins/node-checker/run.sh'
+        ;;
+      🧱)
+        submenuUFW
+        ;;
+      🤗)
+        getPeerCount
+        ;;
+      🔐)
+        sudo bash -c './helpers/install_fail2ban.sh'
+        ;;
+      🛠️)
+        sudo bash -c './helpers/install_unattendedupgrades.sh'
+        ;;
+      🔒)
+        # Enable 2fa only if ssh keys are present, check current user
+        [[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
+        runScript ./helpers/install_2fa.sh
+        ;;
+      🔄)
+        checkOpenPorts
+        ;;
+      🥷)
+        history -c && history -w
+        ohai "Cleared bash history"
+        read
         ;;
       👋)
         break
@@ -1270,22 +1341,15 @@ while true; do
       ⚙️ "eth-duties: Show upcoming block proposals, attestations, sync duties"
       🧰 "ethdo: Conduct Common Validator Tasks"
       💾 "NCDU: Find large files. Analyze disk usage."
-      🧱 "UFW Firewall: Control network traffic against unauthorized access"
-      🤗 "Peer Count: Show # peers connected to EL & CL"
-      🔄 "Port Checker: Test for Incoming Connections"
       🔗 "Beaconcha.in Validator Dashboard: Create a link for my validators"
       🚪 "Beaconcha.in: Check Validator Entry/Exit Queue time"
       💻 "EL: Switch Execution Clients"
       ⌚ "Timezone: Update machine's timezone"
       🌐 "Locales: Fix terminal formatting issues"
-      🥷 "Privacy: Clear bash shell history"
       📁 "Swapfile: Use disk space as extra RAM"
       🚄 "Speedtest: Test internet bandwidth using speedtest.net"
       💪 "Yet-Another-Bench-Script: Test node performance. Automated Benchmarking."
       🚀 "Performance Tuning: Optimize your nodes with OS tweaks"
-      🔐 "Fail2Ban: Automatically protecting your node from common attack patterns"
-      🛠️ "Unattended-upgrades: Automatically install security updates"
-      🔒 "2FA: Secure your SSH access with two-factor authentication"
       - ""
       👋 "Back to main menu"
     )
@@ -1324,15 +1388,9 @@ while true; do
       💾)
         findLargestDiskUsage
         ;;
-      🔄)
-        checkOpenPorts
-        ;;
       🧰)
         installEthdo
         submenuEthdo
-        ;;
-      🤗)
-        getPeerCount
         ;;
       🔗)
         createBeaconChainDashboardLink
@@ -1357,16 +1415,8 @@ while true; do
         ohai "Logout and login for terminal locale updates to take effect. Press ENTER to continue."
         read
         ;;
-      🥷)
-        history -c && history -w
-        ohai "Cleared bash history"
-        read
-        ;;
       📁)
         addSwapfile
-        ;;
-      🧱)
-        submenuUFW
         ;;
       🚄)
         testBandwidth
@@ -1376,17 +1426,6 @@ while true; do
         ;;
       🚀)
         submenuPerformanceTuning
-        ;;
-      🔐)
-        sudo bash -c './helpers/install_fail2ban.sh'
-        ;;
-      🛠️)
-        sudo bash -c './helpers/install_unattendedupgrades.sh'
-        ;;
-      🔒)
-        # Enable 2fa only if ssh keys are present, check current user
-        [[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
-        runScript ./helpers/install_2fa.sh
         ;;
       👋)
         break
