@@ -70,6 +70,24 @@ UsePAM yes
 AuthenticationMethods publickey,keyboard-interactive
 EOF
 
+    # Check if Include directive is present and not commented out
+    if grep -q "^#Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
+        echo "❌ Include directive is commented out in /etc/ssh/sshd_config"
+        echo "✏️  Uncommenting Include directive..."
+        sudo sed -i 's|^#Include /etc/ssh/sshd_config.d/\*.conf|Include /etc/ssh/sshd_config.d/*.conf|' /etc/ssh/sshd_config
+    elif ! grep -q "^Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
+        echo "❌ Required Include directive not found in /etc/ssh/sshd_config"
+        echo "✏️  Adding Include directive..."
+        echo "Include /etc/ssh/sshd_config.d/*.conf" | sudo tee -a /etc/ssh/sshd_config
+    fi
+    
+    # Check if KbdInteractiveAuthentication is not set to no
+    if grep -q "^KbdInteractiveAuthentication.*no" /etc/ssh/sshd_config; then
+        echo "❌ KbdInteractiveAuthentication is set to 'no' in /etc/ssh/sshd_config"
+        echo "🪛 Enabling KbdInteractiveAuthentication..."
+        sudo sed -i 's/^KbdInteractiveAuthentication.*no/KbdInteractiveAuthentication yes/' /etc/ssh/sshd_config
+    fi
+
     check_ssh_config
 
     echo "🔄 Restarting SSH service..."
