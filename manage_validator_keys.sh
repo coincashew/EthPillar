@@ -464,6 +464,7 @@ function queryEntryQueue(){
     local json
     if ! json=$(curl -fsSL "${BEACONCHAIN_URLS["${NETWORK}"]}"${BEACONCHAIN_VALIDATOR_QUEUE_API_URL}); then
         echo "ERROR: Beaconchain Entry Queue API request failed." >&2
+        MSG_VALIDATOR_QUEUE=""
         return 1
     fi
 
