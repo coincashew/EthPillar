@@ -81,13 +81,14 @@ EOF
         echo "Include /etc/ssh/sshd_config.d/*.conf" | sudo tee -a /etc/ssh/sshd_config
     fi
     
-    # Check if KbdInteractiveAuthentication is not set to no
-    if grep -q "^KbdInteractiveAuthentication.*no" /etc/ssh/sshd_config; then
-        echo "❌ KbdInteractiveAuthentication is set to 'no' in /etc/ssh/sshd_config"
-        echo "🪛 Enabling KbdInteractiveAuthentication..."
-        sudo sed -i 's/^KbdInteractiveAuthentication.*no/KbdInteractiveAuthentication yes/' /etc/ssh/sshd_config
+    # Ensure KbdInteractiveAuthentication is explicitly enabled
+    if grep -qE "^[[:space:]]*#?[[:space:]]*KbdInteractiveAuthentication" /etc/ssh/sshd_config; then
+        echo "🪛 Normalizing KbdInteractiveAuthentication to 'yes' in /etc/ssh/sshd_config"
+        sudo sed -ri 's|^[[:space:]]*#?[[:space:]]*KbdInteractiveAuthentication.*|KbdInteractiveAuthentication yes|' /etc/ssh/sshd_config
+    else
+        echo "🪛 Adding KbdInteractiveAuthentication yes to /etc/ssh/sshd_config"
+        echo "KbdInteractiveAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
     fi
-
     check_ssh_config
 
     echo "🔄 Restarting SSH service..."
