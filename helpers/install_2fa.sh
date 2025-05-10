@@ -70,6 +70,25 @@ UsePAM yes
 AuthenticationMethods publickey,keyboard-interactive
 EOF
 
+    # Check if Include directive is present and not commented out
+    if grep -q "^#Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
+        echo "❌ Include directive is commented out in /etc/ssh/sshd_config"
+        echo "✏️  Uncommenting Include directive..."
+        sudo sed -i 's|^#Include /etc/ssh/sshd_config.d/\*.conf|Include /etc/ssh/sshd_config.d/*.conf|' /etc/ssh/sshd_config
+    elif ! grep -q "^Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
+        echo "❌ Required Include directive not found in /etc/ssh/sshd_config"
+        echo "✏️  Adding Include directive..."
+        echo "Include /etc/ssh/sshd_config.d/*.conf" | sudo tee -a /etc/ssh/sshd_config
+    fi
+    
+    # Ensure KbdInteractiveAuthentication is explicitly enabled
+    if grep -qE "^[[:space:]]*#?[[:space:]]*KbdInteractiveAuthentication" /etc/ssh/sshd_config; then
+        echo "🪛 Normalizing KbdInteractiveAuthentication to 'yes' in /etc/ssh/sshd_config"
+        sudo sed -ri 's|^[[:space:]]*#?[[:space:]]*KbdInteractiveAuthentication.*|KbdInteractiveAuthentication yes|' /etc/ssh/sshd_config
+    else
+        echo "🪛 Adding KbdInteractiveAuthentication yes to /etc/ssh/sshd_config"
+        echo "KbdInteractiveAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
+    fi
     check_ssh_config
 
     echo "🔄 Restarting SSH service..."
