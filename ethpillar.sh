@@ -237,7 +237,7 @@ while true; do
         ;;
       🔒)
         # Enable 2fa only if ssh keys are present, check current user
-        [[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && echo "⚠️ Please setup SSH key authentication first by adding your public key to authorized_keys. Enter to continue." && read && exit 1
+        [[ ! $(grep -E '^ssh-([a-zA-Z0-9]+)' ~/.ssh/authorized_keys) ]] && whiptail --msgbox "⚠️ Please setup SSH key authentication first.\nAdd your public key to ~/.ssh/authorized_keys" 8 78 && return
         runScript ./helpers/install_2fa.sh
         ;;
       🔄)
