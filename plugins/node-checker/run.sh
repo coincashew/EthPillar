@@ -144,7 +144,7 @@ check_firewall() {
     if sudo ufw status | grep -q "Status: active"; then
         print_check_result "PASS" "Firewall is active"
     else
-        print_check_result "FAIL" "Firewall is not active. Install found in Toolbox."
+        print_check_result "FAIL" "Firewall is not active. Install found in Security & Node Checks."
         ((failed_checks++))
     fi
 }
@@ -173,7 +173,7 @@ check_fail2ban() {
     if systemctl is-active --quiet fail2ban; then
         print_check_result "PASS" "Fail2ban is running"
     else
-        print_check_result "FAIL" "Fail2ban not active. Install found in Toolbox."
+        print_check_result "FAIL" "Fail2ban not active. Install found in Security & Node Checks."
         ((failed_checks++))
     fi
 }
@@ -199,7 +199,7 @@ check_unattended_upgrades() {
             ((warning_checks++))
         fi
     else
-        print_check_result "FAIL" "Unattended upgrades not installed. Install found in Toolbox."
+        print_check_result "FAIL" "Unattended upgrades not installed. Install found in Security & Node Checks."
         ((failed_checks++))
     fi
 }
@@ -265,7 +265,7 @@ check_ssh_2fa() {
     if grep -q "auth required pam_google_authenticator.so" /etc/pam.d/sshd; then
         print_check_result "PASS" "SSH 2FA configured"
     else
-        print_check_result "WARN" "SSH 2FA not configured. Install found in Toolbox."
+        print_check_result "WARN" "SSH 2FA not configured. Install found in Security & Node Checks."
         ((warning_checks++))
     fi
 }
