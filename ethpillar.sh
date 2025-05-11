@@ -193,7 +193,7 @@ while true; do
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
-      🛡️ "Node Checker: Automated security and health checks for your node."
+      🛡️ "Node Checker: Automated security and health checks for your node"
       🧱 "UFW Firewall: Control network traffic against unauthorized access"
       🤗 "Peer Count: Show # peers connected to EL & CL"
       🔄 "Port Checker: Test for Incoming Connections"
@@ -246,7 +246,7 @@ while true; do
       🥷)
         history -c && history -w
         ohai "Cleared bash history"
-        read
+        sleep 3
         ;;
       👋)
         break
@@ -666,12 +666,12 @@ while true; do
         fi
         ;;
       ℹ️)
-        MSG_ABOUT="🫰 Created as a Public Good by CoinCashew.eth since Pre-Genesis 2020
-        \n🫶 Make improvements and suggestions on GitHub: https://github.com/coincashew/ethpillar
-        \n🙌 Ask questions on Discord: https://discord.gg/dEpAVWgFNB
-        \nIf you'd like to support this public goods project, find us on the next Gitcoin Grants.
-        \nOur donation address is 0xCF83d0c22dd54475cC0C52721B0ef07d9756E8C0 or coincashew.eth"
-        whiptail --title "About EthPillar" --msgbox "$MSG_ABOUT" 20 78
+        MSG_ABOUT="🏡🥩 Since Pre-Merge 2020,\n- EthPillar is a free, open source, public good.\n- Made for Ethereum. Built on-chain. Powered by community.
+        \n🚀 Get Involved: Make improvements & suggestions on GitHub\n- https://github.com/coincashew/ethpillar
+        \n📣 Join community & ask questions on Discord:\n- https://discord.gg/dEpAVWgFNB
+        \n✨ Support EthPillar on the next Gitcoin Grants round
+        \n🙏 Donations:\n[ 0xCF83d0c22dd54475cC0C52721B0ef07d9756E8C0 ] || [ coincashew.eth ]"
+        whiptail --title "About EthPillar" --msgbox "$MSG_ABOUT" 21 78
         ;;
       ⚙️)
         configureAutoStart
@@ -983,6 +983,8 @@ while true; do
         fi
         sudo ufw allow 30303 comment 'Allow execution client port'
         sudo ufw allow 9000 comment 'Allow consensus client port'
+        getClient
+        [[ $CL == "Lighthouse" ]] && sudo ufw allow 9001/udp comment 'Allow consensus client QUIC port'
         sudo ufw enable
         sudo ufw status numbered
         ohai "UFW firewall enabled."
@@ -1264,7 +1266,7 @@ while true; do
       🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
       🐼 "Contributoor: powerful monitoring & data-gathering tool. enhances network transparency"
       - ""
-      99 "Back to main menu"
+      👋 "Back to main menu"
     )
 
     # Display the submenu and get the user's choice
@@ -1326,7 +1328,7 @@ while true; do
         fi
         runScript plugins/eth-validator-cli/menu.sh
         ;;
-      99)
+      👋)
         break
         ;;
     esac
