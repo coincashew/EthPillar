@@ -985,6 +985,7 @@ while true; do
         sudo ufw allow 9000 comment 'Allow consensus client port'
         getClient
         [[ $CL == "Lighthouse" ]] && sudo ufw allow 9001/udp comment 'Allow consensus client QUIC port'
+        [[ $EL == "Reth" ]] && sudo ufw allow 30304/udp comment 'Allow execution client discv5 port'
         sudo ufw enable
         sudo ufw status numbered
         ohai "UFW firewall enabled."
