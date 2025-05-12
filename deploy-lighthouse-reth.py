@@ -35,8 +35,6 @@ from dotenv import load_dotenv, dotenv_values
 from config import *
 from tqdm import tqdm
 
-import os
-
 def clear_screen():
     if os.name == 'posix':  # Unix-based systems (e.g., Linux, macOS)
         os.system('clear')
@@ -58,7 +56,7 @@ load_dotenv("env")
 EL_P2P_PORT=os.getenv('EL_P2P_PORT')
 EL_P2P_PORT_2=os.getenv('EL_P2P_PORT_2')
 EL_RPC_PORT=os.getenv('EL_RPC_PORT')
-EL_MAX_PEER_COUNT=os.getenv('EL_MAX_PEER_COUNT')
+EL_MAX_PEER_COUNT=int(os.getenv('EL_MAX_PEER_COUNT', '50'))
 CL_P2P_PORT=os.getenv('CL_P2P_PORT')
 CL_P2P_PORT_2=os.getenv('CL_P2P_PORT_2')
 CL_REST_PORT=os.getenv('CL_REST_PORT')
@@ -294,9 +292,9 @@ def setup_ephemery_network(genesis_repository):
     def download_genesis_release(genesis_release):
         # remove old genesis and setup dir
         if os.path.exists(testnet_dir):
-            subprocess.run([f'sudo rm -rf {testnet_dir}'], shell=True)
-        subprocess.run([f'sudo mkdir -p {testnet_dir}'], shell=True)
-        subprocess.run([f'sudo chmod -R 755 {testnet_dir}'], shell=True)
+            subprocess.run(['sudo', 'rm', '-rf', testnet_dir], check=True)
+        subprocess.run(['sudo', 'mkdir', '-p', testnet_dir], check=True)
+        subprocess.run(['sudo', 'chmod', '-R', '755', testnet_dir], check=True)
 
         # get latest genesis
         url = f"https://github.com/{genesis_repository}/releases/download/{genesis_release}/testnet-all.tar.gz"
@@ -335,7 +333,7 @@ sync_url = random.choice(sync_urls)[1]
 def setup_node():
     if not VALIDATOR_ONLY:
         # Create JWT directory
-        subprocess.run([f'sudo mkdir -p $(dirname {JWTSECRET_PATH})'], shell=True)
+        subprocess.run(f"sudo mkdir -p \"$(dirname \"{JWTSECRET_PATH}\")\"", shell=True, check=True)
 
         # Generate random hex string and save to file
         rand_hex = subprocess.run(['openssl', 'rand', '-hex', '32'], stdout=subprocess.PIPE)
@@ -352,7 +350,7 @@ def setup_node():
     subprocess.run(['sudo', 'apt', '-y', '-qq', 'install', 'chrony'])
 
 def install_mevboost():
-    if MEVBOOST_ENABLED == True and not VALIDATOR_ONLY:
+    if MEVBOOST_ENABLED and not VALIDATOR_ONLY:
         # Step 1: Create mevboost service account
         os.system("sudo useradd --no-create-home --shell /bin/false mevboost")
 
@@ -391,8 +389,9 @@ def install_mevboost():
             block_size = 1024
             t = tqdm(total=total_size, unit='B', unit_scale=True)
 
+            tar_filename = "mev-boost.tar.gz"
             # Save the binary to the home folder
-            with open("mev-boost.tar.gz", "wb") as f:
+            with open(tar_filename, "wb") as f:
                 for chunk in response.iter_content(block_size):
                     if chunk:
                         t.update(len(chunk))
@@ -405,14 +404,23 @@ def install_mevboost():
             exit(1)
 
         # Extract the binary to the home folder
-        with tarfile.open('mev-boost.tar.gz', 'r:gz') as tar:
+        with tarfile.open(tar_filename, "r:gz") as tar:
+            def is_within_directory(directory, target):
+                abs_directory=os.path.abspath(directory)
+                abs_target=os.path.abspath(target)
+                return os.path.commonpath([abs_directory]) == os.path.commonpath([abs_directory, abs_target])
+
+            for member in tar.getmembers():
+                member_path = os.path.join(os.getcwd(), member.name)
+                if not is_within_directory(os.getcwd(), member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
             tar.extractall()
 
         # Move the binary to /usr/local/bin using sudo
         os.system(f"sudo mv mev-boost /usr/local/bin")
 
         # Remove files
-        os.system(f"rm mev-boost.tar.gz LICENSE README.md")
+        os.system(f"rm {tar_filename} LICENSE README.md")
 
         ##### MEV Boost Service File
         mev_boost_service_file_lines = [
@@ -521,7 +529,16 @@ def download_and_install_reth():
             exit(1)
 
         # Extract the binary to the home folder
-        with tarfile.open(f"{tar_filename}", 'r:gz') as tar:
+        with tarfile.open(tar_filename, "r:gz") as tar:
+            def is_within_directory(directory, target):
+                abs_directory=os.path.abspath(directory)
+                abs_target=os.path.abspath(target)
+                return os.path.commonpath([abs_directory]) == os.path.commonpath([abs_directory, abs_target])
+
+            for member in tar.getmembers():
+                member_path = os.path.join(os.getcwd(), member.name)
+                if not is_within_directory(os.getcwd(), member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
             tar.extractall()
 
         # Move the binary to /usr/local/bin using sudo
@@ -545,7 +562,7 @@ def download_and_install_reth():
 
         # Half peers for reth
         global EL_MAX_PEER_COUNT
-        EL_MAX_PEER_COUNT = int(EL_MAX_PEER_COUNT) // 2
+        EL_MAX_PEER_COUNT = max(1, int(EL_MAX_PEER_COUNT) // 2)
         ##### RETH SERVICE FILE ###########
         reth_service_file = f'''[Unit]
 Description=Reth Execution Layer Client service for {eth_network.upper()}
@@ -641,7 +658,16 @@ def download_lighthouse():
             exit(1)
 
         # Extract the binary to the home folder
-        with tarfile.open(f"{tar_filename}", 'r:gz') as tar:
+        with tarfile.open(tar_filename, "r:gz") as tar:
+            def is_within_directory(directory, target):
+                abs_directory=os.path.abspath(directory)
+                abs_target=os.path.abspath(target)
+                return os.path.commonpath([abs_directory]) == os.path.commonpath([abs_directory, abs_target])
+
+            for member in tar.getmembers():
+                member_path = os.path.join(os.getcwd(), member.name)
+                if not is_within_directory(os.getcwd(), member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
             tar.extractall()
 
         # Move the binary to /usr/local/bin using sudo
@@ -661,7 +687,7 @@ def install_lighthouse():
         subprocess.run(['sudo', 'useradd', '--no-create-home', '--shell', '/bin/false', 'consensus'])
         subprocess.run(['sudo', 'chown', '-R', 'consensus:consensus', '/var/lib/lighthouse'])
 
-        if MEVBOOST_ENABLED == True:
+        if MEVBOOST_ENABLED:
             _mevparameters='--builder http://127.0.0.1:18550'
         else:
             _mevparameters=''
@@ -706,12 +732,12 @@ WantedBy=multi-user.target
         os.remove(lighthouse_temp_file)
 
 def install_lighthouse_validator():
-    if MEVBOOST_ENABLED == True:
+    if MEVBOOST_ENABLED:
         _mevparameters='--builder-proposals'
     else:
         _mevparameters=''
 
-    if VALIDATOR_ENABLED == True and FEE_RECIPIENT_ADDRESS:
+    if VALIDATOR_ENABLED and FEE_RECIPIENT_ADDRESS:
         _feeparameters=f'--suggested-fee-recipient={FEE_RECIPIENT_ADDRESS}'
     else:
         _feeparameters=''
@@ -719,18 +745,19 @@ def install_lighthouse_validator():
     if BN_ADDRESS:
         _beaconnodeparameters=f'--beacon-nodes={BN_ADDRESS}'
     else:
-        _beaconnodeparameters=f'--beacon-nodes=http://{CL_IP_ADDRESS}:{CL_REST_PORT}'
+        _beaconnodeparameters = (
+            f'--beacon-nodes=http://{CL_IP_ADDRESS}:{CL_REST_PORT}'
+            if CL_IP_ADDRESS
+            else '--beacon-nodes=http://127.0.0.1:5052'
+        )
 
     # Process custom testnet configuration
     if eth_network=="ephemery":
-        file_path = f"/opt/ethpillar/testnet/bootstrap_nodes.txt"
-        with open(file_path, "r") as file:
-            bootnodes = ",".join(file.read().splitlines())
         _network=f"--testnet-dir=/opt/ethpillar/testnet"
     else:
         _network=f"--network={eth_network}"        
 
-    if consensus_client == 'lighthouse' and VALIDATOR_ENABLED == True:
+    if consensus_client == 'lighthouse' and VALIDATOR_ENABLED:
         # Create data paths, service user, assign ownership permissions
         subprocess.run(['sudo', 'mkdir', '-p', '/var/lib/lighthouse_validator'])
         subprocess.run(['sudo', 'useradd', '--no-create-home', '--shell', '/bin/false', 'validator'])
@@ -801,9 +828,9 @@ def finish_install():
     print(f'Systemd service files created:')
     if not VALIDATOR_ONLY:
         print(f'\n{lighthouse_service_file_path}\n{reth_service_file_path}')
-    if VALIDATOR_ENABLED == True:
+    if VALIDATOR_ENABLED:
         print(f'{lighthouse_validator_file_path}')
-    if MEVBOOST_ENABLED == True and not VALIDATOR_ONLY:
+    if MEVBOOST_ENABLED and not VALIDATOR_ONLY:
         print(f'{mev_boost_service_file_path}')
 
     if args.skip_prompts:
@@ -815,7 +842,7 @@ def finish_install():
         answer=PromptUtils(Screen()).prompt_for_yes_or_no(f"\nInstallation successful!\nSyncing a Lighthouse/Reth node for validator duties can be as quick as a few hours.\nWould you like to start syncing now?")
         if answer:
             os.system(f'sudo systemctl start execution consensus')
-            if MEVBOOST_ENABLED == True:
+            if MEVBOOST_ENABLED:
                 os.system(f'sudo systemctl start mevboost')
 
     # Prompt to enable autostart services
@@ -823,9 +850,9 @@ def finish_install():
     if answer:
         if not VALIDATOR_ONLY:
             os.system(f'sudo systemctl enable execution consensus')
-        if VALIDATOR_ENABLED == True:
+        if VALIDATOR_ENABLED:
             os.system(f'sudo systemctl enable validator')
-        if MEVBOOST_ENABLED == True and not VALIDATOR_ONLY:
+        if MEVBOOST_ENABLED and not VALIDATOR_ONLY:
             os.system(f'sudo systemctl enable mevboost')
 
     # Show Lido CSM Instructions and ask CSM staker if they to manage validator keystores

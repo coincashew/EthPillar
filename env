@@ -18,7 +18,7 @@ CL_IP_ADDRESS=127.0.0.1
 JWTSECRET_PATH="/secrets/jwtsecret"
 
 # Graffiti for validator. Maximum length is 16 characters.
-GRAFFITI="🏠🥩🪙🛡️EthPillar"
+GRAFFITI="🏠🥩🪙🛡️🦒EthPillar"
 
 # ETH address receiving priority fees (tips) and MEV rewards
 FEE_RECIPIENT_ADDRESS=
