@@ -138,7 +138,7 @@ function _getValidatorType(){
         return
     fi
     _VALIDATORTYPE=$(whiptail --title "Validator Type" --menu \
-          "Type of Validator?" 10 88 2 \
+          "Type of Validator?" 10 90 2 \
           "compounding" "Accumulating. Up to 2048 ETH max balance. 0x02 withdrawal credentials" \
           "regular-withdrawal" "Distributing. 32 ETH max balance. 0x01 withdrawal credentials" \
           3>&1 1>&2 2>&3)
@@ -320,12 +320,13 @@ function loadKeys(){
    ohai "Stopping validator to import keys"
    case $VC in
       Lighthouse)
+        [[ -d /var/lib/lighthouse_validator ]] && vc_path="/var/lib/lighthouse_validator" || vc_path="/var/lib/lighthouse/validators"
         sudo lighthouse account validator import \
-          --datadir /var/lib/lighthouse \
+          --datadir "$vc_path" \
           --directory="$KEYFOLDER" \
           --reuse-password
-        sudo chown -R validator:validator /var/lib/lighthouse/validators
-        sudo chmod 700 /var/lib/lighthouse/validators
+        sudo chown -R validator:validator "$vc_path"
+        sudo chmod 700 "$vc_path"
       ;;
      Lodestar)
         sudo mkdir -p /var/lib/lodestar/validators
