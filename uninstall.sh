@@ -146,6 +146,7 @@ function uninstallVC(){
 
 		#Lighthouse
 		sudo rm -rf /var/lib/lighthouse/validators
+		sudo rm -rf /var/lib/lighthouse_validator
 
 		#Lodestar
 		sudo rm -rf /var/lib/lodestar/validators

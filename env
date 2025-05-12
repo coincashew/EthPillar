@@ -6,17 +6,19 @@
 
 # Default Values
 EL_P2P_PORT=30303
+EL_P2P_PORT_2=30304
 EL_RPC_PORT=8545
 EL_MAX_PEER_COUNT=50
 EL_IP_ADDRESS=127.0.0.1
 CL_P2P_PORT=9000
+CL_P2P_PORT_2=9001
 CL_REST_PORT=5052
 CL_MAX_PEER_COUNT=100
 CL_IP_ADDRESS=127.0.0.1
 JWTSECRET_PATH="/secrets/jwtsecret"
 
 # Graffiti for validator. Maximum length is 16 characters.
-GRAFFITI="🏠🥩🪙🛡️EthPillar"
+GRAFFITI="🏠🥩🪙🛡️🦒EthPillar"
 
 # ETH address receiving priority fees (tips) and MEV rewards
 FEE_RECIPIENT_ADDRESS=

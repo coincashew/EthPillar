@@ -1493,13 +1493,17 @@ function checkV1StakingSetup(){
 function installNode(){
   if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service ]]; then
           _CLIENTCOMBO=$(whiptail --title "Choose your consensus and execution clients" --menu \
-          "Pick your combination:" 10 78 2 \
+          "Pick your combination:" 10 78 3 \
           "Nimbus-Nethermind" "lightweight. secure. easy to use. nim and .net" \
+          "Lighthouse-Reth" "built in rust. security focused. performance" \
           "Teku-Besu" "institutional grade. enterprise staking. java" \
           3>&1 1>&2 2>&3)
           case $_CLIENTCOMBO in
           Nimbus-Nethermind)
             runScript install-nimbus-nethermind.sh true
+            ;;
+          Lighthouse-Reth)
+            runScript install-lighthouse-reth.sh true
             ;;
           Teku-Besu)
             runScript install-teku-besu.sh true
