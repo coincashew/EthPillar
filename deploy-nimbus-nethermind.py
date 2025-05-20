@@ -555,6 +555,14 @@ def download_and_install_nethermind():
         else:
             _network=f"--config {eth_network}"
 
+        # Process sync barriers
+        if eth_network=="mainnet":
+            _syncparameters='--Sync.AncientBodiesBarrier=15537394 --Sync.AncientReceiptsBarrier=15537394'
+        elif eth_network=="sepolia":
+            _syncparameters='--Sync.AncientBodiesBarrier=1450408 --Sync.AncientReceiptsBarrier=1450408'
+        else:
+            _syncparameters=''
+
         ##### NETHERMIND SERVICE FILE ###########
         nethermind_service_file = f'''[Unit]
 Description=Nethermind Execution Layer Client service for {eth_network.upper()}
@@ -572,7 +580,7 @@ KillSignal=SIGINT
 TimeoutStopSec=900
 WorkingDirectory=/var/lib/nethermind
 Environment="DOTNET_BUNDLE_EXTRACT_BASE_DIR=/var/lib/nethermind"
-ExecStart=/usr/local/bin/nethermind/nethermind {_network} --datadir="/var/lib/nethermind" --Network.DiscoveryPort {EL_P2P_PORT} --Network.P2PPort {EL_P2P_PORT} --Network.MaxActivePeers {EL_MAX_PEER_COUNT} --JsonRpc.Port {EL_RPC_PORT} --Metrics.Enabled true --Metrics.ExposePort 6060 --JsonRpc.JwtSecretFile {JWTSECRET_PATH} --Pruning.Mode=Hybrid --Pruning.FullPruningTrigger=VolumeFreeSpace --Pruning.FullPruningThresholdMb=300000
+ExecStart=/usr/local/bin/nethermind/nethermind {_network} --datadir="/var/lib/nethermind" --Network.DiscoveryPort {EL_P2P_PORT} --Network.P2PPort {EL_P2P_PORT} --Network.MaxActivePeers {EL_MAX_PEER_COUNT} --JsonRpc.Port {EL_RPC_PORT} --Metrics.Enabled true --Metrics.ExposePort 6060 --JsonRpc.JwtSecretFile {JWTSECRET_PATH} --Pruning.Mode=Hybrid --Pruning.FullPruningTrigger=VolumeFreeSpace --Pruning.FullPruningThresholdMb=300000 {_syncparameters}
 
 [Install]
 WantedBy=multi-user.target
