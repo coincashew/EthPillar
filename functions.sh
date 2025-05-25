@@ -545,7 +545,7 @@ generateVoluntaryExitMessage(){
     echo "- Backup and save VEMs to external storage. (e.g. USB drive)"
     echo "- Share with your heirs."
     echo "- For more information on what happens AFTER broadcasting a VEM with detailed timelines, see:"
-    echo "  https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-iii-tips/voluntary-exiting-a-validator"
+    echo "  https://docs.coincashew.com/guides/voluntary-exiting-a-validator"
     echo ""
     echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
     read -rsn1 yn
@@ -612,7 +612,7 @@ broadcastVoluntaryExitMessageLocally(){
     echo "- Balances: Validator's balance will be swept to your withdrawal address."
     echo "- Wait time: Check estimated exit queue wait times at https://www.validatorqueue.com"
     echo "- Timelines: For more detailed sequence of events, see:"
-    echo "  https://www.coincashew.com/coins/overview-eth/guide-or-how-to-setup-a-validator-on-eth2-mainnet/part-iii-tips/voluntary-exiting-a-validator"
+    echo "  https://docs.coincashew.com/guides/voluntary-exiting-a-validator"
     echo ""
     echo "${tty_bold}Do you wish to continue? [y|n]${tty_reset}"
     read -rsn1 yn
