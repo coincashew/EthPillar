@@ -428,7 +428,7 @@ def install_mevboost():
         f'Description=MEV-Boost Service for {eth_network.upper()}',
         'Wants=network-online.target',
         'After=network-online.target',
-        'Documentation=https://www.coincashew.com',
+        'Documentation=https://docs.coincashew.com',
         '',
         '[Service]',
         'User=mevboost',
@@ -568,7 +568,7 @@ def download_and_install_reth():
 Description=Reth Execution Layer Client service for {eth_network.upper()}
 After=network-online.target
 Wants=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple
@@ -706,7 +706,7 @@ def install_lighthouse():
 Description=Lighthouse Consensus Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple

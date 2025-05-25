@@ -378,7 +378,7 @@ def install_mevboost():
         f'Description=MEV-Boost Service for {eth_network.upper()}',
         'Wants=network-online.target',
         'After=network-online.target',
-        'Documentation=https://www.coincashew.com',
+        'Documentation=https://docs.coincashew.com',
         '',
         '[Service]',
         'User=mevboost',
@@ -504,7 +504,7 @@ def download_and_install_besu():
 Description=Besu Execution Layer Client service for {eth_network.upper()}
 After=network-online.target
 Wants=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple
@@ -621,7 +621,7 @@ def install_teku():
 Description=Teku Beacon Node Consensus Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple
@@ -675,7 +675,7 @@ def install_teku_validator():
 Description=Teku Validator Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple

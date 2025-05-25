@@ -418,7 +418,7 @@ def install_mevboost():
         f'Description=MEV-Boost Service for {eth_network.upper()}',
         'Wants=network-online.target',
         'After=network-online.target',
-        'Documentation=https://www.coincashew.com',
+        'Documentation=https://docs.coincashew.com',
         '',
         '[Service]',
         'User=mevboost',
@@ -568,7 +568,7 @@ def download_and_install_nethermind():
 Description=Nethermind Execution Layer Client service for {eth_network.upper()}
 After=network-online.target
 Wants=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple
@@ -710,7 +710,7 @@ def install_nimbus():
 Description=Nimbus Beacon Node Consensus Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple
@@ -781,7 +781,7 @@ def install_nimbus_validator():
 Description=Nimbus Validator Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple

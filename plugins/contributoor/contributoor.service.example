@@ -2,6 +2,7 @@
 Description=Contributoor Service
 After=network-online.target
 Wants=network-online.target
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple

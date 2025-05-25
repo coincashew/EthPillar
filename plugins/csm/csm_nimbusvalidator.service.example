@@ -2,7 +2,7 @@
 Description=Nimbus CSM Validator Client
 Wants=network-online.target
 After=network-online.target
-Documentation=http://eth.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 User=csm_nimbus_validator

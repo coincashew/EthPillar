@@ -2,6 +2,7 @@
 Description=Prysm Client Stats: Collects metrics from your validator or beacon node processes and push them to the beaconcha.in stats service
 Wants=network-online.target
 After=network-online.target
+Documentation=https://docs.coincashew.com
 Requires=validator.service
 
 [Service]
