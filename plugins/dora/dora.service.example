@@ -2,7 +2,7 @@
 Description=Dora Lightweight Beaconchain Explorer
 Wants=network-online.target
 After=network-online.target
-Documentation=http://eth.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 User=dora
