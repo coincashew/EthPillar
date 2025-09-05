@@ -19,11 +19,19 @@ if [[ ${#} -eq 0 ]]; then
   echo "ERROR: Missing deploy file. Example ./install-node.sh deploy-nimbus-nethermind.py"
   exit 1
 elif [[ ${#} -eq 2 ]]; then
-  skip_prompt=$2
+  skip_prompt="$2"
 fi
-
-install_file=$1
-
+install_file="$1"
+# Accept only deploy-*.py and disallow slashes
+if [[ "$install_file" != deploy-*.py || "$install_file" == */* ]]; then
+  echo "ERROR: Invalid deploy file: $install_file"
+  exit 1
+fi
+# Ensure file exists before continuing
+if [[ ! -f "$HOME/git/ethpillar/$install_file" ]]; then
+  echo "ERROR: Missing file: $HOME/git/ethpillar/$install_file"
+  exit 1
+fi
 abort() {
   printf "%s\n" "$1"
   exit 1
