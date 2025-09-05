@@ -13,12 +13,25 @@ set -u
 set -o history -o histexpand
 
 python="python3"
-
 skip_prompt=""
-if [[ $# -eq 1 ]]; then
-   skip_prompt="$1"
-fi
 
+if [[ ${#} -eq 0 ]]; then
+  echo "ERROR: Missing deploy file. Example ./install-node.sh deploy-nimbus-nethermind.py"
+  exit 1
+elif [[ ${#} -eq 2 ]]; then
+  skip_prompt="$2"
+fi
+install_file="$1"
+# Accept only deploy-*.py and disallow slashes
+if [[ "$install_file" != deploy-*.py || "$install_file" == */* ]]; then
+  echo "ERROR: Invalid deploy file: $install_file"
+  exit 1
+fi
+# Ensure file exists before continuing
+if [[ ! -f "$HOME/git/ethpillar/$install_file" ]]; then
+  echo "ERROR: Missing file: $HOME/git/ethpillar/$install_file"
+  exit 1
+fi
 abort() {
   printf "%s\n" "$1"
   exit 1
@@ -81,7 +94,7 @@ ohai() {
 
 requirements_check() {
   # Check CPU architecture
-  if ! lscpu | grep -qE '(^Architecture: +(x86_64|aarch64))'; then
+  if ! [[ $(lscpu | grep -oE 'x86') || $(lscpu | grep -oE 'aarch64') ]]; then
     echo "This machine's CPU architecture is not yet supported."
     echo "Recommend using Intel-AMD x86 or arm64 systems for best experience."
     exit 1
@@ -112,7 +125,7 @@ linux_install_python() {
     fi
     exit_on_error $?
     ohai "Installing python tools"
-    sudo apt-get install --no-install-recommends --no-install-suggests -y "${python}-pip" "${python}-tk" "${python}-venv"
+    sudo apt-get install --no-install-recommends --no-install-suggests -y $python-pip $python-tk $python-venv
     ohai "Creating venv"
     $python -m venv ~/.local --system-site-packages
     ohai "Installing pip requirements"
@@ -125,7 +138,7 @@ linux_install_validator-install() {
     mkdir -p ~/git/ethpillar
     git clone https://github.com/coincashew/ethpillar.git ~/git/ethpillar 2> /dev/null || (cd ~/git/ethpillar ; git fetch origin main ; git checkout main ; git pull)
     ohai "Installing validator-install"
-    $python ~/git/ethpillar/deploy-lighthouse-reth.py
+    $python ~/git/ethpillar/${install_file}
     ohai "Allowing user to view journalctl logs"
     sudo usermod -a -G systemd-journal $USER
     ohai "Install complete!"
@@ -156,7 +169,7 @@ if [[ "$OS" == "Linux" ]]; then
                                    - Deploy a node, in a flash
                                    - coincashew.com
     """
-    ohai "This script will install a Lighthouse-Reth Ethereum node:"
+    ohai "This script will install your Ethereum node:"
     echo "git jq curl ccze tmux bc"
     echo "python3-tk python3-pip python3-venv"
     echo "validator-install"
@@ -169,7 +182,7 @@ if [[ "$OS" == "Linux" ]]; then
     echo ""
     echo "######################################################################"
     echo "##                                                                  ##"
-    echo "##      VALIDATOR INSTALL COMPLETE!  To start, type \"ethpillar\"     ##"
+    echo "##           INSTALL COMPLETE!  To start, type \"ethpillar\"          ##"
     echo "##                                                                  ##"
     echo "######################################################################"
     echo ""
