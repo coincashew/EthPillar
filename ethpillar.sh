@@ -1500,8 +1500,8 @@ function installNode(){
           "Lighthouse-Reth" "built in rust. security focused. performance" \
           "Teku-Besu" "institutional grade. enterprise staking. java" \
           3>&1 1>&2 2>&3)
-          file="deploy-${_CLIENTCOMBO,,}.py"
-          runScript install-node.sh "${file}" true
+          _file="deploy-${_CLIENTCOMBO,,}.py"
+          runScript install-node.sh "${_file}" true
   fi
 }
 
