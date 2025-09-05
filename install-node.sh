@@ -27,11 +27,7 @@ if [[ "$install_file" != deploy-*.py || "$install_file" == */* ]]; then
   echo "ERROR: Invalid deploy file: $install_file"
   exit 1
 fi
-# Ensure file exists before continuing
-if [[ ! -f "$HOME/git/ethpillar/$install_file" ]]; then
-  echo "ERROR: Missing file: $HOME/git/ethpillar/$install_file"
-  exit 1
-fi
+
 abort() {
   printf "%s\n" "$1"
   exit 1
