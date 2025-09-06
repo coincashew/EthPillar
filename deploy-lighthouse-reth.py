@@ -563,6 +563,15 @@ def download_and_install_reth():
         # Half peers for reth
         global EL_MAX_PEER_COUNT
         EL_MAX_PEER_COUNT = max(1, int(EL_MAX_PEER_COUNT) // 2)
+
+        # Process sync barriers
+        if eth_network=="mainnet":
+            _syncparameters='--prune.bodies.pre-merge --prune.receipts.before 15537394'
+        elif eth_network=="sepolia":
+            _syncparameters='--prune.bodies.pre-merge --prune.receipts.before 1450409'
+        else:
+            _syncparameters=''
+
         ##### RETH SERVICE FILE ###########
         reth_service_file = f'''[Unit]
 Description=Reth Execution Layer Client service for {eth_network.upper()}
@@ -579,7 +588,7 @@ RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
 Environment=RUST_LOG=info
-ExecStart=/usr/local/bin/reth node {_network} --datadir=/var/lib/reth --log.file.directory=/var/lib/reth/logs --metrics 127.0.0.1:6060 --port {EL_P2P_PORT} --discovery.port {EL_P2P_PORT} --enable-discv5-discovery --discovery.v5.port {EL_P2P_PORT_2} --max-outbound-peers {EL_MAX_PEER_COUNT} --max-inbound-peers {EL_MAX_PEER_COUNT} --http --http.port {EL_RPC_PORT} --http.api="rpc,eth,web3,net,debug" --authrpc.jwtsecret {JWTSECRET_PATH}
+ExecStart=/usr/local/bin/reth node {_network} --datadir=/var/lib/reth --log.file.directory=/var/lib/reth/logs --metrics 127.0.0.1:6060 --port {EL_P2P_PORT} --discovery.port {EL_P2P_PORT} --enable-discv5-discovery --discovery.v5.port {EL_P2P_PORT_2} --max-outbound-peers {EL_MAX_PEER_COUNT} --max-inbound-peers {EL_MAX_PEER_COUNT} --http --http.port {EL_RPC_PORT} --http.api="rpc,eth,web3,net,debug" --authrpc.jwtsecret {JWTSECRET_PATH} {_syncparameters}
 
 [Install]
 WantedBy=multi-user.target
