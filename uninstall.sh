@@ -150,6 +150,7 @@ function uninstallVC(){
 
 		#Lodestar
 		sudo rm -rf /var/lib/lodestar/validators
+		sudo rm -rf /var/lib/lodestar_validator
 
 		#Teku, if running Standalone Teku Validator
 		sudo rm -rf /var/lib/teku_validator
