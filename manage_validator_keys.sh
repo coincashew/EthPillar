@@ -272,9 +272,10 @@ function setConfig(){
             EXPLORER="https://hoodi.cloud.blockscout.com"
           ;;
           ephemery)
+            # Reuse HOODI values unless ephemery-specific ones exist
             LAUNCHPAD_URL="https://launchpad.ephemery.dev"
-            LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOLESKY}
-            CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOLESKY}
+            LAUNCHPAD_URL_LIDO=${LAUNCHPAD_URL_LIDO_HOODI}
+            CSM_WITHDRAWAL_ADDRESS=${CSM_WITHDRAWAL_ADDRESS_HOODI}
             CSM_SENTINEL_URL="https://t.me/CSMSentinelTBD"
             FAUCET="https://faucet.bordel.wtf"
             HOMEPAGE="https://ephemery.dev"
@@ -287,7 +288,7 @@ function setConfig(){
         # Update message for Lido
         MSG_ETHADDRESS="\nSet this to Lido's CSM Withdrawal Vault Address.
 \n${NETWORK}: ${CSM_WITHDRAWAL_ADDRESS}
-\nIn checksum format, ether the Withdrawal Address:"
+\nIn checksum format, enter the Withdrawal Address:"
     fi
 }
 
