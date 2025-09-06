@@ -183,9 +183,11 @@ if install_config == "Lido CSM Staking Node" or install_config == "Lido CSM Vali
         CSM_WITHDRAWAL_ADDRESS=CSM_WITHDRAWAL_ADDRESS_HOODI
         LAUNCHPAD_URL_LIDO=LAUNCHPAD_URL_LIDO_HOODI
     elif eth_network == "ephemery":
-        FEE_RECIPIENT_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOODI
-        CSM_WITHDRAWAL_ADDRESS=CSM_FEE_RECIPIENT_ADDRESS_HOODI
-        LAUNCHPAD_URL_LIDO=CSM_FEE_RECIPIENT_ADDRESS_HOODI
+    elif eth_network == "ephemery":
+        # Reuse HOODI values unless ephemery-specific ones exist
+        FEE_RECIPIENT_ADDRESS = CSM_FEE_RECIPIENT_ADDRESS_HOODI
+        CSM_WITHDRAWAL_ADDRESS = CSM_WITHDRAWAL_ADDRESS_HOODI
+        LAUNCHPAD_URL_LIDO = LAUNCHPAD_URL_LIDO_HOODI
     else:
         print(f'Unsupported Lido CSM Staking Node network: {eth_network}')
         exit(1)
