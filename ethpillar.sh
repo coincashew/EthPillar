@@ -1495,13 +1495,18 @@ function installNode(){
   if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service ]]; then
           local _CLIENTCOMBO _file
           _CLIENTCOMBO=$(whiptail --title "Choose your consensus and execution clients" --menu \
-          "Pick your combination:" 10 78 3 \
+          "Pick your combination:" 12 78 4 \
           "Nimbus-Nethermind" "lightweight. secure. easy to use. nim and .net" \
-          "Lighthouse-Reth" "built in rust. security focused. performance" \
+          "Lodestar-Besu" "performant. robust. ziglang & javascript" \
           "Teku-Besu" "institutional grade. enterprise staking. java" \
+          "Lighthouse-Reth" "built in rust. security focused. performance" \
           3>&1 1>&2 2>&3)
-          _file="deploy-${_CLIENTCOMBO,,}.py"
-          runScript install-node.sh "${_file}" true
+          if [ $? -gt 0 ]; then # user pressed <Cancel> button
+            return
+          else
+            _file="deploy-${_CLIENTCOMBO,,}.py"
+            runScript install-node.sh "${_file}" true
+          fi
   fi
 }
 

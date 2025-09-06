@@ -329,13 +329,13 @@ function loadKeys(){
         sudo chmod 700 "$vc_path"
       ;;
      Lodestar)
-        sudo mkdir -p /var/lib/lodestar/validators
+        [[ -d /var/lib/lodestar_validator ]] && vc_path="/var/lib/lodestar_validator" || vc_path="/var/lib/lodestar/validators"
         cd /usr/local/bin/lodestar || true
         sudo ./lodestar validator import \
-          --dataDir="/var/lib/lodestar/validators" \
+          --dataDir="$vc_path" \
           --keystore="$KEYFOLDER"
-        sudo chown -R validator:validator /var/lib/lodestar/validators
-        sudo chmod 700 /var/lib/lodestar/validators
+        sudo chown -R validator:validator "$vc_path"
+        sudo chmod 700 "$vc_path"
       ;;
      Teku)
         if [[ -z $_KEYSTOREPASSWORD ]]; then
