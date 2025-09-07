@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="5.0.0"
+EP_VERSION="5.1.0"
 
 # Default text editor
 export EDITOR="nano"
@@ -977,9 +977,20 @@ while true; do
         echo "${tty_bold}Allow SSH access? [y|n]${tty_reset}"
         read -rsn1 yn
         if [[ ${yn} = [Yy]* ]]; then
-          read -r -p "Enter your SSH port. Press Enter to use default '22': " _ssh_port
-          _ssh_port=${_ssh_port:-22}
-          sudo ufw allow ${_ssh_port}/tcp comment 'Allow SSH port'
+          while true; do
+            read -r -p "Enter your SSH port. Press Enter to use default '22': " _ssh_port
+            _ssh_port=${_ssh_port:-22}
+            if ! [[ "$_ssh_port" =~ ^[0-9]+$ ]] || [ "$_ssh_port" -lt 1 ] || [ "$_ssh_port" -gt 65535 ]; then
+                 whiptail --title "Error" --msgbox "Invalid port. Try again." 8 78
+            else
+                if [ "$_ssh_port" -eq 22 ]; then
+                  sudo ufw limit 22/tcp comment 'Rate-limit SSH (port 22)'
+                else
+                  sudo ufw allow "${_ssh_port}/tcp" comment 'Allow SSH port'
+                fi
+                break
+            fi
+          done
         fi
         sudo ufw allow 30303 comment 'Allow execution client port'
         sudo ufw allow 9000 comment 'Allow consensus client port'
@@ -1403,6 +1414,7 @@ while true; do
         ;;
       💻)
         [[ "${_arch}" == "arm64" ]] && echo "EL Switcher not available for arm64. Press ENTER to continue." && read && break
+        [[ "${NETWORK,,}" == "ephemery" ]] && echo "EL Switcher not available for EPHEMERY testnet. To switch, use System Admin > Reinstall node . Press ENTER to continue." && read && break
         sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coincashew/client-switcher/master/install.sh)"
         ;;
       ⌚)
@@ -1497,7 +1509,7 @@ function installNode(){
           _CLIENTCOMBO=$(whiptail --title "Choose your consensus and execution clients" --menu \
           "Pick your combination:" 12 78 4 \
           "Nimbus-Nethermind" "lightweight. secure. easy to use. nim and .net" \
-          "Lodestar-Besu" "performant. robust. ziglang & javascript" \
+          "Lodestar-Besu" "performant. robust. ziglang & javascript & java" \
           "Teku-Besu" "institutional grade. enterprise staking. java" \
           "Lighthouse-Reth" "built in rust. security focused. performance" \
           3>&1 1>&2 2>&3)
