@@ -14,20 +14,17 @@ BASE_DIR=$HOME/git/ethpillar
 source $BASE_DIR/functions.sh
 
 # Get machine info
-_platform=$(get_platform)
 _arch=$(get_arch)
 
-# Binaries only available for amd64
-if [[ ! "${_arch}" == "amd64" ]]; then
-	echo "eth-duties binaries are only available for amd64 architecture"
-	sleep 5
-	exit 1
+# Translate achitecture file name
+if [[ "${_arch}" == "arm64" ]]; then
+	_arch=arm
 fi
 
 # Variables
 GITHUB_URL=https://api.github.com/repos/TobiWo/eth-duties/releases/latest
 GITHUB_RELEASE_NODES=https://github.com/TobiWo/eth-duties/releases
-RELEASE_SUFFIX="ubuntu22.04-${_arch}.tar.gz"
+RELEASE_SUFFIX="ubuntu24.04-${_arch}.tar.gz"
 DESCRIPTION="eth-duties logs upcoming validator duties to the console. Developed mainly for home stakers."
 DOCUMENTATION=https://tobiwo.github.io/eth-duties
 SOURCE_CODE=https://github.com/TobiWo/eth-duties
@@ -56,6 +53,10 @@ function downloadClient(){
 	cd $HOME
 	# Download
 	wget -O $APP_NAME.tar.gz $BINARIES_URL
+  if [ ! -f $APP_NAME.tar.gz ]; then
+    echo "Error: Downloading $APP_NAME.tar.gz failed!"
+    exit 1
+  fi
 	# Untar
 	tar -xzvf $APP_NAME.tar.gz -C $HOME --strip-components=2
 	# Cleanup
