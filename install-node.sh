@@ -162,8 +162,8 @@ if [[ "$OS" == "Linux" ]]; then
 ██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗                
 ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝                
                                                                                                                                          
-                                   - Deploy a node, in a flash
-                                   - coincashew.com
+    - This is my node. There are many like it, but this one is mine.
+    - coincashew
     """
     ohai "This script will install your Ethereum node:"
     echo "git jq curl ccze tmux bc"
