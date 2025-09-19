@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="5.1.0"
+EP_VERSION="5.2.0"
 
 # Default text editor
 export EDITOR="nano"
@@ -43,13 +43,20 @@ export _platform _arch
 menuMain(){
 
 # Define systemctl services
-_SERVICES=("execution" "consensus" "validator" "mevboost" "csm_nimbusvalidator")
-_SERVICES_NAME=("Execution Client" "Consensus Client" "Validator Client" "MEV-Boost" "CSM Nimbus Validator Plugin")
-_SERVICES_ICON=("🔗" "🧠" "🚀" "⚡" "💧")
+_SERVICES=("execution" "consensus" "validator" "mevboost" "csm_nimbusvalidator" "dora")
+_SERVICES_NAME=("Execution Client" "Consensus Client" "Validator Client" "MEV-Boost" "CSM Nimbus Validator Plugin" "Dora the Explorer")
+_SERVICES_ICON=("🔗" "🧠" "🚀" "⚡" "💧" "🔎")
 
 function testAndServiceCommand() {
   for _service in "${_SERVICES[@]}"; do
     test -f /etc/systemd/system/"${_service}".service && sudo service "${_service}" "$1"
+  done
+}
+
+function testAndPluginCommand() {
+  local _DIRNAME=("aztec")
+  for (( i=0; i<${#_DIRNAME[@]}; i++ )); do
+    test -d /opt/ethpillar/"${_DIRNAME[i]}" && cd "/opt/ethpillar/${_DIRNAME[i]}" && sudo docker compose "$1"
   done
 }
 
@@ -58,6 +65,16 @@ function buildMenu() {
     test -f /etc/systemd/system/"${_SERVICES[i]}".service && OPTIONS+=("${_SERVICES_ICON[i]}" "${_SERVICES_NAME[i]}")
   done
 }
+
+function buildMenuPlugins() {
+  local _DIRNAME=("aztec")
+  local _NAME=("Aztec Sequencer")
+  local _ICON=("🥷")
+  for (( i=0; i<${#_NAME[@]}; i++ )); do
+    test -d /opt/ethpillar/"${_DIRNAME[i]}" && OPTIONS+=("${_ICON[i]}" "${_NAME[i]}")
+  done
+}
+
 # Define the options for the main menu
 OPTIONS=(
   📈 "Logging & Monitoring"
@@ -65,6 +82,7 @@ OPTIONS=(
   - ""
 )
 buildMenu
+buildMenuPlugins
 OPTIONS+=(
   - ""
   ✅ "Start all clients"
@@ -114,14 +132,23 @@ while true; do
       💧)
         submenuPluginCSMValidator
         ;;
+      🔎)
+        runScript plugins/dora/menu.sh
+        ;;
+      🥷)
+        runScript plugins/aztec/menu.sh
+        ;;
       ✅)
         testAndServiceCommand start
+        testAndPluginCommand start
         ;;
       🛑)
         testAndServiceCommand stop
+        testAndPluginCommand stop
         ;;
       🔄)
         testAndServiceCommand restart
+        testAndPluginCommand restart
         ;;
       🖥️)
         submenuAdminstrative
@@ -1277,6 +1304,7 @@ while true; do
       🔧 "eth-validator-cli by TobiWo: managing validators via execution layer requests"
       🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
       🐼 "Contributoor: powerful monitoring & data-gathering tool. enhances network transparency"
+      🥷 "Aztec Sepolia Sequencer: Run a sequencer validating node for privacy first L2 by Aztec Labs"
       - ""
       👋 "Back to main menu"
     )
@@ -1312,6 +1340,12 @@ while true; do
             runScript plugins/sentinel/plugin_csm_sentinel.sh -i
         fi
         submenuPluginSentinel
+        ;;
+      🥷)
+        if [[ ! -d /opt/ethpillar/aztec ]]; then
+            runScript plugins/aztec/plugin_aztec.sh -i
+        fi
+        [[ -d /opt/ethpillar/aztec ]] && runScript plugins/aztec/menu.sh
         ;;
       🔎)
         getNetworkConfig
@@ -1504,20 +1538,25 @@ function checkV1StakingSetup(){
 
 # If no consensus or validator client service is installed, start install workflow
 function installNode(){
-  if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service ]]; then
+  if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service && ! -d /opt/ethpillar/aztec ]]; then
           local _CLIENTCOMBO _file
-          _CLIENTCOMBO=$(whiptail --title "Choose your consensus and execution clients" --menu \
-          "Pick your combination:" 12 78 4 \
+          _CLIENTCOMBO=$(whiptail --title "⚙️  Node Configuration" --menu \
+          "Pick your combination:" 13 78 5 \
           "Nimbus-Nethermind" "lightweight. secure. easy to use. nim and .net" \
           "Lodestar-Besu" "performant. robust. ziglang & javascript & java" \
           "Teku-Besu" "institutional grade. enterprise staking. java" \
           "Lighthouse-Reth" "built in rust. security focused. performance" \
+          "Aztec L2 Sequencer" "by Aztec Labs. support privacy. permissionless" \
           3>&1 1>&2 2>&3)
           if [ $? -gt 0 ]; then # user pressed <Cancel> button
             return
           else
-            _file="deploy-${_CLIENTCOMBO,,}.py"
-            runScript install-node.sh "${_file}" true
+            if [ "$_CLIENTCOMBO" == "Aztec L2 Sequencer" ]; then
+              runScript plugins/aztec/plugin_aztec.sh -i
+            else
+              _file="deploy-${_CLIENTCOMBO,,}.py"
+              runScript install-node.sh "${_file}" true
+            fi
           fi
   fi
 }
@@ -1548,15 +1587,20 @@ function setNodeMode(){
   elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ -f /etc/systemd/system/mevboost.service ]]; then
     NODE_MODE="Failover Staking Node"
   elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
-    NODE_MODE="Full Node Only"
+    NODE_MODE="Full Node"
   elif [[ -f /etc/systemd/system/validator.service ]]; then
     if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOODI}" /etc/systemd/system/validator.service) ]]; then
         NODE_MODE="Lido CSM Validator Client Only"
     else
         NODE_MODE="Validator Client Only"
     fi
+  elif [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
+      NODE_MODE="Aztec Node | Remote RPC"
   else
     NODE_MODE="Not Installed"
+  fi
+  if [[ -d /opt/ethpillar/aztec ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
+      NODE_MODE+=" | Aztec Node | Local RPC"
   fi
   if [[ -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then
     PLUGIN_MODE=true
