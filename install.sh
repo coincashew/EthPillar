@@ -125,8 +125,8 @@ if [[ "$OS" == "Linux" ]]; then
 ███████╗   ██║   ██║  ██║██║     ██║███████╗███████╗██║  ██║██║  ██║
 ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
                                                           
-                                   - Ethereum Nodes Made Easy
-                                   - coincashew.com
+  - This is my node. There are many like it, but this one is mine.
+  - coincashew
     """
     ohai "This script will install a node management tool called 'ethpillar'"
 
