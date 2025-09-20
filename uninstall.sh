@@ -56,6 +56,16 @@ function uninstallPlugins(){
 		sudo userdel contributoor
 		sudo rm -rf /opt/ethpillar/plugin-contributoor
 	fi
+	if [[ -d /opt/ethpillar/aztec ]]; then
+	    cd /opt/ethpillar/aztec 2>/dev/null && docker compose down || true
+	    sudo docker rm -f aztec-sequencer
+	    TAG=$(grep "DOCKER_TAG" /opt/ethpillar/aztec/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
+	    sudo docker rmi -f aztecprotocol/aztec:"$TAG"
+	    if [[ -f /opt/ethpillar/aztec/.cast_installed_by_plugin && -f /usr/local/bin/cast ]]; then
+	      sudo rm /usr/local/bin/cast
+	    fi
+	    sudo rm -rf /opt/ethpillar/aztec
+	fi
 }
 
 function cleanupMisc(){

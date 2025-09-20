@@ -54,7 +54,7 @@ function healthChecks(){
       local rpc_local=http://localhost:8080
       local remote_execution_l1_rpc=https://ethereum-sepolia-rpc.publicnode.com
       local remote_consensus_beacon_rpc=https://ethereum-sepolia-beacon-api.publicnode.com
-      local consensus_beacon_rpc execution_l1_rpc remote_block local_block percentage peerid enr latest_block_number latest_slot
+      local consensus_beacon_rpc execution_l1_rpc remote_block local_block peerid enr latest_block_number latest_slot
 
       # Load RPC URLs from .env
       consensus_beacon_rpc=$(grep ^L1_CONSENSUS_HOST_URLS "$PLUGIN_INSTALL_PATH"/.env | sed 's/L1_CONSENSUS_HOST_URLS=//g') #http://localhost:5052
@@ -65,43 +65,53 @@ function healthChecks(){
       execution_l1_rpc=${execution_l1_rpc%%,*}
 
       # Check RPC node availablity
-      echo -e "\n🔎 Checking Sepolia Execution L1 RPC: $execution_l1_rpc"
-      if curl -s "$execution_l1_rpc" >/dev/null 2>&1; then echo "✅ Sepolia Execution L1 RPC is up"; else echo "❌ Sepolia Execution L1 RPC is down or unreachable"; fi
+      echo -e "${bold}\n🔎 Checking Sepolia Execution L1 RPC: $execution_l1_rpc${nc}"
+      if curl -s --connect-timeout 5 --max-time 10 "$execution_l1_rpc" >/dev/null 2>&1; then echo "✅ Sepolia Execution L1 RPC is up"; else echo "❌ Sepolia Execution L1 RPC is down or unreachable"; fi
 
-      echo -e "\n🔎 Checking Consensus Beacon Node RPC: $consensus_beacon_rpc"
-      if curl -s "$consensus_beacon_rpc" >/dev/null 2>&1; then echo "✅ Consensus Beacon Node RPC is up"; else echo "❌ Consensus Beacon Node RPC is down or unreachable"; fi
+      echo -e "${bold}\n🔎 Checking Consensus Beacon Node RPC: $consensus_beacon_rpc${nc}"
+      if curl -s --connect-timeout 5 --max-time 10 "$consensus_beacon_rpc" >/dev/null 2>&1; then echo "✅ Consensus Beacon Node RPC is up"; else echo "❌ Consensus Beacon Node RPC is down or unreachable"; fi
 
       # Check execution latest blocks
-      latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' "${execution_l1_rpc}" | jq -r '.result' || error "Unable to query latest block")
+      latest_block_number=$(curl -s --connect-timeout 3 --max-time 5 --fail -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' "${execution_l1_rpc}" | jq -r '.result' || error "Unable to query latest block")
       if [[ -n "$latest_block_number" && "$latest_block_number" != "0x0" ]]; then latest_block_number=$(printf '%d' "$latest_block_number"); else latest_block_number="N/A"; fi
-      latest_remote_block=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' "${remote_execution_l1_rpc}" | jq -r '.result' || error "Unable to query latest block")
+      latest_remote_block=$(curl -s --connect-timeout 3 --max-time 5 --fail -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' "${remote_execution_l1_rpc}" | jq -r '.result' || error "Unable to query latest block")
       if [[ -n "$latest_remote_block" && "$latest_remote_block" != "0x0" ]]; then latest_remote_block=$(printf '%d' "$latest_remote_block"); else latest_remote_block="N/A"; fi
 
       # Check consensus client latest slot
-      latest_slot=$(curl -s -X GET "${consensus_beacon_rpc}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot' || error "Unable to query latest slot")
+      latest_slot=$(curl -s --connect-timeout 3 --max-time 5 --fail -X GET "${consensus_beacon_rpc}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot' || error "Unable to query latest slot")
       [[ -n "$latest_slot" ]] || latest_slot="N/A"
-      latest_remote_slot=$(curl -s -X GET "${remote_consensus_beacon_rpc}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot' || error "Unable to query latest slot")
+      latest_remote_slot=$(curl -s --connect-timeout 3 --max-time 5 --fail -X GET "${remote_consensus_beacon_rpc}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot' || error "Unable to query latest slot")
       [[ -n "$latest_remote_slot" ]] || latest_remote_slot="N/A"
 
-      echo -e "\n🔗 Ethereum Execution Client status: "
+      echo -e "${bold}\n🔗 Ethereum Execution Client status:${nc}"
       echo "   🌍 Remote block:  $latest_remote_block [$remote_execution_l1_rpc]"
       echo "   🧱 Local block:   $latest_block_number [$execution_l1_rpc]"
-      percentage="N/A"
-      [[ $latest_remote_block != "N/A" && $latest_block_number != "N/A" ]] && percentage=$(echo "scale=2; $latest_block_number * 100 / $latest_remote_block" | bc -l 2>/dev/null || error "Unable to calculate %")
-      echo "   📈 Progress: ${percentage}%"
-      [[ "$percentage" == "100.00" ]] && echo "   ✅ Execution is synced." || echo "   ❌ Execution is not synced."
+      exec_pct="N/A"
+      [[ $latest_remote_block != "N/A" && $latest_block_number != "N/A" ]] && exec_pct=$(echo "scale=2; $latest_block_number * 100 / $latest_remote_block" | bc -l 2>/dev/null || error "Unable to calculate %")
+      if [[ "$exec_pct" != "N/A" ]]; then
+        echo "   📈 Progress: ${exec_pct}%"
+        [[ "$exec_pct" == "100.00" ]] && echo "   ✅ Execution is synced." || echo "   ❌ Execution is not synced."
+      else
+        echo "   📈 Progress: N/A"
+        echo "   ℹ️ Unable to determine sync status."
+      fi
 
-      echo -e "\n🧠 Beacon Consensus Client Status:"
+      echo -e "${bold}\n🧠 Beacon Consensus Client Status:${nc}"
       echo "   🌍 Remote slot:  $latest_remote_slot [$remote_consensus_beacon_rpc]"
       echo "   🧱 Local slot:   $latest_slot [$consensus_beacon_rpc]"
-      percentage="N/A"
-      [[ $latest_remote_slot != "N/A" && $latest_slot != "N/A" ]] && percentage=$(echo "scale=2; $latest_slot * 100 / $latest_remote_slot" | bc -l 2>/dev/null || error "Unable to calculate %")
-      echo "   📈 Progress: ${percentage}%"
-      [[ "$percentage" == "100.00" ]] && echo "   ✅ Beacon is synced." || echo "   ❌ Beacon is not synced."
+      beacon_pct="N/A"
+      [[ $latest_remote_slot != "N/A" && $latest_slot != "N/A" ]] && beacon_pct=$(echo "scale=2; $latest_slot * 100 / $latest_remote_slot" | bc -l 2>/dev/null || error "Unable to calculate %")
+      if [[ "$beacon_pct" != "N/A" ]]; then
+        echo "   📈 Progress: ${beacon_pct}%"
+        [[ "$beacon_pct" == "100.00" ]] && echo "   ✅ Beacon is synced." || echo "   ❌ Beacon is not synced." 
+      else
+        echo "   📈 Progress: N/A"
+        echo "   ℹ️ Unable to determine sync status."
+      fi
 
       # Check block height of remote and local node
-      remote_block=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"node_getL2Tips","params":[],"id":67}' "$rpc_remote")
-      local_block=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"node_getL2Tips","params":[],"id":67}' "$rpc_local")
+      remote_block=$(curl -s --connect-timeout 3 --max-time 5 --fail -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"node_getL2Tips","params":[],"id":67}' "$rpc_remote")
+      local_block=$(curl -s --connect-timeout 3 --max-time 5 --fail -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"node_getL2Tips","params":[],"id":67}' "$rpc_local")
 
       if [[ -z "$remote_block" || "$remote_block" == "null" ]]; then
         remote_block="N/A"
@@ -115,28 +125,33 @@ function healthChecks(){
         local_block=$(echo "$local_block" | jq -r ".result.proven.number")
       fi
 
-      echo -e "\n🖥️ Aztec L2 Node Sync Status:"
+      echo -e "${bold}\n🖥️ Aztec L2 Node Sync Status:${nc}"
       echo "   🌍 Remote block: $remote_block [$rpc_remote]"
       echo "   🧱 Local block:  $local_block [$rpc_local]"
-      percentage="N/A"
-      [[ $remote_block != "N/A" && $local_block != "N/A" ]] && percentage=$(echo "scale=2; $local_block * 100 / $remote_block" | bc -l 2>/dev/null || error "Unable to calculate %")
-      echo "   📈 Progress: ${percentage}%"
-      [[ "$percentage" == "100.00" ]] && echo "   ✅ Aztec node is synced." || echo "   ❌ Aztec node is not synced."
+      aztec_pct="N/A"
+      [[ $remote_block != "N/A" && $local_block != "N/A" ]] && aztec_pct=$(echo "scale=2; $local_block * 100 / $remote_block" | bc -l 2>/dev/null || error "Unable to calculate %")
+      if [[ "$aztec_pct" != "N/A" ]]; then
+        echo "   📈 Progress: ${aztec_pct}%"
+        [[ "$aztec_pct" == "100.00" ]] && echo "   ✅ Aztec node is synced." || echo "   ❌ Aztec node is not synced."
+      else
+        echo "   📈 Progress: N/A"
+        echo "   ℹ️ Unable to determine sync status."
+      fi
     }
 
     function dockerChecks(){
       # Check if we have a Peer ID
       peerid=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^"]*\)".*/\1/')
-      echo -e "\n📋 Peer ID: Verify at https://aztec.nethermind.io/explore"
+      echo -e "${bold}\n📋 Peer ID: Verify at https://aztec.nethermind.io/explore${nc}"
       [[ -n $peerid ]] && echo "   ✅ $peerid" || echo "   ❌ Unable to get Peer ID. Is node running?"
 
       # Check if we have an ENR
       enr=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^"]*\)".*/\1/')
-      echo -e "\n⚙️ ENR:"
+      echo -e "${bold}\n⚙️ ENR:${nc}"
       [[ -n $enr ]] && echo "   ✅ $enr" || echo "   ❌ Unable to get ENR. Is node running?"
 
       # Check docker processes
-      echo -e "\n🔎 Docker Process Running:"
+      echo -e "${bold}\n🔎 Docker Process Running:${nc}"
       sudo docker compose -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
     }
 
@@ -148,7 +163,8 @@ function healthChecks(){
 
       # Check TCP ports
       checker_url="https://eth2-client-port-checker.vercel.app/api/checker?ports="
-      tcp_json=$(curl -s "${checker_url}${tcp_ports}")
+      tcp_check_ok=false
+      tcp_json=$(curl -s --connect-timeout 3 --max-time 5 --fail "${checker_url}${tcp_ports}") || true
 
       # Check UDP ports using netcat
       udp_open_ports=0
@@ -157,15 +173,18 @@ function healthChecks(){
           if nc -z -u localhost "$port" &>/dev/null; then
               ((udp_open_ports++))
               open_udp_ports+=("$port")
+              tcp_check_ok=true
           fi
       done
 
       # Parse JSON using jq and check if any open ports exist
-      echo -e "\n🔎 Open ports found:"
+      echo -e "${bold}\n🔎 Open ports found:${nc}"
       if echo "$tcp_json" | jq -e '.open_ports[]' > /dev/null 2>&1; then
           echo "$tcp_json" | jq -r '.open_ports[]' | while read -r port; do echo "$port(TCP)"; done
           tcp_open_ports=$(echo "$tcp_json" | jq '.open_ports | length')
           open_ports=$((tcp_open_ports + udp_open_ports))
+      else
+        echo "   ℹ️ Remote TCP port checker unavailable; skipping remote reachability."
       fi
 
       # Show UDP ports
@@ -176,18 +195,53 @@ function healthChecks(){
       # Compare expected vs actual number of open ports
       expected_tcp_ports=$(echo "$tcp_ports" | tr ',' '\n' | wc -l)
       expected_udp_ports=$(echo "$udp_ports" | tr ',' '\n' | wc -l)
-      expected_ports=$((expected_tcp_ports + expected_udp_ports))
+      expected_ports=$(( (tcp_check_ok ? expected_tcp_ports : 0) + expected_udp_ports ))
 
       if [ "$expected_ports" -ne "$open_ports" ]; then
-          echo -e "❌ Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check firewall or port forwarding on router."
+          echo -e "${r}   ❌ Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check firewall or port forwarding on router.${nc}"
       else
-          echo -e "✅ P2P Ports fully open on ${tcp_ports} (TCP) and ${udp_ports} (UDP)"
+          echo -e "${g}   ✅ P2P Ports fully open on ${tcp_ports} (TCP) and ${udp_ports} (UDP)${nc}"
       fi
     }
+
+    function check_firewall() {
+      echo -e "${bold}\n🔥🧱 UFW Firewall Status:${nc}"
+      if sudo ufw status | grep -q "Status: active"; then
+          sudo ufw status numbered
+          echo -e "${g}   ✅ Firewall is active${nc}"
+      else
+          echo -e "${r}   ❌ Firewall is not active. Install found in Security & Node Checks.${nc}"
+      fi
+    }
+
+    function show_status() {
+      UPTIME=$(uptime -p)
+      CONTAINER_STARTED_AT=$(sudo docker inspect -f '{{.State.StartedAt}}' aztec-sequencer 2>/dev/null | cut -d'.' -f1)
+      START_FORMAT=$(test -n "$CONTAINER_STARTED_AT" && date -d "$CONTAINER_STARTED_AT" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "N/A")
+      CPU=$(LANG=C top -bn1 | grep "Cpu(s)" | awk '{print $2+$4}')
+      MEM=$(free -m | awk 'NR==2{printf "%.2f GiB",$3/1024}')
+      echo -e "${bold}\n🖥️ Node Status:${nc}"
+      echo -e "${bold}   ⌚ Uptime:      ${g}$UPTIME${nc}"
+      echo -e "${bold}   ⚡ Started:     ${g}$START_FORMAT${nc}"
+      echo -e "${bold}   🚀 CPU:         ${r}$CPU%${nc}"
+      echo -e "${bold}   💾 Memory:      ${g}$MEM${nc}"
+      if df -h / &> /dev/null; then
+          FREE_GB=$(df -h / | awk 'NR==2 {print $4}')
+          USED_PERCENT=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+          if [ "$USED_PERCENT" -ge 90 ]; then
+              echo -e "${bold}   💽 Disk Space:${nc}${r} ⚠️ / has only $((100 - USED_PERCENT))% free space left ($FREE_GB).${nc}"
+          else
+              echo -e "${bold}   💽 Disk Space:${nc}${g} ✅ / has sufficient free space: $FREE_GB ($((100 - USED_PERCENT))% free).${nc}"
+          fi
+      fi
+    }
+
     echo -e "\n${g}${bold}=== Health Checks Begin: This will take a few seconds... ===${nc}"
     rpcStatus
     dockerChecks
     openPorts
+    check_firewall
+    show_status
     echo -e "\n${g}${bold}=== Health Checks Complete: Press enter to exit ===${nc}"
     read -r
 }
@@ -306,6 +360,9 @@ while true; do
       🛠️ "Update docker image"
       🗑️ "Uninstall plugin"
       - ""
+    )
+    [[ -f "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase ]] && SUBOPTIONS+=(🔐 "Backup Validator Key: Keep this safe")
+    SUBOPTIONS+=(
       🛡️ "Troubleshooting: Run Health Checks"
       💻 "Claim Guardian Role: Run a Node with good uptime"
       🚀 "Register Validator: Become a Verifying Validator"
@@ -365,6 +422,28 @@ while true; do
         # shellcheck disable=SC2164
         cd ~/git/ethpillar
         exec ./plugins/aztec/plugin_aztec.sh -r
+        ;;
+      🔐)
+        tmpfile=$(mktemp)
+        {
+          echo "1) Keep this safe."
+          echo "2) Do not share or lose it."
+          echo "3) Can be used to restore your validator."
+          echo "4) Make a backup."
+          echo "Note: Disregard this seed backup, if you're using private keys generated elsewhere."
+          echo
+          echo "File Location: $PLUGIN_INSTALL_PATH/aztec_seed_phrase"
+          echo
+          echo "======START OF FILE====="
+          sudo cat "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase
+          echo "======END OF FILE======="
+        } > "$tmpfile"
+        whiptail --title "🔐 Backup Validator Seed" --textbox "$tmpfile" 28 83
+        rm -f "$tmpfile"
+        if whiptail --title "🗑️ Delete Validator Seed" --defaultno --yesno "Are you sure you made a backup and we can delete the seed now?" 9 78; then
+          sudo rm "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase || error "Unable to delete aztec_seed_phrase"
+          whiptail --title "Seed is deleted from node" --msgbox "You have deleted the secret seed phrase." 8 78
+        fi
         ;;
       🛡️)
         healthChecks
