@@ -65,10 +65,10 @@ function healthChecks(){
       execution_l1_rpc=${execution_l1_rpc%%,*}
 
       # Check RPC node availablity
-      echo -e "\n🔎 Checking Sepolia Execution L1 RPC: $execution_l1_rpc"
+      echo -e "${bold}\n🔎 Checking Sepolia Execution L1 RPC: $execution_l1_rpc${nc}"
       if curl -s "$execution_l1_rpc" >/dev/null 2>&1; then echo "✅ Sepolia Execution L1 RPC is up"; else echo "❌ Sepolia Execution L1 RPC is down or unreachable"; fi
 
-      echo -e "\n🔎 Checking Consensus Beacon Node RPC: $consensus_beacon_rpc"
+      echo -e "${bold}\n🔎 Checking Consensus Beacon Node RPC: $consensus_beacon_rpc${nc}"
       if curl -s "$consensus_beacon_rpc" >/dev/null 2>&1; then echo "✅ Consensus Beacon Node RPC is up"; else echo "❌ Consensus Beacon Node RPC is down or unreachable"; fi
 
       # Check execution latest blocks
@@ -83,7 +83,7 @@ function healthChecks(){
       latest_remote_slot=$(curl -s -X GET "${remote_consensus_beacon_rpc}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot' || error "Unable to query latest slot")
       [[ -n "$latest_remote_slot" ]] || latest_remote_slot="N/A"
 
-      echo -e "\n🔗 Ethereum Execution Client status: "
+      echo -e "${bold}\n🔗 Ethereum Execution Client status:${nc}"
       echo "   🌍 Remote block:  $latest_remote_block [$remote_execution_l1_rpc]"
       echo "   🧱 Local block:   $latest_block_number [$execution_l1_rpc]"
       percentage="N/A"
@@ -91,7 +91,7 @@ function healthChecks(){
       echo "   📈 Progress: ${percentage}%"
       [[ "$percentage" == "100.00" ]] && echo "   ✅ Execution is synced." || echo "   ❌ Execution is not synced."
 
-      echo -e "\n🧠 Beacon Consensus Client Status:"
+      echo -e "${bold}\n🧠 Beacon Consensus Client Status:${nc}"
       echo "   🌍 Remote slot:  $latest_remote_slot [$remote_consensus_beacon_rpc]"
       echo "   🧱 Local slot:   $latest_slot [$consensus_beacon_rpc]"
       percentage="N/A"
@@ -115,7 +115,7 @@ function healthChecks(){
         local_block=$(echo "$local_block" | jq -r ".result.proven.number")
       fi
 
-      echo -e "\n🖥️ Aztec L2 Node Sync Status:"
+      echo -e "${bold}\n🖥️ Aztec L2 Node Sync Status:${nc}"
       echo "   🌍 Remote block: $remote_block [$rpc_remote]"
       echo "   🧱 Local block:  $local_block [$rpc_local]"
       percentage="N/A"
@@ -127,16 +127,16 @@ function healthChecks(){
     function dockerChecks(){
       # Check if we have a Peer ID
       peerid=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^"]*\)".*/\1/')
-      echo -e "\n📋 Peer ID: Verify at https://aztec.nethermind.io/explore"
+      echo -e "${bold}\n📋 Peer ID: Verify at https://aztec.nethermind.io/explore${nc}"
       [[ -n $peerid ]] && echo "   ✅ $peerid" || echo "   ❌ Unable to get Peer ID. Is node running?"
 
       # Check if we have an ENR
       enr=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^"]*\)".*/\1/')
-      echo -e "\n⚙️ ENR:"
+      echo -e "${bold}\n⚙️ ENR:${nc}"
       [[ -n $enr ]] && echo "   ✅ $enr" || echo "   ❌ Unable to get ENR. Is node running?"
 
       # Check docker processes
-      echo -e "\n🔎 Docker Process Running:"
+      echo -e "${bold}\n🔎 Docker Process Running:${nc}"
       sudo docker compose -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
     }
 
@@ -161,7 +161,7 @@ function healthChecks(){
       done
 
       # Parse JSON using jq and check if any open ports exist
-      echo -e "\n🔎 Open ports found:"
+      echo -e "${bold}\n🔎 Open ports found:${nc}"
       if echo "$tcp_json" | jq -e '.open_ports[]' > /dev/null 2>&1; then
           echo "$tcp_json" | jq -r '.open_ports[]' | while read -r port; do echo "$port(TCP)"; done
           tcp_open_ports=$(echo "$tcp_json" | jq '.open_ports | length')
@@ -179,15 +179,50 @@ function healthChecks(){
       expected_ports=$((expected_tcp_ports + expected_udp_ports))
 
       if [ "$expected_ports" -ne "$open_ports" ]; then
-          echo -e "❌ Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check firewall or port forwarding on router."
+          echo -e "${r}   ❌ Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check firewall or port forwarding on router.${nc}"
       else
-          echo -e "✅ P2P Ports fully open on ${tcp_ports} (TCP) and ${udp_ports} (UDP)"
+          echo -e "${g}   ✅ P2P Ports fully open on ${tcp_ports} (TCP) and ${udp_ports} (UDP)${nc}"
       fi
     }
+
+    function check_firewall() {
+      echo -e "${bold}\n🔥🧱 UFW Firewall Status:${nc}"
+      if sudo ufw status | grep -q "Status: active"; then
+          sudo ufw status numbered
+          echo -e "${g}   ✅ Firewall is active${nc}"
+      else
+          echo -e "${r}   ❌ Firewall is not active. Install found in Security & Node Checks.${nc}"
+      fi
+    }
+
+    function show_status() {
+      UPTIME=$(uptime -p)
+      CONTAINER_STARTED_AT=$(sudo docker inspect -f '{{.State.StartedAt}}' aztec-sequencer 2>/dev/null | cut -d'.' -f1)
+      START_FORMAT=$(date -d "$CONTAINER_STARTED_AT" +"%Y-%m-%d %H:%M:%S" 2>/dev/null)
+      CPU=$(top -bn1 | grep "Cpu(s)" | awk '{print $2+$4}')
+      MEM=$(free -m | awk 'NR==2{printf "%.2f GiB",$3/1024}')
+      echo -e "${bold}\n🖥️ Node Status:${nc}"
+      echo -e "${bold}   ⌚ Uptime:      ${g}$UPTIME${nc}"
+      echo -e "${bold}   ⚡ Started:     ${g}$START_FORMAT${nc}"
+      echo -e "${bold}   🚀 CPU:         ${r}$CPU%${nc}"
+      echo -e "${bold}   💾 Memory:      ${g}$MEM${nc}"
+      if df -h / &> /dev/null; then
+          FREE_GB=$(df -h / | awk 'NR==2 {print $4}')
+          USED_PERCENT=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+          if [ "$USED_PERCENT" -ge 90 ]; then
+              echo -e "${bold}   💽 Disk Space:${nc}${r} ⚠️ / has only $((100 - USED_PERCENT))% free space left ($FREE_GB).${nc}"
+          else
+              echo -e "${bold}   💽 Disk Space:${nc}${g} ✅ / has sufficient free space: $FREE_GB ($((100 - USED_PERCENT))% free).${nc}"
+          fi
+      fi
+    }
+
     echo -e "\n${g}${bold}=== Health Checks Begin: This will take a few seconds... ===${nc}"
     rpcStatus
     dockerChecks
     openPorts
+    check_firewall
+    show_status
     echo -e "\n${g}${bold}=== Health Checks Complete: Press enter to exit ===${nc}"
     read -r
 }
@@ -306,6 +341,9 @@ while true; do
       🛠️ "Update docker image"
       🗑️ "Uninstall plugin"
       - ""
+    )
+    [[ -f "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase ]] && SUBOPTIONS+=(🔐 "Backup Validator Key: Keep this safe")
+    SUBOPTIONS+=(
       🛡️ "Troubleshooting: Run Health Checks"
       💻 "Claim Guardian Role: Run a Node with good uptime"
       🚀 "Register Validator: Become a Verifying Validator"
@@ -365,6 +403,23 @@ while true; do
         # shellcheck disable=SC2164
         cd ~/git/ethpillar
         exec ./plugins/aztec/plugin_aztec.sh -r
+        ;;
+      🔐)
+        keyMSG="1) Keep this safe.
+2) Do not share or lose it.
+3) Can be used to restore your validator.
+4) Make a backup.
+Note: Disregard this seed backup, if you're using private keys generated elsewhere.
+\nFile Location: $PLUGIN_INSTALL_PATH/aztec_seed_phrase
+\n======START OF FILE=====
+$(sudo cat "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase)
+======END OF FILE=======
+"
+        whiptail --title "🔐 Backup Validator Seed" --msgbox "$keyMSG" 30 83
+        if whiptail --title "🗑️ Delete Validator Seed" --defaultno --yesno "Are you sure you made a backup and we can delete the seed now?" 9 78; then
+          sudo rm "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase || error "Unable to delete aztec_seed_phrase"
+          whiptail --title "Seed is deleted from node" --msgbox "You have deleted the secret seed phrase." 8 78
+        fi
         ;;
       🛡️)
         healthChecks
