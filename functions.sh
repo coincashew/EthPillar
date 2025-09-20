@@ -262,7 +262,7 @@ getPubKeys(){
    local ARGUMENT=${1:-"default"}
    case $VC in
       Lighthouse)
-         [[ -d /var/lib/lighthouse_validator ]] && vc_path="/var/lib/lighthouse_validator" || vc_path="/var/lib/lighthouse/validators"
+         [[ -d /var/lib/lighthouse_validator ]] && vc_path="/var/lib/lighthouse_validator" || vc_path="/var/lib/lighthouse"
          TEMP=$(sudo /usr/local/bin/lighthouse account validator list --datadir "$vc_path" | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;

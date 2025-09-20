@@ -35,10 +35,28 @@ export API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
 # Execution layer RPC API
 export EL_RPC_ENDPOINT="${EL_IP_ADDRESS}:${EL_RPC_PORT}"
 
+# Handle Aztec remote RPC nodes
+if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
+  # Load RPC URLs from .env
+  consensus_beacon_rpc=$(grep ^L1_CONSENSUS_HOST_URLS /opt/ethpillar/aztec/.env | sed 's/L1_CONSENSUS_HOST_URLS=//g')
+  execution_l1_rpc=$(grep ^ETHEREUM_HOSTS /opt/ethpillar/aztec/.env | sed 's/ETHEREUM_HOSTS=//g')
+
+  # If there's a list of comma separated rpc nodes, use the first node
+  consensus_beacon_rpc=${consensus_beacon_rpc%%,*}
+  execution_l1_rpc=${execution_l1_rpc%%,*}
+
+  export API_BN_ENDPOINT=$consensus_beacon_rpc
+  export EL_RPC_ENDPOINT=$execution_l1_rpc
+fi
+
 # Get machine info
 _platform=$(get_platform)
 _arch=$(get_arch)
 export _platform _arch
+
+# Initialize network variables
+getNetworkConfig
+getNetwork
 
 menuMain(){
 
@@ -198,6 +216,10 @@ while true; do
         runScript view_logs.sh
         ;;
       🔍)
+        # Aztec with remote rpc
+        if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
+              cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233
+        fi
         sudo bash -c 'journalctl -u validator -u consensus -u execution -u mevboost -u csm_nimbusvalidator --no-hostname -f | ccze -A'
         ;;
       📜)
@@ -732,7 +754,6 @@ done
 
 submenuMonitoring(){
 while true; do
-    getNetworkConfig
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
@@ -838,13 +859,13 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        getNetwork && getPubKeys && getIndices
+        getPubKeys && getIndices
         if [[ ${#INDICES[@]} = "0" ]]; then echo "No validators currently active. Once validators are activated, you can query duties."; sleep 5;
 return; fi
         /usr/local/bin/eth-duties --validators ${INDICES[@]} --beacon-nodes $API_BN_ENDPOINT
         ;;
       2)
-        getNetwork && getPubKeys && getIndices
+        getPubKeys && getIndices
         if [[ ${#INDICES[@]} = "0" ]]; then echo "No validators currently active. Once validators are activated, you can query duties."; sleep 5;
 return; fi
         /usr/local/bin/eth-duties --validators ${INDICES[@]} --beacon-nodes $API_BN_ENDPOINT --max-attestation-duty-logs 60 --mode cicd-wait --mode-cicd-attestation-time 90 --mode-cicd-attestation-proportion 0.90
@@ -938,7 +959,6 @@ done
 submenuUFW(){
 while true; do
     getBackTitle
-    getNetworkConfig
     # Define the options for the submenu
     SUBOPTIONS=(
       1 "View ufw status"
@@ -1071,7 +1091,6 @@ done
 submenuPerformanceTuning(){
 while true; do
     getBackTitle
-    getNetworkConfig
     # Define the options for the submenu
     SUBOPTIONS=(
       1 "Swappiness: Optimize pages between memory and the swap space"
@@ -1110,7 +1129,6 @@ done
 
 submenuPluginSentinel(){
 while true; do
-    getNetworkConfig
     getBackTitle
     # Define the options for the submenu
     SUBOPTIONS=(
@@ -1348,8 +1366,6 @@ while true; do
         [[ -d /opt/ethpillar/aztec ]] && runScript plugins/aztec/menu.sh
         ;;
       🔎)
-        getNetworkConfig
-        getNetwork
         if [[ ! -d /opt/ethpillar/plugin-dora ]]; then
             runScript plugins/dora/plugin_dora.sh -i
         fi
@@ -1484,7 +1500,6 @@ done
 }
 
 function getBackTitle(){
-    getNetwork
     getClient
     # Latest block
     latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' ${EL_RPC_ENDPOINT} | jq -r '.result')

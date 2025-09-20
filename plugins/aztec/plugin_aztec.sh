@@ -136,8 +136,8 @@ RPC_CONFIG=$(whiptail --title "🔧 RPC Configuration" --menu \
       3>&1 1>&2 2>&3)
 if [ -z "$RPC_CONFIG" ]; then exit; fi # pressed cancel
 if [[ $RPC_CONFIG == "REMOTE" ]]; then
-  ETH_RPC=$(whiptail --title "Ethereum RPC URL (ETHEREUM_HOSTS)" --inputbox "🔗 Enter Ethereum RPC URL (e.g. https://sepolia.rpc.url):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-  BEACON_RPC=$(whiptail --title "Beacon RPC URL (L1_CONSENSUS_HOST_URLS)" --inputbox "🔗 Enter Beacon RPC URL (e.g. https://beacon.rpc.url):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+  ETH_RPC=$(whiptail --title "Ethereum RPC URL (ETHEREUM_HOSTS)" --inputbox "🔗 Enter Ethereum RPC URL (e.g. https://sepolia.rpc.url,http://192.168.1.123:8545):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+  BEACON_RPC=$(whiptail --title "Beacon RPC URL (L1_CONSENSUS_HOST_URLS)" --inputbox "🔗 Enter Beacon RPC URL (e.g. https://beacon.rpc.url,http://192.168.1.123:5052):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
 else
   # Install EL/CL
   if [[ ! -f /etc/systemd/system/execution.service ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
@@ -178,6 +178,7 @@ cast wallet new-mnemonic > "$HOME"/aztec_seed_phrase || error "Unable to generat
 ADDRESS=$(grep "Address: " "$HOME"/aztec_seed_phrase | awk '{print $2}')
 PRIVATE_KEY=$(grep "Private key: " "$HOME"/aztec_seed_phrase | awk '{print $3}')
 sudo mv "$HOME"/aztec_seed_phrase $PLUGIN_INSTALL_PATH
+sudo chmod 600 "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase || error "Unable to restrict aztec_seed_phrase permissions"
 
 info "🔧 Update config values in .env..."
 # shellcheck disable=SC2015
@@ -210,10 +211,9 @@ sudo ufw allow 40400 comment 'Allow aztec node p2p port' || error "Unable to con
 
 MSG_COMPLETE="✅ Done! $APP_NAME is now installed.
 \nNext Steps:
-\n1. Backup aztec validator key created by cast:
-   Location > $PLUGIN_INSTALL_PATH/aztec_seed_phrase
-\n2. Review .env configuration: update values if desired   
-\n3. Start aztec-sequencer: Ensure Sepolia Full Node is fully synced first!
+\n1. Review .env configuration: Update values if desired
+\n2. Start aztec-sequencer: Ensure Sepolia RPC Node is fully synced first!
+\n3. Backup aztec validator key: Use the 🔐 menu option
 
 Port forwarding: Forward the p2p port (default: 40400) to your local node ip address. Configure in your router.
 \nRead documentation: $DOCUMENTATION
@@ -236,7 +236,7 @@ function removeAll() {
     TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
     sudo docker rmi -f $DOCKER_IMAGE:"$TAG"
     sudo rm -rf "$PLUGIN_INSTALL_PATH"
-    sudo rm /usr/local/bin/cast
+    [[ -f /usr/local/bin/cast ]] && sudo rm /usr/local/bin/cast
     whiptail --title "Uninstall finished" --msgbox "You have uninstalled $APP_NAME." 8 78
   fi
 }
