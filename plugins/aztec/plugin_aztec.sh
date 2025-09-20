@@ -162,8 +162,12 @@ if ! command -v docker &> /dev/null; then
    install_docker
 fi
 
+info "🔧 Creating service user account..."
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin aztec-user || error "Unable to create service user"
+
 info "🔧 Setup installation directory"
 sudo mkdir -p $PLUGIN_INSTALL_PATH || error "Unable to setup installation directory"
+sudo chown -R aztec-user:aztec-user "$PLUGIN_INSTALL_PATH" || error "Unable to set directory ownership"
 sudo chmod -R 755 "$PLUGIN_INSTALL_PATH" || error "Unable to chmod installation directory permissions"
 
 info "🔧 Install env file and compose file..."

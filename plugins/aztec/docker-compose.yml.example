@@ -3,6 +3,30 @@ services:
     container_name: aztec-sequencer
     image: aztecprotocol/aztec:${DOCKER_TAG:-2.0.2}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    user: aztec-user:aztec-user
+    deploy:
+      resources:
+        limits:
+          cpus: '4'                         # Limit to 4 CPU cores
+          memory: 16G                       # Limit to 16GB RAM
+        reservations:
+          cpus: '2'                         # Guarantee 2 CPU cores
+          memory: 8G                        # Guarantee 8GB RAM
+    security_opt:
+      - no-new-privileges:true              # Prevent gaining additional privileges
+    read_only: true                         # Make root filesystem read-only
+    tmpfs:
+      - /tmp:size=1g                        # Provide writable /tmp
+    cap_drop:                               # Drop all capabilities
+      - ALL
+    cap_add:                                # Add only required capabilities
+      - NET_BIND_SERVICE                    # Needed for binding to ports
     environment:
       NETWORK: testnet
       ETHEREUM_HOSTS: ${ETHEREUM_HOSTS}
@@ -20,6 +44,25 @@ services:
       - ${P2P_PORT:-40400}:40400/tcp
       - ${P2P_PORT:-40400}:40400/udp
       - ${PORT:-8080}:8080
+    ports:
+      - "127.0.0.1:${PORT:-8080}:8080"  # RPC port - only accessible locally
+      - "${P2P_PORT:-40400}:40400/tcp"   # P2P ports - need to be accessible externally
+      - "${P2P_PORT:-40400}:40400/udp"   # P2P ports - need to be accessible externally
     volumes:
-      -  /opt/ethpillar/aztec/data:/data
-    network_mode: host
+      - /opt/ethpillar/aztec/data:/data:rw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+        compress: "true"
+    networks:
+      - aztec_network
+
+networks:
+  aztec_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
