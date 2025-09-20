@@ -16,6 +16,11 @@ if ! command -v tmux &> /dev/null; then
    sudo apt-get install tmux -y
 fi
 
+# Install ccze
+if ! command -v ccze &> /dev/null; then
+   sudo apt-get install ccze -y
+fi
+
 # Check if the current user belongs to the systemd-journal group
 current_user=$(whoami)
 group_members=$(getent group systemd-journal | cut -d: -f2-)
@@ -40,10 +45,35 @@ EOF
 fi
 
 # Kill prior session
-tmux kill-session -t logs
+tmux kill-session -t logs 2>/dev/null || true
 
 # Get terminal width
 cols=$(tput cols)
+
+# Aztec node with remote rpc
+if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
+      tmux new-session -d -s logs \; \
+           send-keys 'cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233' C-m \; \
+           split-window -h \; \
+           select-pane -t 1 \; \
+           send-keys 'btop --utf-force' C-m \; \
+           select-layout even-vertical \;
+      exec tmux attach-session -t logs
+      exit 0
+elif [[ -d /opt/ethpillar/aztec ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ ! -f /etc/systemd/system/validator.service ]]; then
+      # Aztec node with local rpc
+      tmux new-session -d -s logs \; \
+           send-keys 'journalctl -fu consensus --no-hostname | ccze -A' C-m \; \
+           split-window -h \; \
+           send-keys 'btop --utf-force' C-m \; \
+           split-window -v \; \
+           send-keys 'cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233' C-m \; \
+           select-pane -t 0 \; \
+           split-window -v \; \
+           send-keys 'journalctl -fu execution --no-hostname | ccze -A' C-m \;
+      exec tmux attach-session -t logs
+      exit 0
+fi
 
 # Portrait view for narrow terminals <= 80 col
 if [[ $cols -lt 81 ]]; then

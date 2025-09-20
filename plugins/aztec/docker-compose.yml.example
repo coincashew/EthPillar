@@ -13,7 +13,7 @@ services:
       P2P_IP: ${P2P_IP:-}
       P2P_PORT: ${P2P_PORT}
       PORT: ${PORT}
-      LOG_LEVEL: debug
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       SEQ_PUBLISHER_PRIVATE_KEY: ${SEQ_PUBLISHER_PRIVATE_KEY:-}
     entrypoint: >
       sh -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start --node --archiver --sequencer'

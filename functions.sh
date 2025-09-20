@@ -191,7 +191,7 @@ getEphemeryChainID(){
 
 getNetwork(){
     # Get network name from execution client
-    result=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' ${EL_RPC_ENDPOINT} | jq -r '.result')
+    result=$(curl -sS --fail --connect-timeout 1 --max-time 2 -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' "${EL_RPC_ENDPOINT}" | jq -r '.result')
     if [[ -z $result ]]; then NETWORK="Network Syncing"; return; fi
     case $result in
     1)
@@ -262,8 +262,8 @@ getPubKeys(){
    local ARGUMENT=${1:-"default"}
    case $VC in
       Lighthouse)
-         [[ -d /var/lib/lighthouse_validator ]] && vc_path="/var/lib/lighthouse_validator" || vc_path="/var/lib/lighthouse/validators"
-         TEMP=$(sudo /usr/local/bin/lighthouse account validator list --datadir "$vc_path" | grep -Eo '0x[a-fA-F0-9]{96}')
+         [[ -d /var/lib/lighthouse_validator ]] && vc_path="/var/lib/lighthouse_validator" || vc_path="/var/lib/lighthouse"
+         TEMP=$(sudo -u validator /usr/local/bin/lighthouse account validator list --datadir "$vc_path" | grep -Eo '0x[a-fA-F0-9]{96}')
          convertLIST
       ;;
       Lodestar)
@@ -723,7 +723,7 @@ getPeerCount(){
     local _warn=""
     # Get peer counts from CL and EL
     _peer_status["Consensus_Layer_Connected_Peer_Count"]="$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/peer_count" -H  "accept: application/json" | jq -r ".data.connected")"
-    _peer_status["Execution_Layer_Connected_Peer_Count"]="$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc": "2.0", "method":"net_peerCount", "params": [], "id":1}' ${EL_RPC_ENDPOINT} | jq -r ".result" | mawk '{printf "%d\n",$1}')"
+    _peer_status["Execution_Layer_Connected_Peer_Count"]="$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc": "2.0", "method":"net_peerCount", "params": [], "id":1}' "${EL_RPC_ENDPOINT}" | jq -r ".result" | mawk '{printf "%d\n",$1}')"
     # Get CL peers by direction
     _json_cl=$(curl -s ${API_BN_ENDPOINT}/eth/v1/node/peers | jq -c '.data')
     _peer_status["Consensus_Layer_Known_Inbound_Peers"]=$(jq -c '.[] | select(.direction == "inbound")' <<< "$_json_cl" | wc -l)
@@ -1205,8 +1205,8 @@ Actions: $VA_URL
 function get_user_input() {
     local OPTIONS=()
     local service date_range
-    test -f /etc/systemd/system/execution.service && OPTIONS+=("consensus" "")
-    test -f /etc/systemd/system/consensus.service && OPTIONS+=("execution" "")
+    test -f /etc/systemd/system/execution.service && OPTIONS+=("execution" "")
+    test -f /etc/systemd/system/consensus.service && OPTIONS+=("consensus" "")
     test -f /etc/systemd/system/validator.service && OPTIONS+=("validator" "")
     test -f /etc/systemd/system/mevboost.service && OPTIONS+=("mevboost" "" )
     test -f /etc/systemd/system/csm_nimbusvalidator.service && OPTIONS+=("csm_nimbusvalidator" "")

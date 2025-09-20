@@ -81,6 +81,7 @@ function install_foundry() {
   sudo tar -xzvf foundry.tar.gz -C "$tmpdir" || error "Unable to untar foundry.tar.gz"
   # shellcheck disable=SC2015
   [[ -f "$tmpdir"/cast ]] && sudo mv "$tmpdir"/cast /usr/local/bin || error "Unable to install cast to /usr/local/bin"
+  sudo touch "$PLUGIN_INSTALL_PATH/.cast_installed_by_plugin" || true
   # shellcheck disable=SC2015
   rm -rf "$tmpdir" || error "Unable to cleanup temp foundry files"
 }
@@ -136,8 +137,14 @@ RPC_CONFIG=$(whiptail --title "🔧 RPC Configuration" --menu \
       3>&1 1>&2 2>&3)
 if [ -z "$RPC_CONFIG" ]; then exit; fi # pressed cancel
 if [[ $RPC_CONFIG == "REMOTE" ]]; then
-  ETH_RPC=$(whiptail --title "Ethereum RPC URL (ETHEREUM_HOSTS)" --inputbox "🔗 Enter Ethereum RPC URL (e.g. https://sepolia.rpc.url):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-  BEACON_RPC=$(whiptail --title "Beacon RPC URL (L1_CONSENSUS_HOST_URLS)" --inputbox "🔗 Enter Beacon RPC URL (e.g. https://beacon.rpc.url):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+  ETH_RPC=$(whiptail --title "Ethereum RPC URL(s) (ETHEREUM_HOSTS)" --inputbox "🔗 Enter one or more URLs, comma-separated (e.g. https://sepolia.rpc.url,http://192.168.1.123:8545):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+  BEACON_RPC=$(whiptail --title "Beacon RPC URL(s) (L1_CONSENSUS_HOST_URLS)" --inputbox "🔗 Enter one or more URLs, comma-separated (e.g. https://beacon.rpc.url,http://192.168.1.123:5052):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+  # sanitize: strip spaces
+  ETH_RPC=$(echo "$ETH_RPC" | tr -d '[:space:]')
+  BEACON_RPC=$(echo "$BEACON_RPC" | tr -d '[:space:]')
+  # basic scheme check
+  [[ "$ETH_RPC" =~ ^https?:// ]] || error "ETHEREUM_HOSTS must start with http(s)://"
+  [[ "$BEACON_RPC" =~ ^https?:// ]] || error "L1_CONSENSUS_HOST_URLS must start with http(s)://"
 else
   # Install EL/CL
   if [[ ! -f /etc/systemd/system/execution.service ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
@@ -157,13 +164,13 @@ fi
 
 info "🔧 Setup installation directory"
 sudo mkdir -p $PLUGIN_INSTALL_PATH || error "Unable to setup installation directory"
-sudo chmod -R 655 "$PLUGIN_INSTALL_PATH" || error "Unable to chmod installation directory permissions"
+sudo chmod -R 755 "$PLUGIN_INSTALL_PATH" || error "Unable to chmod installation directory permissions"
 
 info "🔧 Install env file and compose file..."
 sudo cp "$PLUGIN_SOURCE_PATH"/.env.example $PLUGIN_INSTALL_PATH/.env || error "Unable to create .env"
 sudo cp "$PLUGIN_SOURCE_PATH"/docker-compose.yml.example $PLUGIN_INSTALL_PATH/docker-compose.yml || error "Unable to create docker-compose.yml"
 
-TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
+TAG=$(grep "^DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
 #TAG=$(docker inspect aztec-sequencer |  jq -r '.[0].Config.Image')
 echo "$TAG" | sudo tee $PLUGIN_INSTALL_PATH/current_version
 info "✏️  Storing current version... $TAG"
@@ -174,10 +181,16 @@ if ! command -v cast &> /dev/null; then
 fi
 
 info "🔐 Generating new Ethereum private key for validator with cast..."
-cast wallet new-mnemonic > "$HOME"/aztec_seed_phrase || error "Unable to generate new cast wallet"
-ADDRESS=$(grep "Address: " "$HOME"/aztec_seed_phrase | awk '{print $2}')
-PRIVATE_KEY=$(grep "Private key: " "$HOME"/aztec_seed_phrase | awk '{print $3}')
-sudo mv "$HOME"/aztec_seed_phrase $PLUGIN_INSTALL_PATH
+# shellcheck disable=SC2033
+sudo install -d -m 755 "$PLUGIN_INSTALL_PATH" || true
+tmp_seed=$(mktemp)
+umask 077
+cast wallet new-mnemonic > "$tmp_seed" || error "Unable to generate new cast wallet"
+ADDRESS=$(grep "Address: " "$tmp_seed" | awk '{print $2}')
+PRIVATE_KEY=$(grep "Private key: " "$tmp_seed" | awk '{print $3}')
+# shellcheck disable=SC2033
+sudo install -m 600 "$tmp_seed" "$PLUGIN_INSTALL_PATH/aztec_seed_phrase"
+rm -f "$tmp_seed"
 
 info "🔧 Update config values in .env..."
 # shellcheck disable=SC2015
@@ -194,7 +207,11 @@ if [[ $RPC_CONFIG == "REMOTE" ]]; then
 fi 
 
 # sanitize with grep
-P2P_IP=$(grep -m 1 -oE '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' <<< "$(wget -T 10 -t 1 -4qO- "ipv4.icanhazip.com" || curl -m 10 -4Ls "http://ip1.dynupdate.no-ip.com")")    
+P2P_IP=$(grep -m1 -oE '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' <<< "$(
+  curl -fsS --max-time 5 https://ipv4.icanhazip.com \
+  || curl -fsS --max-time 5 https://api.ipify.org \
+  || curl -fsS --max-time 5 http://ip1.dynupdate.no-ip.com
+)")
 
 # shellcheck disable=SC2015
 [[ -n $P2P_IP ]] && sudo sed -i "s/^P2P_IP.*$/P2P_IP=${P2P_IP}/" $PLUGIN_INSTALL_PATH/.env || error "Unable to get and set P2P_IP"
@@ -210,10 +227,9 @@ sudo ufw allow 40400 comment 'Allow aztec node p2p port' || error "Unable to con
 
 MSG_COMPLETE="✅ Done! $APP_NAME is now installed.
 \nNext Steps:
-\n1. Backup aztec validator key created by cast:
-   Location > $PLUGIN_INSTALL_PATH/aztec_seed_phrase
-\n2. Review .env configuration: update values if desired   
-\n3. Start aztec-sequencer: Ensure Sepolia Full Node is fully synced first!
+\n1. Review .env configuration: Update values if desired
+\n2. Start aztec-sequencer: Ensure Sepolia RPC Node is fully synced first!
+\n3. Backup aztec validator key: Use the 🔐 menu option
 
 Port forwarding: Forward the p2p port (default: 40400) to your local node ip address. Configure in your router.
 \nRead documentation: $DOCUMENTATION
@@ -232,11 +248,13 @@ whiptail --title "$APP_NAME: Install Complete" --msgbox "$MSG_COMPLETE" 28 78
 function removeAll() {
   if whiptail --title "Uninstall $APP_NAME" --defaultno --yesno "Are you sure you want to remove $APP_NAME" 9 78; then
     cd $PLUGIN_INSTALL_PATH 2>/dev/null && docker compose down || true
-    sudo docker rm -f $APP_NAME
+    sudo docker rm -f $APP_NAME 2>/dev/null || true
     TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
     sudo docker rmi -f $DOCKER_IMAGE:"$TAG"
+    if [[ -f "$PLUGIN_INSTALL_PATH/.cast_installed_by_plugin" && -f /usr/local/bin/cast ]]; then
+      sudo rm /usr/local/bin/cast
+    fi
     sudo rm -rf "$PLUGIN_INSTALL_PATH"
-    sudo rm /usr/local/bin/cast
     whiptail --title "Uninstall finished" --msgbox "You have uninstalled $APP_NAME." 8 78
   fi
 }
