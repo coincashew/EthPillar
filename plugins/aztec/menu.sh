@@ -23,6 +23,11 @@ function error {
 # Location of plugin files
 PLUGIN_INSTALL_PATH=/opt/ethpillar/aztec
 
+# Source docker wrapper for rootless/rootful compatibility
+if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+  # shellcheck disable=SC1091
+  source /opt/ethpillar/helpers/docker_wrapper.sh
+fi
 # Get current version
 # shellcheck disable=SC1091
 [[ -f $PLUGIN_INSTALL_PATH/current_version ]] && VERSION=$(cat $PLUGIN_INSTALL_PATH/current_version)
@@ -40,7 +45,7 @@ function set_public_ip() {
 
 function startCommand(){
     #set_public_ip
-    sudo docker compose --env-file "$PLUGIN_INSTALL_PATH"/.env up -d || error "Error starting command"
+    ${DOCKER_COMPOSE_CMD} --env-file "$PLUGIN_INSTALL_PATH"/.env up -d || error "Error starting command"
 }
 
 function buildMenuText(){
@@ -141,18 +146,18 @@ function healthChecks(){
 
     function dockerChecks(){
       # Check if we have a Peer ID
-      peerid=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^"]*\)".*/\1/')
+      peerid=$(${DOCKER_CMD} logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^" ]*\)".*/\1/')
       echo -e "${bold}\n📋 Peer ID: Verify at https://aztec.nethermind.io/explore${nc}"
       [[ -n $peerid ]] && echo "   ✅ $peerid" || echo "   ❌ Unable to get Peer ID. Is node running?"
 
       # Check if we have an ENR
-      enr=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^"]*\)".*/\1/')
+      enr=$(${DOCKER_CMD} logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^" ]*\)".*/\1/')
       echo -e "${bold}\n⚙️ ENR:${nc}"
       [[ -n $enr ]] && echo "   ✅ $enr" || echo "   ❌ Unable to get ENR. Is node running?"
 
       # Check docker processes
       echo -e "${bold}\n🔎 Docker Process Running:${nc}"
-      sudo docker compose -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
+      ${DOCKER_COMPOSE_CMD} -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
     }
 
     function openPorts(){
@@ -216,7 +221,7 @@ function healthChecks(){
 
     function show_status() {
       UPTIME=$(uptime -p)
-      CONTAINER_STARTED_AT=$(sudo docker inspect -f '{{.State.StartedAt}}' aztec-sequencer 2>/dev/null | cut -d'.' -f1)
+    CONTAINER_STARTED_AT=$(${DOCKER_CMD} inspect -f '{{.State.StartedAt}}' aztec-sequencer 2>/dev/null | cut -d'.' -f1)
       START_FORMAT=$(test -n "$CONTAINER_STARTED_AT" && date -d "$CONTAINER_STARTED_AT" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "N/A")
       CPU=$(LANG=C top -bn1 | grep "Cpu(s)" | awk '{print $2+$4}')
       MEM=$(free -m | awk 'NR==2{printf "%.2f GiB",$3/1024}')
@@ -390,7 +395,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       🔍)
-        sudo docker compose logs -fn 233
+        ${DOCKER_COMPOSE_CMD} logs -fn 233
         ;;
       🔧)
         sudo "${EDITOR}" "$PLUGIN_INSTALL_PATH"/.env
@@ -402,17 +407,17 @@ while true; do
         startCommand
         ;;
       🛑)
-        sudo docker compose stop
+        ${DOCKER_COMPOSE_CMD} stop
         ;;
       🔄)
-        sudo docker compose restart
+        ${DOCKER_COMPOSE_CMD} restart
         ;;
       🛠️)
         whiptail --msgbox "⚠️ Change the version tag found in the .env file on the following line\n\nDOCKER_TAG=$VERSION" 10 78
         sudo "${EDITOR}" "$PLUGIN_INSTALL_PATH"/.env
         TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
         if [[ "$TAG" != "$VERSION" ]]; then
-          if sudo docker compose pull; then echo "$TAG" | sudo tee $PLUGIN_INSTALL_PATH/current_version; fi
+          if ${DOCKER_COMPOSE_CMD} pull; then echo "$TAG" | sudo tee $PLUGIN_INSTALL_PATH/current_version; fi
           startCommand
         else
           whiptail --msgbox "No version changes were made. Staying on $VERSION" 8 78
@@ -442,6 +447,7 @@ while true; do
         rm -f "$tmpfile"
         if whiptail --title "🗑️ Delete Validator Seed" --defaultno --yesno "Are you sure you made a backup and we can delete the seed now?" 9 78; then
           sudo rm "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase || error "Unable to delete aztec_seed_phrase"
+          rm "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase || error "Unable to delete aztec_seed_phrase"
           whiptail --title "Seed is deleted from node" --msgbox "You have deleted the secret seed phrase." 8 78
         fi
         ;;

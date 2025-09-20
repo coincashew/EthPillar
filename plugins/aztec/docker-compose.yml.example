@@ -17,9 +17,15 @@ services:
       SEQ_PUBLISHER_PRIVATE_KEY: ${SEQ_PUBLISHER_PRIVATE_KEY:-}
     entrypoint: >
       sh -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start --node --archiver --sequencer'
-      - ${P2P_PORT:-40400}:40400/tcp
-      - ${P2P_PORT:-40400}:40400/udp
-      - ${PORT:-8080}:8080
+    ports:
+      - "${P2P_PORT:-40400}:40400/tcp"
+      - "${P2P_PORT:-40400}:40400/udp"
+      - "${PORT:-8080}:8080"
     volumes:
       -  /opt/ethpillar/aztec/data:/data
-    network_mode: host
+    networks:
+      - ethpillar_default
+
+networks:
+  ethpillar_default:
+    driver: bridge

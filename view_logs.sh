@@ -21,6 +21,12 @@ if ! command -v ccze &> /dev/null; then
    sudo apt-get install ccze -y
 fi
 
+# Source docker wrapper for rootless/rootful compatibility
+if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+   # shellcheck disable=SC1091
+   source /opt/ethpillar/helpers/docker_wrapper.sh
+fi
+
 # Check if the current user belongs to the systemd-journal group
 current_user=$(whoami)
 group_members=$(getent group systemd-journal | cut -d: -f2-)
@@ -52,8 +58,8 @@ cols=$(tput cols)
 
 # Aztec node with remote rpc
 if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
-      tmux new-session -d -s logs \; \
-           send-keys 'cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233' C-m \; \
+    tmux new-session -d -s logs \; \
+       send-keys 'cd  /opt/ethpillar/aztec && ${DOCKER_COMPOSE_CMD} logs -fn 233' C-m \; \
            split-window -h \; \
            select-pane -t 1 \; \
            send-keys 'btop --utf-force' C-m \; \
@@ -67,7 +73,7 @@ elif [[ -d /opt/ethpillar/aztec ]] && [[ -f /etc/systemd/system/consensus.servic
            split-window -h \; \
            send-keys 'btop --utf-force' C-m \; \
            split-window -v \; \
-           send-keys 'cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233' C-m \; \
+           send-keys 'cd  /opt/ethpillar/aztec && ${DOCKER_COMPOSE_CMD} logs -fn 233' C-m \; \
            select-pane -t 0 \; \
            split-window -v \; \
            send-keys 'journalctl -fu execution --no-hostname | ccze -A' C-m \;

@@ -29,10 +29,15 @@ function uninstallPlugins(){
 		sudo rm -rf /opt/ethpillar/plugin-csm
 	fi
 	if [[ -d /opt/ethpillar/plugin-sentinel ]]; then
-		sudo docker stop csm-sentinel
-		sudo docker rm csm-sentinel
-		sudo docker rmi csm-sentinel
-		sudo docker volume rm csm-sentinel-persistent
+		# Use docker wrapper if available
+		if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+		  # shellcheck disable=SC1091
+		  source /opt/ethpillar/helpers/docker_wrapper.sh
+		fi
+		${DOCKER_CMD} stop csm-sentinel || true
+		${DOCKER_CMD} rm csm-sentinel || true
+		${DOCKER_CMD} rmi csm-sentinel || true
+		${DOCKER_CMD} volume rm csm-sentinel-persistent || true
 		sudo rm -rf /opt/ethpillar/plugin-sentinel
 	fi
 	if [[ -d /opt/ethpillar/plugin-dora ]]; then
@@ -57,10 +62,14 @@ function uninstallPlugins(){
 		sudo rm -rf /opt/ethpillar/plugin-contributoor
 	fi
 	if [[ -d /opt/ethpillar/aztec ]]; then
-	    cd /opt/ethpillar/aztec 2>/dev/null && docker compose down || true
-	    sudo docker rm -f aztec-sequencer
+	    if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+	      # shellcheck disable=SC1091
+	      source /opt/ethpillar/helpers/docker_wrapper.sh
+	    fi
+	    cd /opt/ethpillar/aztec 2>/dev/null && ${DOCKER_COMPOSE_CMD} down || true
+	    ${DOCKER_CMD} rm -f aztec-sequencer || true
 	    TAG=$(grep "DOCKER_TAG" /opt/ethpillar/aztec/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
-	    sudo docker rmi -f aztecprotocol/aztec:"$TAG"
+	    ${DOCKER_CMD} rmi -f aztecprotocol/aztec:"$TAG" || true
 	    if [[ -f /opt/ethpillar/aztec/.cast_installed_by_plugin && -f /usr/local/bin/cast ]]; then
 	      sudo rm /usr/local/bin/cast
 	    fi

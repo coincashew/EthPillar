@@ -96,6 +96,15 @@ Already a running a Validator? EthPillar is compatible with [a Coincashew V2 Sta
   * Support for **AMD64 and ARM64** architecture
   * Recommend at least 16GB RAM for **ARM64** sbc
 
+  ### Rootless Docker
+
+  If you plan to run Docker in rootless mode, note:
+
+  - Some plugins previously used host networking which rootless Docker does not support. Those plugin compose files and run commands have been updated to use a user-defined bridge network named `ethpillar_default` and explicit `ports:` mappings where possible.
+  - After installing Docker rootless, create the network once on the host: `docker network create ethpillar_default`.
+  - If a plugin still requires host networking you will see a warning; converting those plugins to be fully rootless may require per-plugin changes.
+
+
 ## :triangular\_ruler: Option 1: Automated One-Liner Install
 
 Open a terminal window from anywhere by typing `Ctrl+Alt+T`

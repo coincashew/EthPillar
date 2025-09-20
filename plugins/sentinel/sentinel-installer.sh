@@ -9,6 +9,12 @@
 
 set -e
 
+# Source docker wrapper if available
+if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+    # shellcheck disable=SC1091
+    source /opt/ethpillar/helpers/docker_wrapper.sh
+fi
+
 MSG_ABOUT="About: CSM Sentinel is a telegram bot that sends you notifications for your CSM Node Operator events.
 \nMaintainer: This bot was developed and is maintained by @skhomuti, a member of the Lido Protocol community, to simplify the process of subscribing to the important events for CSM.
 \nLocally ran instance: This bot will run on your node, self-hosted for your own improved reliability and privacy.
@@ -54,17 +60,18 @@ apt-get update
 apt-get upgrade -y
 
 install_docker() {
-  # Install Docker
-  sudo apt-get install --yes docker.io
-  # Verify that we can at least get version output
-  if ! docker --version; then
-    echo "ERROR: Is Docker installed?"
-    exit 1
-    fi
+    # Use central installer which supports rootless via ROOTLESS=true
+    sudo /opt/ethpillar/helpers/install_docker.sh
 }
 
 if ! command -v docker &> /dev/null; then
-   install_docker
+     install_docker
+fi
+
+# Ensure wrapper variables are set
+if [[ -z "${DOCKER_CMD:-}" || -z "${DOCKER_COMPOSE_CMD:-}" ]] && [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+    # shellcheck disable=SC1091
+    source /opt/ethpillar/helpers/docker_wrapper.sh
 fi
 
 # Setup files
@@ -78,8 +85,11 @@ else
 fi
 
 # Build image
-docker build -t csm-sentinel .
-docker volume create csm-sentinel-persistent
+${DOCKER_CMD} build -t csm-sentinel .
+${DOCKER_CMD} volume create csm-sentinel-persistent
+
+# Ensure the ethpillar_default network exists (used for rootless-friendly bridge networking)
+${DOCKER_CMD} network inspect ethpillar_default >/dev/null 2>&1 || ${DOCKER_CMD} network create ethpillar_default
 
 # Create env file
 case $_NETWORK in
@@ -121,7 +131,10 @@ esac
 
 # Start docker container
 cd /opt/ethpillar/plugin-sentinel/csm-sentinel
-sudo docker run -d --env-file=.env --name csm-sentinel -v csm-sentinel-persistent:/app/.storage csm-sentinel
+${DOCKER_CMD} run -d --env-file=.env --name csm-sentinel \
+    -v csm-sentinel-persistent:/app/.storage \
+    --network ethpillar_default \
+    csm-sentinel
 
 MSG_COMPLETE="Done! Congratulations on your new locally hosted CSM Sentinel bot.
 \nYou will find it at t.me/[YOUR-BOT-NAME].

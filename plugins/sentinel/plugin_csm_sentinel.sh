@@ -10,6 +10,12 @@
 # Base directory with scripts
 BASE_DIR=$HOME/git/ethpillar
 
+# Source docker wrapper for rootless/rootful compatibility
+if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+  # shellcheck disable=SC1091
+  source /opt/ethpillar/helpers/docker_wrapper.sh
+fi
+
 # Variables
 #GITHUB_URL=https://api.github.com/repos/skhomuti/csm-sentinel/releases/latest
 #GITHUB_RELEASE_NODES=https://github.com/skhomuti/csm-sentinel/releases
@@ -25,10 +31,10 @@ PLUGIN_INSTALL_PATH="/opt/ethpillar/plugin-sentinel"
 function upgrade(){
   if whiptail --title "Update $PLUGIN_NAME" --yesno "Reminder: Always read the release notes for breaking changes: $SOURCE_CODE\n\nDo you want to update?" 10 78; then
       cd $PLUGIN_INSTALL_PATH/$APP_NAME
-      sudo git pull
-      sudo docker stop $APP_NAME
-      sudo docker build -t csm-sentinel .    
-      __start 
+  sudo git pull
+  ${DOCKER_CMD} stop $APP_NAME || true
+  ${DOCKER_CMD} build -t csm-sentinel .    
+  __start 
 	fi
 }
 
@@ -41,18 +47,22 @@ function install(){
 function __start(){
   cd $PLUGIN_INSTALL_PATH/$APP_NAME
   if docker ps -aq --filter=name=$APP_NAME > /dev/null 2>&1; then
-    sudo docker rm -f $APP_NAME
+    ${DOCKER_CMD} rm -f $APP_NAME
   fi
-  sudo docker run --net=host -d --env-file=.env --name csm-sentinel -v csm-sentinel-persistent:/app/.storage csm-sentinel
+  # Run using bridge network and explicit port mappings to be rootless-compatible.
+  ${DOCKER_CMD} run -d --env-file=.env --name csm-sentinel \
+    -v csm-sentinel-persistent:/app/.storage \
+    --network ethpillar_default \
+    csm-sentinel
 }
 
 # Uninstall
 function removeAll() {
 	if whiptail --title "Uninstall $APP_NAME" --defaultno --yesno "Are you sure you want to remove $APP_NAME" 9 78; then
-	  sudo docker stop "$APP_NAME"
-    sudo docker rm -f $APP_NAME
-    sudo docker rmi -f "$APP_NAME"
-    sudo docker volume rm csm-sentinel-persistent
+  ${DOCKER_CMD} stop "$APP_NAME" || true
+  ${DOCKER_CMD} rm -f $APP_NAME || true
+  ${DOCKER_CMD} rmi -f "$APP_NAME" || true
+  ${DOCKER_CMD} volume rm csm-sentinel-persistent || true
     sudo rm -rf "$PLUGIN_INSTALL_PATH"
   	whiptail --title "Uninstall finished" --msgbox "You have uninstalled $APP_NAME." 8 78
 	fi

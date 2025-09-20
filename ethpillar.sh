@@ -29,6 +29,12 @@ source ./env
 # Load environment variables overrides
 [[ -f ./.env.overrides ]] && source ./.env.overrides
 
+# Source docker wrapper for rootless/rootful compatibility
+if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+  # shellcheck disable=SC1091
+  source /opt/ethpillar/helpers/docker_wrapper.sh
+fi
+
 # Consensus client or beacon node HTTP Endpoint
 export API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
 
@@ -78,7 +84,7 @@ function testAndServiceCommand() {
 function testAndPluginCommand() {
   local _DIRNAME=("aztec")
   for (( i=0; i<${#_DIRNAME[@]}; i++ )); do
-    test -d /opt/ethpillar/"${_DIRNAME[i]}" && cd "/opt/ethpillar/${_DIRNAME[i]}" && sudo docker compose "$1"
+    test -d /opt/ethpillar/"${_DIRNAME[i]}" && cd "/opt/ethpillar/${_DIRNAME[i]}" && ${DOCKER_COMPOSE_CMD} "$1"
   done
 }
 
@@ -221,8 +227,8 @@ while true; do
         ;;
       🔍)
         # Aztec with remote rpc
-        if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
-              cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233
+    if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
+      cd  /opt/ethpillar/aztec && ${DOCKER_COMPOSE_CMD} logs -fn 233
         fi
         sudo bash -c 'journalctl -u validator -u consensus -u execution -u mevboost -u csm_nimbusvalidator --no-hostname -f | ccze -A'
         ;;
@@ -1163,25 +1169,25 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       1)
-        sudo bash -c 'docker logs csm-sentinel -f -n 300 | ccze -A'
+        ${DOCKER_CMD} logs csm-sentinel -f -n 300 | ccze -A
         ohai "Press ENTER to exit logs."
         read
         ;;
       2)
-        sudo docker start csm-sentinel
+        ${DOCKER_CMD} start csm-sentinel
         ;;
       3)
-        sudo docker stop csm-sentinel
+        ${DOCKER_CMD} stop csm-sentinel
         ;;
       4)
-        sudo docker restart csm-sentinel
+        ${DOCKER_CMD} restart csm-sentinel
         ;;
       5)
         sudo "${EDITOR}" /opt/ethpillar/plugin-sentinel/csm-sentinel/.env
         if whiptail --title "Reload env and restart services" --yesno "Do you want to restart with updated env?" 8 78; then
-          sudo docker stop csm-sentinel
+          ${DOCKER_CMD} stop csm-sentinel
           runScript plugins/sentinel/plugin_csm_sentinel.sh -s
-          sudo docker start csm-sentinel
+          ${DOCKER_CMD} start csm-sentinel
         fi
         ;;
       6)

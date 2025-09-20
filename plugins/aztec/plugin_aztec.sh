@@ -10,6 +10,12 @@ set -euo pipefail
 
 SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Source docker wrapper for rootless/rootful compatibility
+if [[ -f /opt/ethpillar/helpers/docker_wrapper.sh ]]; then
+  # shellcheck disable=SC1091
+  source /opt/ethpillar/helpers/docker_wrapper.sh
+fi
+
 # Variables
 RELEASE_URL="https://api.github.com/repos/AztecProtocol/aztec-packages/releases/latest"
 DESCRIPTION="🥷 Aztec Sequencer Node: a privacy first L2 on Ethereum by Aztec Labs"
@@ -247,10 +253,10 @@ whiptail --title "$APP_NAME: Install Complete" --msgbox "$MSG_COMPLETE" 28 78
 # Uninstall
 function removeAll() {
   if whiptail --title "Uninstall $APP_NAME" --defaultno --yesno "Are you sure you want to remove $APP_NAME" 9 78; then
-    cd $PLUGIN_INSTALL_PATH 2>/dev/null && docker compose down || true
-    sudo docker rm -f $APP_NAME 2>/dev/null || true
-    TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
-    sudo docker rmi -f $DOCKER_IMAGE:"$TAG"
+  cd $PLUGIN_INSTALL_PATH 2>/dev/null && ${DOCKER_COMPOSE_CMD} down || true
+  ${DOCKER_CMD} rm -f $APP_NAME 2>/dev/null || true
+  TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
+  ${DOCKER_CMD} rmi -f $DOCKER_IMAGE:"$TAG"
     if [[ -f "$PLUGIN_INSTALL_PATH/.cast_installed_by_plugin" && -f /usr/local/bin/cast ]]; then
       sudo rm /usr/local/bin/cast
     fi
