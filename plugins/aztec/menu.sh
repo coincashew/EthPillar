@@ -141,18 +141,18 @@ function healthChecks(){
 
     function dockerChecks(){
       # Check if we have a Peer ID
-      peerid=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^"]*\)".*/\1/')
+      peerid=$(docker logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^"]*\)".*/\1/')
       echo -e "${bold}\n📋 Peer ID: Verify at https://aztec.nethermind.io/explore${nc}"
       [[ -n $peerid ]] && echo "   ✅ $peerid" || echo "   ❌ Unable to get Peer ID. Is node running?"
 
       # Check if we have an ENR
-      enr=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^"]*\)".*/\1/')
+      enr=$(docker logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^"]*\)".*/\1/')
       echo -e "${bold}\n⚙️ ENR:${nc}"
       [[ -n $enr ]] && echo "   ✅ $enr" || echo "   ❌ Unable to get ENR. Is node running?"
 
       # Check docker processes
       echo -e "${bold}\n🔎 Docker Process Running:${nc}"
-      sudo docker compose -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
+      docker compose -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
     }
 
     function openPorts(){

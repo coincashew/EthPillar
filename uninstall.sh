@@ -29,10 +29,10 @@ function uninstallPlugins(){
 		sudo rm -rf /opt/ethpillar/plugin-csm
 	fi
 	if [[ -d /opt/ethpillar/plugin-sentinel ]]; then
-		sudo docker stop csm-sentinel
-		sudo docker rm csm-sentinel
-		sudo docker rmi csm-sentinel
-		sudo docker volume rm csm-sentinel-persistent
+		docker stop csm-sentinel
+		docker rm csm-sentinel
+		docker rmi csm-sentinel
+		docker volume rm csm-sentinel-persistent
 		sudo rm -rf /opt/ethpillar/plugin-sentinel
 	fi
 	if [[ -d /opt/ethpillar/plugin-dora ]]; then

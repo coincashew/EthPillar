@@ -78,7 +78,7 @@ function testAndServiceCommand() {
 function testAndPluginCommand() {
   local _DIRNAME=("aztec")
   for (( i=0; i<${#_DIRNAME[@]}; i++ )); do
-    test -d /opt/ethpillar/"${_DIRNAME[i]}" && cd "/opt/ethpillar/${_DIRNAME[i]}" && sudo docker compose "$1"
+    test -d /opt/ethpillar/"${_DIRNAME[i]}" && cd "/opt/ethpillar/${_DIRNAME[i]}" && docker compose "$1"
   done
 }
 
@@ -222,7 +222,7 @@ while true; do
       🔍)
         # Aztec with remote rpc
         if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
-              cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233
+              cd  /opt/ethpillar/aztec && docker compose logs -fn 233
         fi
         sudo bash -c 'journalctl -u validator -u consensus -u execution -u mevboost -u csm_nimbusvalidator --no-hostname -f | ccze -A'
         ;;
