@@ -29,38 +29,44 @@ source ./env
 # Load environment variables overrides
 [[ -f ./.env.overrides ]] && source ./.env.overrides
 
-# Consensus client or beacon node HTTP Endpoint
-export API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
-
-# Execution layer RPC API
-export EL_RPC_ENDPOINT="http://${EL_IP_ADDRESS}:${EL_RPC_PORT}"
-
-# Handle Aztec remote RPC nodes
-if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
-  # Load RPC URLs from .env
-  if [[ -f /opt/ethpillar/aztec/.env ]]; then
-    consensus_beacon_rpc=$(grep ^L1_CONSENSUS_HOST_URLS /opt/ethpillar/aztec/.env | sed 's/L1_CONSENSUS_HOST_URLS=//g')
-    execution_l1_rpc=$(grep ^ETHEREUM_HOSTS /opt/ethpillar/aztec/.env | sed 's/ETHEREUM_HOSTS=//g')
-  fi
-
-  # If there's a list of comma separated rpc nodes, use the first node
-  consensus_beacon_rpc=${consensus_beacon_rpc%%,*}
-  execution_l1_rpc=${execution_l1_rpc%%,*}
-
-  if [[ -n "$consensus_beacon_rpc" && -n "$execution_l1_rpc" ]]; then
-    export API_BN_ENDPOINT="$consensus_beacon_rpc"
-    export EL_RPC_ENDPOINT="$execution_l1_rpc"
-  fi
-fi
-
 # Get machine info
 _platform=$(get_platform)
 _arch=$(get_arch)
 export _platform _arch
 
-# Initialize network variables
-getNetworkConfig
-getNetwork
+initializeNetwork(){
+  # Defaults if not provided
+  : "${CL_IP_ADDRESS:=127.0.0.1}"
+  : "${CL_REST_PORT:=5052}"
+  : "${EL_IP_ADDRESS:=127.0.0.1}"
+  : "${EL_RPC_PORT:=8545}"
+  # Consensus client or beacon node HTTP Endpoint
+  export API_BN_ENDPOINT="http://${CL_IP_ADDRESS}:${CL_REST_PORT}"
+  # Execution layer RPC API
+  export EL_RPC_ENDPOINT="http://${EL_IP_ADDRESS}:${EL_RPC_PORT}"
+
+  # Handle Aztec remote RPC nodes
+  if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
+    # Load RPC URLs from .env
+    if [[ -f /opt/ethpillar/aztec/.env ]]; then
+      consensus_beacon_rpc=$(grep ^L1_CONSENSUS_HOST_URLS /opt/ethpillar/aztec/.env | sed 's/L1_CONSENSUS_HOST_URLS=//g')
+      execution_l1_rpc=$(grep ^ETHEREUM_HOSTS /opt/ethpillar/aztec/.env | sed 's/ETHEREUM_HOSTS=//g')
+    fi
+
+    # If there's a list of comma separated rpc nodes, use the first node
+    consensus_beacon_rpc=${consensus_beacon_rpc%%,*}
+    execution_l1_rpc=${execution_l1_rpc%%,*}
+
+    if [[ -n "$consensus_beacon_rpc" && -n "$execution_l1_rpc" ]]; then
+      export API_BN_ENDPOINT="$consensus_beacon_rpc"
+      export EL_RPC_ENDPOINT="$execution_l1_rpc"
+    fi
+  fi
+
+  # Initialize network variables
+  getNetworkConfig
+  getNetwork
+}
 
 menuMain(){
 
@@ -78,7 +84,7 @@ function testAndServiceCommand() {
 function testAndPluginCommand() {
   local _DIRNAME=("aztec")
   for (( i=0; i<${#_DIRNAME[@]}; i++ )); do
-    test -d /opt/ethpillar/"${_DIRNAME[i]}" && cd "/opt/ethpillar/${_DIRNAME[i]}" && sudo docker compose "$1"
+    test -d /opt/ethpillar/"${_DIRNAME[i]}" && cd "/opt/ethpillar/${_DIRNAME[i]}" && docker compose "$1"
   done
 }
 
@@ -222,7 +228,7 @@ while true; do
       🔍)
         # Aztec with remote rpc
         if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
-              cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233
+              cd  /opt/ethpillar/aztec && docker compose logs -f --tail=233
         fi
         sudo bash -c 'journalctl -u validator -u consensus -u execution -u mevboost -u csm_nimbusvalidator --no-hostname -f | ccze -A'
         ;;
@@ -1572,6 +1578,7 @@ function installNode(){
           else
             if [ "$_CLIENTCOMBO" == "Aztec L2 Sequencer" ]; then
               runScript plugins/aztec/plugin_aztec.sh -i
+              exit 0
             else
               _file="deploy-${_CLIENTCOMBO,,}.py"
               runScript install-node.sh "${_file}" true
@@ -1634,4 +1641,5 @@ applyPatches
 checkDiskSpace
 checkCPULoad
 setNodeMode
+initializeNetwork
 menuMain

@@ -53,7 +53,7 @@ cols=$(tput cols)
 # Aztec node with remote rpc
 if [[ -d /opt/ethpillar/aztec ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
       tmux new-session -d -s logs \; \
-           send-keys 'cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233' C-m \; \
+           send-keys 'cd  /opt/ethpillar/aztec && docker compose logs -f --tail=233' C-m \; \
            split-window -h \; \
            select-pane -t 1 \; \
            send-keys 'btop --utf-force' C-m \; \
@@ -67,7 +67,7 @@ elif [[ -d /opt/ethpillar/aztec ]] && [[ -f /etc/systemd/system/consensus.servic
            split-window -h \; \
            send-keys 'btop --utf-force' C-m \; \
            split-window -v \; \
-           send-keys 'cd  /opt/ethpillar/aztec && sudo docker compose logs -fn 233' C-m \; \
+           send-keys 'cd  /opt/ethpillar/aztec && docker compose logs -f --tail=233' C-m \; \
            select-pane -t 0 \; \
            split-window -v \; \
            send-keys 'journalctl -fu execution --no-hostname | ccze -A' C-m \;
