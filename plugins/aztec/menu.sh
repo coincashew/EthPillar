@@ -38,16 +38,19 @@ function set_public_ip() {
     [[ -n $P2P_IP ]] && sudo sed -i "s/^P2P_IP.*$/P2P_IP=${P2P_IP}/" $PLUGIN_INSTALL_PATH/.env || error "Unable to set P2P_IP. Update .env manually."
 }
 
+# startCommand starts the Docker Compose services for the Aztec-Sequencer using the plugin's .env file in detached mode and reports an error if startup fails.
 function startCommand(){
     #set_public_ip
     docker compose --env-file "$PLUGIN_INSTALL_PATH"/.env up -d || error "Error starting command"
 }
 
+# buildMenuText initializes MENUTEXT with the primary prompt string used by the interactive submenu.
 function buildMenuText(){
     # shellcheck disable=SC1091
     MENUTEXT="\nChoose one of the following options:"
 }
 
+# healthChecks runs a suite of diagnostics for the Aztec-Sequencer plugin: RPC and consensus sync checks, Aztec L2 sync, Docker/container and peer (PeerID/ENR) checks, P2P TCP/UDP port reachability, UFW firewall status, and basic node resource metrics (uptime, start time, CPU, memory, disk); pauses for user input before returning.
 function healthChecks(){
     function rpcStatus(){
       local rpc_remote=https://aztec-alpha-testnet-fullnode.zkv.xyz

@@ -34,6 +34,7 @@ _platform=$(get_platform)
 _arch=$(get_arch)
 export _platform _arch
 
+# initializeNetwork sets default consensus/execution host and port environment variables, exports API_BN_ENDPOINT and EL_RPC_ENDPOINT, optionally overrides them from /opt/ethpillar/aztec/.env (using the first entry of any comma-separated lists), and initializes network state by calling getNetworkConfig and getNetwork.
 initializeNetwork(){
   # Defaults if not provided
   : "${CL_IP_ADDRESS:=127.0.0.1}"
@@ -68,6 +69,7 @@ initializeNetwork(){
   getNetwork
 }
 
+# menuMain displays the main whiptail-based TUI for EthPillar, dynamically building options for installed services and plugins and dispatching user selections (open submenus, run plugin scripts, or start/stop/restart clients and plugins) in a loop until the user quits.
 menuMain(){
 
 # Define systemctl services
@@ -194,6 +196,7 @@ while true; do
 done
 }
 
+# submenuLogsMonitoring shows the "Logging & Monitoring" whiptail submenu to view the log dashboard, tail consolidated logs (including Aztec docker logs when present), export logs, open monitoring dashboards/install the metrics exporter, and return to the main menu.
 submenuLogsMonitoring(){
 while true; do
     getBackTitle
@@ -1561,7 +1564,7 @@ function checkV1StakingSetup(){
   fi
 }
 
-# If no consensus or validator client service is installed, start install workflow
+# installNode prompts to install a node configuration if no consensus or validator service and no Aztec directory are present; choosing "Aztec L2 Sequencer" runs the Aztec installer and exits, otherwise it runs install-node.sh with the corresponding deploy file.
 function installNode(){
   if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service && ! -d /opt/ethpillar/aztec ]]; then
           local _CLIENTCOMBO _file

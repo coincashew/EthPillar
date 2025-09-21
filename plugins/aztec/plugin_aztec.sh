@@ -54,11 +54,12 @@ function getLatestVersion(){
   if [[ -z "$TAG" ]]; then error "Failed to fetch latest version"; fi
 }
 
-# Install cli binaries
+# downloadClient installs the Aztec CLI non-interactively by running the remote installer script; it sets NON_INTERACTIVE=1 and SKIP_PULL=1 in the environment to avoid interactive prompts and skip pulling additional images.
 function downloadClient(){
   export NON_INTERACTIVE=1; export SKIP_PULL=1; bash -i <(curl -s https://install.aztec.network)
 }
 
+# install_docker runs the helper installer script to install Docker and adds the current user to the `docker` group.
 function install_docker() {
   bash -c "$SOURCE_DIR/../../helpers/install_docker.sh"
   info "Adding current user to docker group..."
@@ -105,7 +106,7 @@ function download_snapshot() {
   rm "$HOME"/aztec-alpha-testnet.tar.lz4 || error "Unable cleanup tar file"
 }
 
-# Installation function
+# install performs interactive installation of the Aztec Sepolia Sequencer, including RPC configuration (local or remote), prerequisite installation and updates, creation and permissioning of the install directory, optional Foundry/cast installation, generation and secure storage of a validator key, updating the service .env, P2P IP detection, UFW configuration, ownership adjustments, and final user guidance.
 function install(){
 MSG_ABOUT="🥷 Aztec Sepolia Sequencer: a privacy first L2 on Ethereum by Aztec Labs
 \nBackground:
@@ -272,7 +273,7 @@ function removeAll() {
   fi
 }
 
-# Displays usage info
+# usage prints the script's help/usage text to stdout, showing available options and references to the app description, source code, and documentation.
 function usage() {
 cat << EOF
 Usage: $(basename "$0") [-i] [-u] [-r]
