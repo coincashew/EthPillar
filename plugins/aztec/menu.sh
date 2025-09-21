@@ -40,7 +40,7 @@ function set_public_ip() {
 
 function startCommand(){
     #set_public_ip
-    sudo docker compose --env-file "$PLUGIN_INSTALL_PATH"/.env up -d || error "Error starting command"
+    docker compose --env-file "$PLUGIN_INSTALL_PATH"/.env up -d || error "Error starting command"
 }
 
 function buildMenuText(){
@@ -141,18 +141,31 @@ function healthChecks(){
 
     function dockerChecks(){
       # Check if we have a Peer ID
-      peerid=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^"]*\)".*/\1/')
+      peerid=$(docker logs aztec-sequencer 2>&1 | grep --max-count 1 "peerId" | sed 's/.*"peerId":"\([^"]*\)".*/\1/')
       echo -e "${bold}\n📋 Peer ID: Verify at https://aztec.nethermind.io/explore${nc}"
       [[ -n $peerid ]] && echo "   ✅ $peerid" || echo "   ❌ Unable to get Peer ID. Is node running?"
 
+      # Check how many peers are connected
+      peercount=$(docker logs aztec-sequencer -n 100 2>&1 | grep 'peer_manager' | tail -n1 | sed "s/.*Connected to \([0-9]*\).*/\1/")
+      echo -e "${bold}\n👥 Peer count:"
+      [[ -n $peercount ]] && echo "   ✅ $peercount peers connected" || echo "   ❌ Unable to get # of connected peers. Is node running?"
+
       # Check if we have an ENR
-      enr=$(sudo docker logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^"]*\)".*/\1/')
+      enr=$(docker logs aztec-sequencer 2>&1 | grep --max-count 1 "enrTcp" | sed 's/.*"enrTcp":"\([^"]*\)".*/\1/')
       echo -e "${bold}\n⚙️ ENR:${nc}"
       [[ -n $enr ]] && echo "   ✅ $enr" || echo "   ❌ Unable to get ENR. Is node running?"
 
       # Check docker processes
       echo -e "${bold}\n🔎 Docker Process Running:${nc}"
-      sudo docker compose -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
+      docker compose -f "$PLUGIN_INSTALL_PATH"/docker-compose.yml ps || error "Unable to list docker ps"
+
+      # Check docker is in ROOTLESS mode
+      echo -e "${bold}\n🧱 ROOTLESS Docker Mode:${nc}"
+      if docker info 2>&1 | grep -q "rootless"; then
+          echo -e "${g}   ✅ ROOTLESS Docker mode is active${nc}"
+      else
+          echo -e "${r}   ⚠️ Container is running as root. Re-install Docker with non-root user.${nc}"
+      fi
     }
 
     function openPorts(){
@@ -195,7 +208,11 @@ function healthChecks(){
       # Compare expected vs actual number of open ports
       expected_tcp_ports=$(echo "$tcp_ports" | tr ',' '\n' | wc -l)
       expected_udp_ports=$(echo "$udp_ports" | tr ',' '\n' | wc -l)
-      expected_ports=$(( (tcp_check_ok ? expected_tcp_ports : 0) + expected_udp_ports ))
+      include_tcp=0
+      if echo "$tcp_json" | jq -e '.open_ports | length > 0' >/dev/null 2>&1; then
+          include_tcp=1
+      fi
+      expected_ports=$(( (include_tcp == 1 ? expected_tcp_ports : 0) + expected_udp_ports ))
 
       if [ "$expected_ports" -ne "$open_ports" ]; then
           echo -e "${r}   ❌ Ports ${tcp_ports} (TCP) and ${udp_ports} (UDP) not all open or reachable. Expected ${expected_ports}. Actual $open_ports. Check firewall or port forwarding on router.${nc}"
@@ -216,7 +233,7 @@ function healthChecks(){
 
     function show_status() {
       UPTIME=$(uptime -p)
-      CONTAINER_STARTED_AT=$(sudo docker inspect -f '{{.State.StartedAt}}' aztec-sequencer 2>/dev/null | cut -d'.' -f1)
+      CONTAINER_STARTED_AT=$(docker inspect -f '{{.State.StartedAt}}' aztec-sequencer 2>/dev/null | cut -d'.' -f1)
       START_FORMAT=$(test -n "$CONTAINER_STARTED_AT" && date -d "$CONTAINER_STARTED_AT" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "N/A")
       CPU=$(LANG=C top -bn1 | grep "Cpu(s)" | awk '{print $2+$4}')
       MEM=$(free -m | awk 'NR==2{printf "%.2f GiB",$3/1024}')
@@ -390,7 +407,7 @@ while true; do
     # Handle the user's choice from the submenu
     case $SUBCHOICE in
       🔍)
-        sudo docker compose logs -fn 233
+        docker compose logs -fn 233
         ;;
       🔧)
         sudo "${EDITOR}" "$PLUGIN_INSTALL_PATH"/.env
@@ -402,17 +419,17 @@ while true; do
         startCommand
         ;;
       🛑)
-        sudo docker compose stop
+        docker compose stop
         ;;
       🔄)
-        sudo docker compose restart
+        docker compose restart
         ;;
       🛠️)
         whiptail --msgbox "⚠️ Change the version tag found in the .env file on the following line\n\nDOCKER_TAG=$VERSION" 10 78
         sudo "${EDITOR}" "$PLUGIN_INSTALL_PATH"/.env
         TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
         if [[ "$TAG" != "$VERSION" ]]; then
-          if sudo docker compose pull; then echo "$TAG" | sudo tee $PLUGIN_INSTALL_PATH/current_version; fi
+          if docker compose pull; then echo "$TAG" | sudo tee $PLUGIN_INSTALL_PATH/current_version; fi
           startCommand
         else
           whiptail --msgbox "No version changes were made. Staying on $VERSION" 8 78

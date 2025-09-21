@@ -60,7 +60,7 @@ function downloadClient(){
 }
 
 function install_docker() {
-  sudo bash -c "$SOURCE_DIR/../../helpers/install_docker.sh"
+  bash -c "$SOURCE_DIR/../../helpers/install_docker.sh"
   info "Adding current user to docker group..."
   sudo usermod -aG docker "$USER"
 }
@@ -137,14 +137,28 @@ RPC_CONFIG=$(whiptail --title "🔧 RPC Configuration" --menu \
       3>&1 1>&2 2>&3)
 if [ -z "$RPC_CONFIG" ]; then exit; fi # pressed cancel
 if [[ $RPC_CONFIG == "REMOTE" ]]; then
-  ETH_RPC=$(whiptail --title "Ethereum RPC URL(s) (ETHEREUM_HOSTS)" --inputbox "🔗 Enter one or more URLs, comma-separated (e.g. https://sepolia.rpc.url,http://192.168.1.123:8545):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-  BEACON_RPC=$(whiptail --title "Beacon RPC URL(s) (L1_CONSENSUS_HOST_URLS)" --inputbox "🔗 Enter one or more URLs, comma-separated (e.g. https://beacon.rpc.url,http://192.168.1.123:5052):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
-  # sanitize: strip spaces
-  ETH_RPC=$(echo "$ETH_RPC" | tr -d '[:space:]')
-  BEACON_RPC=$(echo "$BEACON_RPC" | tr -d '[:space:]')
-  # basic scheme check
-  [[ "$ETH_RPC" =~ ^https?:// ]] || error "ETHEREUM_HOSTS must start with http(s)://"
-  [[ "$BEACON_RPC" =~ ^https?:// ]] || error "L1_CONSENSUS_HOST_URLS must start with http(s)://"
+  while true; do
+      ETH_RPC=$(whiptail --title "Ethereum RPC URL(s) (ETHEREUM_HOSTS)" --inputbox "🔗 Enter one or more URLs, comma-separated (e.g. https://sepolia.rpc.url,http://192.168.1.123:8545):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+      if [ -z "$ETH_RPC" ]; then exit; fi #pressed cancel
+      # sanitize: strip spaces
+      ETH_RPC=$(echo "$ETH_RPC" | tr -d '[:space:]')
+      if [[ "$ETH_RPC" =~ ^https?:// ]]; then
+          break
+      else
+          whiptail --title "Error" --msgbox "ETHEREUM_HOSTS must start with http(s)://" 8 78
+      fi
+  done
+  while true; do
+      BEACON_RPC=$(whiptail --title "Beacon RPC URL(s) (L1_CONSENSUS_HOST_URLS)" --inputbox "🔗 Enter one or more URLs, comma-separated (e.g. https://beacon.rpc.url,http://192.168.1.123:5052):" 9 78 --ok-button "Submit" 3>&1 1>&2 2>&3)
+      if [ -z "$BEACON_RPC" ]; then exit; fi #pressed cancel
+      # sanitize: strip spaces
+      BEACON_RPC=$(echo "$BEACON_RPC" | tr -d '[:space:]')
+      if [[ "$BEACON_RPC" =~ ^https?:// ]]; then
+        break
+      else
+          whiptail --title "Error" --msgbox "L1_CONSENSUS_HOST_URLS must start with http(s)://" 8 78
+      fi
+  done
 else
   # Install EL/CL
   if [[ ! -f /etc/systemd/system/execution.service ]] && [[ ! -f /etc/systemd/system/consensus.service ]]; then
@@ -155,12 +169,6 @@ fi
 # Install packages
 sudo apt-get update
 sudo apt-get upgrade -y
-
-# Install Docker
-if ! command -v docker &> /dev/null; then
-   info "🔧 Installing docker..."
-   install_docker
-fi
 
 info "🔧 Setup installation directory"
 sudo mkdir -p $PLUGIN_INSTALL_PATH || error "Unable to setup installation directory"
@@ -225,6 +233,11 @@ info "🔧 Configuring UFW firewall"
 sudo ufw allow 40400 comment 'Allow aztec node p2p port' || error "Unable to configure ufw"
 #sudo ufw allow 8080 comment 'Allow aztec rpc port'
 
+info "🔧 Updating ownership of $PLUGIN_INSTALL_PATH to current user: $USER"
+sudo chown -R "$USER":"$USER" "$PLUGIN_INSTALL_PATH"
+
+info "🎉  INSTALL COMPLETE :: To run, type \"ethpillar\""
+
 MSG_COMPLETE="✅ Done! $APP_NAME is now installed.
 \nNext Steps:
 \n1. Review .env configuration: Update values if desired
@@ -277,6 +290,17 @@ About $APP_NAME)
 - Documentation: $DOCUMENTATION
 EOF
 }
+
+# Install docker, prompt to relog if not root user
+if ! command -v docker &> /dev/null; then
+  info "🔧 Installing docker..."
+  install_docker
+  # Except root, user account requires re-log for new docker permissions
+  if [ "$(id -u)" -ne 0 ]; then
+      whiptail --title "Docker Install Complete" --msgbox "Log off and log in again for new docker permissions and then try again." 8 78
+      exit 0
+  fi
+fi
 
 # Process command line options
 while getopts :irh opt; do

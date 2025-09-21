@@ -26,8 +26,25 @@ sudo apt update -y && sudo apt upgrade -y
 echo "🐳 Installing Docker Engine, CLI, containerd, Buildx, and Compose plugin..."
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-echo "🚦 Enabling and starting Docker service..."
-sudo systemctl enable docker
-sudo systemctl restart docker
+# Except when logged in as root, configure ROOTLESS mode
+if [ "$(id -u)" -ne 0 ]; then
+    echo "🧱 Enabling ROOTLESS Docker Mode..."
+    sudo apt-get install -y docker-ce-rootless-extras
+    sudo systemctl disable --now docker.service docker.socket
+    sudo rm -f /var/run/docker.sock || true
+    sudo apt-get install -y uidmap
+    dockerd-rootless-setuptool.sh install
+    # enable user service (best-effort) and allow running after logout
+    sudo loginctl enable-linger "$USER" || true
+    sudo systemctl --user enable docker || true
+    sudo systemctl --user restart docker || true
+fi
+
+if [ "$(id -u)" -eq 0 ]; then
+  echo "🚦 Enabling and starting Docker service..."
+  sudo systemctl enable --now docker
+else
+  echo "ℹ️ Rootless Docker uses the per-user service. Skipping system docker.service."
+fi
 
 echo "🎉 Docker and Docker Compose are fully installed and up to date!"
