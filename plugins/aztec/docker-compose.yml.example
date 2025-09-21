@@ -4,7 +4,6 @@ services:
     image: aztecprotocol/aztec:${DOCKER_TAG:-2.0.2}
     restart: unless-stopped
     stop_grace_period: 1m
-    cpus: "4.0"                             # Limit to 4 CPU cores
     mem_limit: 16g                          # Limit to 16GB RAM
     mem_reservation: 8g                     # Reserve 8GB RAM
     security_opt:
