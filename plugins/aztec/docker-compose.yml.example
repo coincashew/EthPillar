@@ -47,3 +47,4 @@ services:
         max-size: "100m"
         max-file: "3"
         compress: "true"
+    network_mode: host
