@@ -388,7 +388,7 @@ function loadKeys(){
      [[ $1 == "plugin_csm_validator" ]] && sudo systemctl start "${__SERVICE_NAME}"
      queryEntryQueue
      setLaunchPadMessage
-     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 24 95
+     whiptail --title "Next Steps: Upload JSON Deposit Data File" --msgbox "$MSG_LAUNCHPAD" 25 95
      whiptail --title "Tips: Things to Know" --msgbox "$MSG_TIPS" 24 78
      ohai "Finished loading keys"
      promptViewLogs "$1"
@@ -399,12 +399,13 @@ function setLaunchPadMessage(){
     [[ -n ${FAUCET} ]] && MSG_FAUCET=">> Faucet Available: $FAUCET"
     [[ -n ${HOMEPAGE} ]] && MSG_HOMEPAGE=">> Network Homepage: $HOMEPAGE"
     [[ -n ${EXPLORER} ]] && MSG_EXPLORER=">> Explorer:         $EXPLORER"
-    MSG_LAUNCHPAD="1) Visit the Launchpad: $LAUNCHPAD_URL
+    MSG_LAUNCHPAD="1) For new validator keys, visit the Launchpad: $LAUNCHPAD_URL
 \n2) Upload your deposit_data-#########.json found in the directory:
 \n$KEYFOLDER
 \n3) Connect the Launchpad with your wallet, review and accept terms.
 \n4) Complete your ETH deposit transaction(s).
 \n5) Wait for validators to become active. $MSG_VALIDATOR_QUEUE
+\n🔥 REMINDER: Importing already ACTIVE Validator(s)? Skip above steps.
 \nUseful links:
 $MSG_HOMEPAGE
 $MSG_EXPLORER
