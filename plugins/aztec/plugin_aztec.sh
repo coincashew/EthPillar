@@ -231,7 +231,11 @@ info "🔧 Configuring and updating P2P_IP to $P2P_IP"
 
 info "🔧 Configuring UFW firewall"
 sudo ufw allow 40400 comment 'Allow aztec node p2p port' || error "Unable to configure ufw"
-#sudo ufw allow 8080 comment 'Allow aztec rpc port'
+if [[ $RPC_CONFIG == "LOCAL" ]]; then
+  info "🔧 Configuring UFW firewall to allow access from host.docker.internal"
+  sudo ufw allow from 172.16.0.0/12 to any port 8545 comment 'Allow host.docker.internal to ETH RPC'
+  sudo ufw allow from 172.16.0.0/12 to any port 5052 comment 'Allow host.docker.internal to BEACON RPC'
+fi
 
 info "🔧 Updating ownership of $PLUGIN_INSTALL_PATH to current user: $USER"
 sudo chown -R "$USER":"$USER" "$PLUGIN_INSTALL_PATH"
