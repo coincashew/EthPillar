@@ -8,34 +8,93 @@
 # Made for home and solo stakers 🏠🥩
 
 BASE_DIR=$HOME/git/ethpillar
+__OTHERTAG=""
 
 # Load functions
-source $BASE_DIR/functions.sh
+# shellcheck disable=SC1091
+source "$BASE_DIR"/functions.sh
 
 # Get machine info
 _platform=$(get_platform)
 _arch=$(get_arch)
 
 function getCurrentVersion(){
-	EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq '.result')
-    #Find version in format #.#.#
-    if [[ $EL_INSTALLED ]] ; then
-        VERSION=$(echo $EL_INSTALLED | sed 's/.*[v\/]\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
-	else
-		VERSION="Client not running or still starting up. Unable to query version."
-	fi
+  EL_INSTALLED=$(curl -s -X POST -H "Content-Type: application/json" \
+    --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' \
+    "${EL_RPC_ENDPOINT}" | jq -r '.result // empty')
+  if [[ -z "$EL_INSTALLED" ]]; then
+    VERSION="Client not running or still starting up. Unable to query version."
+    return
+  fi
+  VERSION=$(sed -E 's/.*[v/]([0-9]+\.[0-9]+\.[0-9]+).*/\1/' <<< "$EL_INSTALLED")
 }
 
 function getClient(){
     EL=$(cat /etc/systemd/system/execution.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
 }
 
+function selectCustomTag(){
+	case $EL in
+	  Nethermind)
+	    _repo="NethermindEth/nethermind"
+	    ;;
+	  Besu)
+	    _repo="hyperledger/besu"
+	    ;;
+	  Erigon)
+	    _repo="erigontech/erigon"
+	    ;;
+	  Geth)
+	    _repo="ethereum/go-ethereum"
+	    ;;
+	  Reth)
+	    _repo="paradigmxyz/reth"
+	    ;;
+	  *)
+	    error "❌ Unsupported or unknown client '$EL'."
+	    ;;
+	esac
+	local _listTags _tag
+	_listTags=$(curl -fsSL https://api.github.com/repos/"${_repo}"/tags | jq -r '.[].name' | sort -hr)
+	if [ -z "$_listTags" ]; then
+		error "❌ Could not retrieve tags for ${_repo}. Try again later."
+	fi
+	info "ℹ️  Select the Version: Type the number to use. For example, 2 (for the 2nd most recent release)"
+	select _tag in $_listTags; do
+        if [ -n "$_tag" ]; then
+			__OTHERTAG=$_tag
+            break
+        else
+            error "❌ Invalid input. Enter the line # corresponding to a tag."
+        fi
+    done
+}
+
 function promptYesNo(){
 	# Remove front v if present
-	[[ "${VERSION#v}" == "${TAG#v}" ]] && whiptail --title "Already updated" --msgbox "You are already on the latest version: $VERSION" 10 78 && return
-    if whiptail --title "Update Execution Client - $EL" --yesno "Installed Version is: $VERSION\nLatest Version is:    $TAG\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update $EL to $TAG?" 15 78; then
-  		updateClient
-  		promptViewLogs
+	if [[ "${VERSION#v}" == "${TAG#v}" ]]; then
+		whiptail --title "Already updated" --msgbox "You are already on the latest version: ${VERSION#v}" 10 78
+	    if whiptail --title "Different Version of $EL" --defaultno --yesno "Would you like to install a different version?" 8 78; then
+			selectCustomTag
+			updateClient "$__OTHERTAG"
+			promptViewLogs
+		fi
+		return
+	fi
+    __MSG="Installed Version is: ${VERSION#v}\nLatest Version is:    ${TAG#v}\n\nReminder: Always read the release notes for breaking changes: $CHANGES_URL\n\nDo you want to update $EL to ${TAG#v}?"
+	__SELECTTAG=$(whiptail --title "🔧 Update Execution Client" --menu \
+	      "$__MSG" 18 78 2 \
+	      "LATEST" "| Installs ${TAG#v}, the latest release" \
+	      "OTHER " "| I will select a different version" \
+	      3>&1 1>&2 2>&3)
+	if [ -z "$__SELECTTAG" ]; then exit; fi # pressed cancel
+	if [[ $__SELECTTAG == "LATEST" ]]; then
+		updateClient "LATEST"
+		promptViewLogs
+	else
+		selectCustomTag
+		updateClient "$__OTHERTAG"
+		promptViewLogs
 	fi
 }
 
@@ -62,60 +121,70 @@ function getLatestVersion(){
 	  Geth)
 	    TAG_URL="https://api.github.com/repos/ethereum/go-ethereum/releases/latest"
 	    CHANGES_URL="https://github.com/ethereum/go-ethereum/releases"
-		;;
-  	  Reth)
+	    ;;
+	  Reth)
 	    TAG_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
 	    CHANGES_URL="https://github.com/paradigmxyz/reth/releases"
 	    ;;
-	  esac
+	  *)
+	    error "❌ Unsupported or unknown client '$EL'."
+	    ;;	    
+	esac
 	#Get tag name
-	TAG=$(curl -s $TAG_URL | jq -r .tag_name)
+	TAG=$(curl -s "$TAG_URL" | jq -r .tag_name)
 	# Exit in case of null tag
-	[[ -z $TAG ]] || [[ $TAG == "null"  ]] && echo "ERROR: Couldn't find the latest version tag" && exit 1
+	if [[ -z $TAG ]] || [[ $TAG == "null" ]]; then
+		error "❌ Couldn't find the latest version tag"
+	fi
 }
 
 function updateClient(){
+	if [[ "$1" == "LATEST" ]]; then
+		_URL_SUFFIX="releases/latest"
+	else
+		_URL_SUFFIX="releases/tags/$1"
+	fi
 	case $EL in
 	  Nethermind)
 		[[ "${_arch}" == "amd64" ]] && _architecture="x64" || _architecture="arm64"
-	    RELEASE_URL="https://api.github.com/repos/NethermindEth/nethermind/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}-${_architecture})"
-		echo Downloading URL: $BINARIES_URL
-		cd $HOME
-		wget -O nethermind.zip $BINARIES_URL
-		unzip -o nethermind.zip -d $HOME/nethermind
+		RELEASE_URL="https://api.github.com/repos/NethermindEth/nethermind/$_URL_SUFFIX"
+		BINARIES_URL=$(curl -s "$RELEASE_URL" | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case "${_platform}"-"${_architecture}")
+		info "✅ Downloading URL: $BINARIES_URL"
+		cd "$HOME" || true
+		wget -O nethermind.zip "$BINARIES_URL" || error "❌ Unable to wget file"
+		unzip -o nethermind.zip -d "$HOME"/nethermind || error "❌ Unable to unzip file"
 		rm nethermind.zip
 		sudo systemctl stop execution
 		sudo rm -rf /usr/local/bin/nethermind
-		sudo mv $HOME/nethermind /usr/local/bin/nethermind
+		sudo mv "$HOME"/nethermind /usr/local/bin/nethermind || error "❌ Unable to move file"
 		sudo systemctl start execution
 	    ;;
 	  Besu)
 		updateJRE
-		RELEASE_URL="https://api.github.com/repos/hyperledger/besu/releases/latest"
-		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
+		RELEASE_URL="https://api.github.com/repos/hyperledger/besu/$_URL_SUFFIX"
+		TAG=$(curl -s "$RELEASE_URL" | jq -r .tag_name)
 		BINARIES_URL="https://github.com/hyperledger/besu/releases/download/$TAG/besu-$TAG.tar.gz"
-		echo Downloading URL: $BINARIES_URL
-		cd $HOME
-		wget -O besu.tar.gz $BINARIES_URL
-		tar -xzvf besu.tar.gz -C $HOME
-		sudo mv besu-${TAG} besu
+		info "✅ Downloading URL: $BINARIES_URL"
+		cd "$HOME" || true
+		wget -O besu.tar.gz "$BINARIES_URL" || error "❌ Unable to wget file"
+		tar -xzvf besu.tar.gz -C "$HOME" || error "❌ Unable to untar file"
+		sudo mv besu-"${TAG}" besu
 		sudo systemctl stop execution
 		sudo rm -rf /usr/local/bin/besu
-		sudo mv $HOME/besu /usr/local/bin/besu
+		sudo mv "$HOME"/besu /usr/local/bin/besu || error "❌ Unable to move file"
 		sudo systemctl start execution
 		rm besu.tar.gz
 	    ;;
 	  Erigon)
-	    RELEASE_URL="https://api.github.com/repos/erigontech/erigon/releases/latest"
-		BINARIES_URL="$(curl -s $RELEASE_URL | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case ${_platform}_${_arch}.tar.gz)"
-		echo Downloading URL: $BINARIES_URL
-		cd $HOME
-		wget -O erigon.tar.gz $BINARIES_URL
-		tar -xzvf erigon.tar.gz -C $HOME
-		mv erigon_*_${_arch} erigon
+		RELEASE_URL="https://api.github.com/repos/erigontech/erigon/$_URL_SUFFIX"
+		BINARIES_URL=$(curl -s "$RELEASE_URL" | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case "${_platform}"_"${_arch}".tar.gz)
+		info "✅ Downloading URL: $BINARIES_URL"
+		cd "$HOME" || true
+		wget -O erigon.tar.gz "$BINARIES_URL" || error "❌ Unable to wget file"
+		tar -xzvf erigon.tar.gz -C "$HOME" || error "❌ Unable to untar file"
+		mv erigon_*_"${_arch}" erigon
 		sudo systemctl stop execution
-		sudo mv $HOME/erigon/erigon /usr/local/bin
+		sudo mv "$HOME"/erigon/erigon /usr/local/bin || error "❌ Unable to move file"
 		sudo systemctl start execution
 		rm -rf erigon erigon.tar.gz
 		;;
@@ -123,14 +192,21 @@ function updateClient(){
 		# Convert to lower case
 		_platform=${_platform,,}
 		RELEASE_URL="https://geth.ethereum.org/downloads"
-		FILE="https://gethstore.blob.core.windows.net/builds/geth-${_platform}-${_arch}[a-zA-Z0-9./?=_%:-]*.tar.gz"
-		BINARIES_URL="$(curl -s $RELEASE_URL | grep -Eo $FILE | head -1)"
-		echo Downloading URL: $BINARIES_URL
-		cd $HOME
-		wget -O geth.tar.gz $BINARIES_URL
-		tar -xzvf geth.tar.gz -C $HOME --strip-components=1
+		#https://gethstore.blob.core.windows.net/builds/geth-linux-386-1.16.3-09786041.tar.gz
+		# Remove front v if present
+		if [[ "$1" == "LATEST" ]]; then
+			_URL_SUFFIX=""
+		else
+			_URL_SUFFIX="-${1#v}-"
+		fi
+		FILE="https://gethstore.blob.core.windows.net/builds/geth-${_platform}-${_arch}${_URL_SUFFIX}[a-zA-Z0-9./?=_%:-]*.tar.gz"
+		BINARIES_URL=$(curl -s $RELEASE_URL | grep -Eo "$FILE" | head -1)
+		info "✅ Downloading URL: $BINARIES_URL"
+		cd "$HOME" || true
+		wget -O geth.tar.gz "$BINARIES_URL" || error "❌ Unable to wget file"
+		tar -xzvf geth.tar.gz -C "$HOME" --strip-components=1 || error "❌ Unable to untar file"
 		sudo systemctl stop execution
-		sudo mv $HOME/geth /usr/local/bin
+		sudo mv "$HOME"/geth /usr/local/bin || error "❌ Unable to move file"
 		sudo systemctl start execution
 		rm geth.tar.gz COPYING
 	    ;;
@@ -138,16 +214,16 @@ function updateClient(){
 		# Convert to lower case
 		_platform=${_platform,,}
 		[[ "${_arch}" == "amd64" ]] && _architecture="x86_64" || _architecture="aarch64"
-	    RELEASE_URL="https://api.github.com/repos/paradigmxyz/reth/releases/latest"
-		TAG=$(curl -s $RELEASE_URL | jq -r .tag_name)
+		RELEASE_URL="https://api.github.com/repos/paradigmxyz/reth/$_URL_SUFFIX"
+		TAG=$(curl -s "$RELEASE_URL" | jq -r .tag_name)
 		BINARIES_URL="https://github.com/paradigmxyz/reth/releases/download/$TAG/reth-$TAG-${_architecture}-unknown-${_platform}-gnu.tar.gz"
-		echo Downloading URL: $BINARIES_URL
-		cd $HOME
-		wget -O reth.tar.gz $BINARIES_URL
-		tar -xzvf reth.tar.gz -C $HOME
+		info "✅ Downloading URL: $BINARIES_URL"
+		cd "$HOME" || true
+		wget -O reth.tar.gz "$BINARIES_URL" || error "❌ Unable to wget file"
+		tar -xzvf reth.tar.gz -C "$HOME" || error "❌ Unable to untar file"
 		rm reth.tar.gz
 		sudo systemctl stop execution
-		sudo mv $HOME/reth /usr/local/bin
+		sudo mv "$HOME"/reth /usr/local/bin || error "❌ Unable to move file"
 		sudo systemctl start execution
 	    ;;
 	  esac
@@ -156,17 +232,18 @@ function updateClient(){
 function updateJRE(){
 	# Check if OpenJDK-21-JRE or OpenJDK-21-JDK is already installed
 	if dpkg --list | grep -q -E "openjdk-21-jre|openjdk-21-jdk"; then
-	   echo "OpenJDK-21-JRE or OpenJDK-21-JDK is already installed. Skipping installation."
+	   info "✅ OpenJDK-21-JRE or OpenJDK-21-JDK is already installed. Skipping installation."
 	else
 	   # Install OpenJDK-21-JRE
 	   sudo apt-get update
 	   sudo apt-get install -y openjdk-21-jre
 
        # Check if the installation was successful
+       # shellcheck disable=SC2181
        if [ $? -eq 0 ]; then
-	      echo "OpenJDK-21-JRE installed successfully!"
+	      info "✅ OpenJDK-21-JRE installed successfully!"
 	   else
-	      echo "Error installing OpenJDK-21-JRE. Please check the error log."
+	      error "❌ Error installing OpenJDK-21-JRE. Please check the error log."
 	   fi
 	fi
 }
