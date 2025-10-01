@@ -18,6 +18,21 @@ source ./env
 # Stores validator index
 declare -a INDICES
 
+# Colors
+g="\033[32m" # Green
+r="\033[31m" # Red
+nc="\033[0m" # No-color
+bold="\033[1m"
+
+function info {
+  echo -e "${g}INFO: $1${nc}"
+}
+
+function error {
+  echo -e "${r}${bold}ERROR: $1${nc}"
+  exit 1
+}
+
 getNetworkConfig() {
     ip_current=$( hostname --all-ip-address | awk '{print $1}')
     interface_current=$(ip route | grep default | head -1 | sed 's/.*dev \([^ ]*\) .*/\1/')
