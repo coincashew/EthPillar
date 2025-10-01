@@ -1,7 +1,7 @@
 services:
   aztec-node:
     container_name: aztec-sequencer
-    image: aztecprotocol/aztec:${DOCKER_TAG:-2.0.2}
+    image: aztecprotocol/aztec:${DOCKER_TAG:-2.0.3}
     restart: unless-stopped
     stop_grace_period: 1m
     mem_limit: 16g                          # Limit to 16GB RAM
@@ -47,4 +47,5 @@ services:
         max-size: "100m"
         max-file: "3"
         compress: "true"
-    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
