@@ -233,8 +233,12 @@ info "🔧 Configuring UFW firewall"
 sudo ufw allow 40400 comment 'Allow aztec node p2p port' || error "Unable to configure ufw"
 if [[ $RPC_CONFIG == "LOCAL" ]]; then
   info "🔧 Configuring UFW firewall to allow access from host.docker.internal"
-  sudo ufw allow from 172.16.0.0/12 to any port 8545 comment 'Allow host.docker.internal to ETH RPC'
-  sudo ufw allow from 172.16.0.0/12 to any port 5052 comment 'Allow host.docker.internal to BEACON RPC'
+  docker_bridge_subnet=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Subnet}}' 2>/dev/null || echo '172.16.0.0/12')
+  if [[ -z "$docker_bridge_subnet" || "$docker_bridge_subnet" == "<no value>" ]]; then
+    docker_bridge_subnet='172.16.0.0/12'
+  fi  
+  sudo ufw allow from "$docker_bridge_subnet" to any port 8545 comment 'Allow host.docker.internal to ETH RPC'
+  sudo ufw allow from "$docker_bridge_subnet" to any port 5052 comment 'Allow host.docker.internal to BEACON RPC'
 fi
 
 info "🔧 Updating ownership of $PLUGIN_INSTALL_PATH to current user: $USER"
