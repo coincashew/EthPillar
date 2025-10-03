@@ -23,22 +23,15 @@ services:
       COINBASE: ${COINBASE}
       P2P_IP: ${P2P_IP:-}
       P2P_PORT: ${P2P_PORT}
-      PORT: ${PORT}
+      AZTEC_PORT: ${AZTEC_PORT}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       SEQ_PUBLISHER_PRIVATE_KEY: ${SEQ_PUBLISHER_PRIVATE_KEY:-}
     entrypoint: >
       sh -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start --node --archiver --sequencer'
     ports:
-      - target: ${PORT:-8080}
-        published: ${PORT:-8080}
-        protocol: tcp
-        host_ip: 127.0.0.1
-      - target: ${P2P_PORT:-40400}
-        published: ${P2P_PORT:-40400}
-        protocol: tcp
-      - target: ${P2P_PORT:-40400}
-        published: ${P2P_PORT:-40400}
-        protocol: udp
+      - ${AZTEC_PORT}:${AZTEC_PORT}
+      - ${P2P_PORT}:${P2P_PORT}
+      - ${P2P_PORT}:${P2P_PORT}/udp
     volumes:
       -  /opt/ethpillar/aztec/data:/data
     logging:

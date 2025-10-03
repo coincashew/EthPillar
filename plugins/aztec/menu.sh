@@ -60,6 +60,10 @@ function healthChecks(){
       consensus_beacon_rpc=$(grep ^L1_CONSENSUS_HOST_URLS "$PLUGIN_INSTALL_PATH"/.env | sed 's/L1_CONSENSUS_HOST_URLS=//g') #http://localhost:5052
       execution_l1_rpc=$(grep ^ETHEREUM_HOSTS "$PLUGIN_INSTALL_PATH"/.env | sed 's/ETHEREUM_HOSTS=//g') #http://localhost:8545
 
+      # Remap http://host.docker.internal to localhost
+      [[ $consensus_beacon_rpc == "http://host.docker.internal:5052" ]] && consensus_beacon_rpc="http://localhost:5052"
+      [[ $execution_l1_rpc == "http://host.docker.internal:8545" ]] && execution_l1_rpc="http://localhost:8545"
+
       # If there's a list of comma separated rpc nodes, use the first node
       consensus_beacon_rpc=${consensus_beacon_rpc%%,*}
       execution_l1_rpc=${execution_l1_rpc%%,*}
@@ -137,6 +141,14 @@ function healthChecks(){
         echo "   📈 Progress: N/A"
         echo "   ℹ️ Unable to determine sync status."
       fi
+
+      # Check status endpoint
+      echo -e "${bold}\n▶️ Aztec Status Endpoint (http://localhost:8080/status):${nc}"
+      echo "   ℹ️ Status: $(curl -s http://localhost:8080/status)"
+
+      # Check sync proof
+      proof=$(curl -s --connect-timeout 3 --max-time 5 --fail -X POST -H 'Content-Type: application/json' -d "{\"jsonrpc\":\"2.0\",\"method\":\"node_getArchiveSiblingPath\",\"params\":[\"$local_block\",\"$local_block\"],\"id\":67}" "$rpc_local" | jq -r .result)
+      echo -e "${bold}\n⏳ Sync Proof: $proof${nc}"
     }
 
     function dockerChecks(){
