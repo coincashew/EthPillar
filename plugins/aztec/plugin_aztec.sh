@@ -105,8 +105,40 @@ function download_snapshot() {
   rm "$HOME"/aztec-alpha-testnet.tar.lz4 || error "Unable cleanup tar file"
 }
 
+# Allow EL RPC access (port 8545) to docker
+exposeETHRPC(){
+    _exposed='0.0.0.0'
+    _service='execution'
+    _file="/etc/systemd/system/${_service}.service"
+    test -f /etc/systemd/system/execution.service || return 0
+    EL=$(grep Description= /etc/systemd/system/execution.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    case "${EL}" in
+        Nethermind ) _flag='JsonRpc.Host';;
+        Besu       ) _flag='rpc-http-host';;
+        Erigon     ) _flag='http.addr';;
+        Geth       ) _flag='http.addr';;
+        Reth       ) _flag='http.addr';;
+        * ) echo "Execution client not detected"; return 0;;
+    esac
+    if ! grep -q "${_flag}=${_exposed}" $_file; then
+      info "🔧 Updating execution client RPC access..."
+      cp ${_file} "$HOME"/_edit
+      # Remove old value
+      sed -r "s/.*--${_flag}[= ]+[0-9.]+.*/&\n/g; s/--${_flag}[= ]+[0-9.]+//g" "$HOME"/_edit > "$HOME"/_result
+      # Add new value to end of ExecStart line
+      sed -i -e "s/^ExecStart.*$/& --${_flag}=${_exposed}/" "$HOME"/_result
+      # Install new config
+      sudo mv "$HOME"/_result ${_file}
+      sudo chown execution:execution ${_file}
+      # Reload and restart
+      sudo systemctl daemon-reload && sudo service ${_service} restart
+    else
+      info "✅ Execution client RPC access already accessible..."
+    fi
+}
+
 # Installation function
-function install(){
+function install_plugin(){
 MSG_ABOUT="🥷 Aztec Sepolia Sequencer: a privacy first L2 on Ethereum by Aztec Labs
 \nBackground:
 Aztec is the first fully decentralized L2, thanks to its permissionless network of sequencers and provers.
@@ -212,7 +244,12 @@ info "🔧 Update config values in .env..."
 if [[ $RPC_CONFIG == "REMOTE" ]]; then
   sudo sed -i "s|^ETHEREUM_HOSTS.*$|ETHEREUM_HOSTS=${ETH_RPC}|" $PLUGIN_INSTALL_PATH/.env || error "Unable to set ETHEREUM_HOSTS"
   sudo sed -i "s|^L1_CONSENSUS_HOST_URLS.*$|L1_CONSENSUS_HOST_URLS=${BEACON_RPC}|" $PLUGIN_INSTALL_PATH/.env || error "Unable to set L1_CONSENSUS_HOST_URLS"
-fi 
+fi
+
+if [[ $RPC_CONFIG == "LOCAL" ]]; then
+  info "🔧 Checking ETH L1/Execution client RPC access"
+  exposeETHRPC
+fi
 
 # sanitize with grep
 P2P_IP=$(grep -m1 -oE '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' <<< "$(
@@ -313,7 +350,7 @@ fi
 # Process command line options
 while getopts :irh opt; do
   case ${opt} in
-    i ) install ;;
+    i ) install_plugin ;;
     r ) removeAll ;;
     h)
       usage
