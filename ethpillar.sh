@@ -631,6 +631,7 @@ while true; do
       - ""
       ⬆️ "Update EthPillar"
       ℹ️ "About EthPillar"
+      ❓ "Support: Get help"
       - ""
       ⚙️ "Configure autostart"
       🗑️ "Uninstall node"
@@ -732,6 +733,31 @@ while true; do
         \n🙏 Donations:\n[ 0xCF83d0c22dd54475cC0C52721B0ef07d9756E8C0 ] || [ coincashew.eth ]"
         whiptail --title "About EthPillar" --msgbox "$MSG_ABOUT" 21 78
         ;;
+      ❓)
+      local MSG="
+  official 🌐:
+    https://docs.coincashew.com/ethpillar
+    https://docs.coincashew.com/guides/mainnet
+
+  FAQs ✨:
+    https://docs.coincashew.com/ethpillar/faq
+
+  discord 📣:
+    https://discord.gg/WS8E3PMzrb
+
+  ethstaker community 🚨:
+    knowledge base - https://docs.ethstaker.org
+    discord - http://dsc.gg/ethstaker
+    reddit - https://www.reddit.com/r/ethstaker
+
+  github 👀:
+    https://github.com/coincashew/EthPillar
+
+  lido csm 💧:
+    https://docs.lido.fi/run-on-lido/csm/node-setup/intermediate/ethpillar
+"
+      whiptail --title "❓ somETHing helpful" --msgbox "$MSG" 28 78
+      ;;
       ⚙️)
         configureAutoStart
       ;;
