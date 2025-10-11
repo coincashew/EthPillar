@@ -2,7 +2,7 @@
 
 # 🛡️ EthPillar
 
-**Your Friendly Ethereum Node Installer & Manager**
+## Your Friendly Ethereum Node Installer & Manager
 
 [![Github release](https://img.shields.io/github/v/release/coincashew/ethpillar)](https://github.com/coincashew/ethpillar/releases)
 [![License](https://img.shields.io/github/license/coincashew/EthPillar)](https://github.com/coincashew/EthPillar/blob/main/LICENSE)
