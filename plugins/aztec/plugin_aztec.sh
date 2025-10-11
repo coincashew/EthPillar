@@ -12,7 +12,7 @@ SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Variables
 RELEASE_URL="https://api.github.com/repos/AztecProtocol/aztec-packages/releases/latest"
-DESCRIPTION="🥷 Aztec Sequencer Node: a privacy first L2 on Ethereum by Aztec Labs"
+DESCRIPTION="🪿 Aztec Sequencer Node: a privacy first L2 on Ethereum by Aztec Labs"
 DOCUMENTATION="https://aztec.network/network"
 SOURCE_CODE="https://github.com/AztecProtocol/aztec-packages"
 APP_NAME="aztec-sequencer"
@@ -139,7 +139,7 @@ exposeETHRPC(){
 
 # Installation function
 function install_plugin(){
-MSG_ABOUT="🥷 Aztec Sepolia Sequencer: a privacy first L2 on Ethereum by Aztec Labs
+MSG_ABOUT="🪿 Aztec Sepolia Sequencer: a privacy first L2 on Ethereum by Aztec Labs
 \nBackground:
 Aztec is the first fully decentralized L2, thanks to its permissionless network of sequencers and provers.
 

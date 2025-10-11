@@ -97,7 +97,7 @@ function buildMenu() {
 function buildMenuPlugins() {
   local _DIRNAME=("aztec")
   local _NAME=("Aztec Sequencer")
-  local _ICON=("🥷")
+  local _ICON=("🪿")
   for (( i=0; i<${#_NAME[@]}; i++ )); do
     test -d /opt/ethpillar/"${_DIRNAME[i]}" && OPTIONS+=("${_ICON[i]}" "${_NAME[i]}")
   done
@@ -163,7 +163,7 @@ while true; do
       🔎)
         runScript plugins/dora/menu.sh
         ;;
-      🥷)
+      🪿)
         runScript plugins/aztec/menu.sh
         ;;
       ✅)
@@ -1358,7 +1358,7 @@ while true; do
       🔧 "eth-validator-cli by TobiWo: managing validators via execution layer requests"
       🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
       🐼 "Contributoor: powerful monitoring & data-gathering tool. enhances network transparency"
-      🥷 "Aztec Sepolia Sequencer: Run a sequencer validating node for privacy first L2 by Aztec Labs"
+      🪿 "Aztec Sepolia Sequencer: Run a sequencer validating node for privacy first L2 by Aztec Labs"
       - ""
       👋 "Back to main menu"
     )
@@ -1395,7 +1395,7 @@ while true; do
         fi
         submenuPluginSentinel
         ;;
-      🥷)
+      🪿)
         if [[ ! -d /opt/ethpillar/aztec ]]; then
             runScript plugins/aztec/plugin_aztec.sh -i
         fi

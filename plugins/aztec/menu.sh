@@ -403,7 +403,7 @@ while true; do
     # Display the submenu and get the user's choice
     SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
-      --title "🥷 Aztec-Sequencer $VERSION | Disk Use: $DISK_USAGE" \
+      --title "🪿 Aztec-Sequencer $VERSION | Disk Use: $DISK_USAGE" \
       --menu "$MENUTEXT"\
       0 0 0 \
       "${SUBOPTIONS[@]}" \
