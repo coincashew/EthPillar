@@ -59,7 +59,7 @@ Already running a validator? EthPillar works with [Coincashew’s Staking Guide]
 - **Plugins**: Aztec, Lido CSM, Node-checker, validator tools, monitoring, stats, and more
 - **Grafana Dashboards**: Built-in Ethereum node monitoring
 - **Troubleshooting Tools**: Built-in checks for common node issues with Node Checker
-- **Flexible Deployment Configuations**: Solo staking node, Full Node, CSM, Validator-only, or Failover setups
+- **Flexible Deployment Configurations**: Solo staking node, Full Node, CSM, Validator-only, or Failover setups
 
 ---
 
