@@ -106,34 +106,52 @@ function download_snapshot() {
 }
 
 # Allow EL RPC access (port 8545) to docker
-exposeETHRPC(){
+function exposeETHRPC(){
     _exposed='0.0.0.0'
     _service='execution'
     _file="/etc/systemd/system/${_service}.service"
-    test -f /etc/systemd/system/execution.service || return 0
-    EL=$(grep Description= /etc/systemd/system/execution.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    sudo test -f /etc/systemd/system/execution.service || return 0
+    EL=$(sudo grep Description= /etc/systemd/system/execution.service | awk -F'=' '{print $2}' | awk '{print $1}')
     case "${EL}" in
-        Nethermind ) _flag='JsonRpc.Host';;
-        Besu       ) _flag='rpc-http-host';;
-        Erigon     ) _flag='http.addr';;
-        Geth       ) _flag='http.addr';;
-        Reth       ) _flag='http.addr';;
+        Nethermind ) _flag='--JsonRpc.Host';;
+        Besu       ) _flag='--rpc-http-host';;
+        Erigon     ) _flag='--http.addr';;
+        Geth       ) _flag='--http.addr';;
+        Reth       ) _flag='--http.addr';;
         * ) echo "Execution client not detected"; return 0;;
     esac
-    if ! grep -q "${_flag}=${_exposed}" $_file; then
+    if sudo grep -e "^ExecStart=.*${_flag}=${_exposed}" "$_file"; then
+      info "✅ Execution client RPC access already accessible..."
+    else
       info "🔧 Updating execution client RPC access..."
-      cp ${_file} "$HOME"/_edit
-      # Remove old value
-      sed -r "s/.*--${_flag}[= ]+[0-9.]+.*/&\n/g; s/--${_flag}[= ]+[0-9.]+//g" "$HOME"/_edit > "$HOME"/_result
       # Add new value to end of ExecStart line
-      sed -i -e "s/^ExecStart.*$/& --${_flag}=${_exposed}/" "$HOME"/_result
-      # Install new config
-      sudo mv "$HOME"/_result ${_file}
-      sudo chown execution:execution ${_file}
+      sudo sed -i -e "s/^ExecStart.*$/& ${_flag}=${_exposed}/" $_file
       # Reload and restart
       sudo systemctl daemon-reload && sudo service ${_service} restart
+    fi
+}
+
+function enableSupernode(){
+    _service='consensus'
+    _file="/etc/systemd/system/${_service}.service"
+    sudo test -f /etc/systemd/system/consensus.service || return 0
+    CL=$(sudo grep Description= /etc/systemd/system/consensus.service | awk -F'=' '{print $2}' | awk '{print $1}')
+    case "${CL}" in
+        Nimbus     ) _flag='--debug-peerdas-supernode';;
+        Lodestar   ) _flag='--supernode';;
+        Lighthouse ) _flag='--supernode';;
+        Prysm      ) _flag='--subscribe-all-data-subnets';;
+        Teku       ) _flag='--p2p-subscribe-all-custody-subnets-enabled';;
+        * ) echo "Consensus client not detected."; return 0;;
+    esac
+    if sudo grep -e "^ExecStart=.*${_flag}" $_file; then
+      info "✅ Consensus client is already supernode..."
     else
-      info "✅ Execution client RPC access already accessible..."
+      info "🔧 Updating consensus client to be supernode..."
+      # Add new value to end of ExecStart line
+      sudo sed -i -e "s/^ExecStart.*$/& ${_flag}/" $_file
+      # Reload and restart
+      sudo systemctl daemon-reload && sudo service ${_service} restart
     fi
 }
 
@@ -247,8 +265,10 @@ if [[ $RPC_CONFIG == "REMOTE" ]]; then
 fi
 
 if [[ $RPC_CONFIG == "LOCAL" ]]; then
-  info "🔧 Checking ETH L1/Execution client RPC access"
+  info "🔧 Checking Execution client RPC access"
   exposeETHRPC
+  info "🔧 Checking Execution client supernode configuration"
+  enableSupernode
 fi
 
 # sanitize with grep
@@ -308,7 +328,7 @@ function removeAll() {
     cd $PLUGIN_INSTALL_PATH 2>/dev/null && docker compose down || true
     sudo docker rm -f $APP_NAME 2>/dev/null || true
     TAG=$(grep "DOCKER_TAG" $PLUGIN_INSTALL_PATH/.env | sed "s/^DOCKER_TAG=\(.*\)/\1/")
-    sudo docker rmi -f $DOCKER_IMAGE:"$TAG"
+    sudo docker rmi -f $DOCKER_IMAGE:"$TAG" || true
     if [[ -f "$PLUGIN_INSTALL_PATH/.cast_installed_by_plugin" && -f /usr/local/bin/cast ]]; then
       sudo rm /usr/local/bin/cast
     fi
