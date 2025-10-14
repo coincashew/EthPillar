@@ -140,7 +140,7 @@ function enableSupernode(){
         Nimbus     ) _flag='--debug-peerdas-supernode';;
         Lodestar   ) _flag='--supernode';;
         Lighthouse ) _flag='--supernode';;
-        Prysm      ) _flag='--subscribe-all-data-subnets';;
+        Prysm      ) _flag='--subscribe-all-subnets';;
         Teku       ) _flag='--p2p-subscribe-all-custody-subnets-enabled';;
         * ) echo "Consensus client not detected."; return 0;;
     esac
