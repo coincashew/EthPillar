@@ -736,6 +736,7 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=300
+LimitNOFILE=65536
 ExecStart=/usr/local/bin/lodestar/lodestar validator {_network} --dataDir=/var/lib/lodestar_validator --metrics=true --metrics.port=8009 --graffiti={GRAFFITI} {_beaconnodeparameters} {_feeparameters} {_mevparameters}
 
 [Install]

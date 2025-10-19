@@ -10,6 +10,7 @@ Group=csm_nimbus_validator
 Type=simple
 Restart=always
 RestartSec=5
+LimitNOFILE=65536
 EnvironmentFile=/opt/ethpillar/plugin-csm/csm_env_vars
 ExecStart=/opt/ethpillar/plugin-csm/nimbus_validator_client --data-dir=${DATA_DIR} --payload-builder=${PAYLOAD_BUILDER} --beacon-node=${BEACON_NODE_ADDRESS} --metrics --metrics-port=${METRICS_PORT} --metrics-address=${METRICS_ADDRESS} --suggested-fee-recipient=${FEE_RECIPIENT} --graffiti=${GRAFFITI} --doppelganger-detection=${DOPPELGANGER_DETECTION} --non-interactive
 

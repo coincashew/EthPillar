@@ -791,6 +791,7 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
+LimitNOFILE=65536
 ExecStart=/usr/local/bin/nimbus_validator_client --data-dir=/var/lib/nimbus_validator --metrics --metrics-port=8009 --non-interactive --doppelganger-detection=off --graffiti={GRAFFITI} {_beaconnodeparameters} {_feeparameters} {_mevparameters}
 
 [Install]

@@ -787,6 +787,7 @@ Restart=on-failure
 RestartSec=3
 KillSignal=SIGINT
 TimeoutStopSec=900
+LimitNOFILE=65536
 ExecStart=/usr/local/bin/lighthouse vc {_network} --datadir=/var/lib/lighthouse_validator --http --metrics --metrics-address=127.0.0.1 --metrics-port=8009 --graffiti={GRAFFITI} {_beaconnodeparameters} {_feeparameters} {_mevparameters}
 
 [Install]
