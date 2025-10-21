@@ -131,7 +131,7 @@ Description=Ethereum Metrics Exporter Service
 Wants=network-online.target
 After=network-online.target
 After=consensus.service
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple
