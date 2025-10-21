@@ -777,7 +777,7 @@ def install_lighthouse_validator():
 Description=Lighthouse Validator Client service for {eth_network.upper()}
 Wants=network-online.target
 After=network-online.target
-Documentation=https://www.coincashew.com
+Documentation=https://docs.coincashew.com
 
 [Service]
 Type=simple
