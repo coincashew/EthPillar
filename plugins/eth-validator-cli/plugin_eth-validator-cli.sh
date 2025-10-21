@@ -10,11 +10,11 @@
 SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Variables
-RELEASE_URL="https://api.github.com/repos/TobiWo/eth-validator-cli/releases/latest"
-GITHUB_RELEASE_NODES="https://github.com/TobiWo/eth-validator-cli/releases"
+RELEASE_URL="https://api.github.com/repos/TobiWo/eth-valctl/releases/latest"
+GITHUB_RELEASE_NODES="https://github.com/TobiWo/eth-valctl/releases"
 DESCRIPTION="🔧 eth-validator-cli: CLI tool for managing Ethereum validators via execution layer requests."
-DOCUMENTATION="https://github.com/TobiWo/eth-validator-cli"
-SOURCE_CODE="https://github.com/TobiWo/eth-validator-cli"
+DOCUMENTATION="https://github.com/TobiWo/eth-valctl"
+SOURCE_CODE="https://github.com/TobiWo/eth-valctl"
 APP_NAME="eth-validator-cli"
 PLUGIN_INSTALL_PATH="/opt/ethpillar/plugin-eth-validator-cli"
 PLUGIN_SOURCE_PATH="$SOURCE_DIR"
