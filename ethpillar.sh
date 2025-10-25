@@ -676,7 +676,7 @@ while true; do
         if [[ -z $EL ]] ; then
           EL="Not installed or still starting up."
         fi
-        whiptail --title "Installed versions" --msgbox "Consensus client: ${CL}\nExecution client: ${EL}\n${VC}\n${MB}" 10 78
+        whiptail --title "Installed versions" --msgbox "Consensus client: ${CL}\nExecution client: ${EL}\n${VC}\n${MB}\nEthPillar: $EP_VERSION" 12 78
         ;;
       📊)
         # Install btop process monitoring
