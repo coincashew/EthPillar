@@ -97,7 +97,7 @@ function buildMenu() {
 function buildMenuPlugins() {
   local _DIRNAME=("aztec")
   local _NAME=("Aztec Sequencer")
-  local _ICON=("🪿")
+  local _ICON=("🦆")
   for (( i=0; i<${#_NAME[@]}; i++ )); do
     test -d /opt/ethpillar/"${_DIRNAME[i]}" && OPTIONS+=("${_ICON[i]}" "${_NAME[i]}")
   done
@@ -119,7 +119,7 @@ OPTIONS+=(
   - ""
   🖥️ "System Administration"
   🛠️ "Toolbox"
-  🧩 "Plugins"
+  ⚙️ "Plugins"
   👋 "Quit"
 )
 
@@ -163,7 +163,7 @@ while true; do
       🔎)
         runScript plugins/dora/menu.sh
         ;;
-      🪿)
+      🦆)
         runScript plugins/aztec/menu.sh
         ;;
       ✅)
@@ -184,7 +184,7 @@ while true; do
       🛠️)
         submenuTools
         ;;
-      🧩)
+      ⚙️)
         submenuPlugins
         ;;
       👋)
@@ -1358,7 +1358,7 @@ while true; do
       🔧 "eth-validator-cli by TobiWo: managing validators via execution layer requests"
       🌈 "Prysm client-stats: collects metrics from CL & VC. publishes to beaconcha.in stats service"
       🐼 "Contributoor: powerful monitoring & data-gathering tool. enhances network transparency"
-      🪿 "Aztec Sepolia Sequencer: Run a sequencer validating node for privacy first L2 by Aztec Labs"
+      🦆 "Aztec Sepolia Sequencer: Run a sequencer validating node for privacy first L2 by Aztec Labs"
       - ""
       👋 "Back to main menu"
     )
@@ -1395,7 +1395,7 @@ while true; do
         fi
         submenuPluginSentinel
         ;;
-      🪿)
+      🦆)
         if [[ ! -d /opt/ethpillar/aztec ]]; then
             runScript plugins/aztec/plugin_aztec.sh -i
         fi
@@ -1439,11 +1439,11 @@ while true; do
     # Define the options for the submenu
     SUBOPTIONS=(
       ⚙️ "eth-duties: Show upcoming block proposals, attestations, sync duties"
-      🧰 "ethdo: Conduct Common Validator Tasks"
+      💎 "ethdo: Conduct common validator tasks"
       💾 "NCDU: Find large files. Analyze disk usage."
       🔗 "Beaconcha.in Validator Dashboard: Create a link for my validators"
-      🚪 "Beaconcha.in: Check Validator Entry/Exit Queue time"
-      💻 "EL: Switch Execution Clients"
+      🚪 "Beaconcha.in: Check validator entry/exit queue time"
+      💻 "EL: Switch execution clients"
       ⌚ "Timezone: Update machine's timezone"
       🌐 "Locales: Fix terminal formatting issues"
       📁 "Swapfile: Use disk space as extra RAM"
@@ -1457,7 +1457,7 @@ while true; do
     # Display the submenu and get the user's choice
     SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
-      --title "Tools" \
+      --title "Toolbox" \
       --menu "Choose one of the following options:" \
       0 0 0 \
       "${SUBOPTIONS[@]}" \
@@ -1488,7 +1488,7 @@ while true; do
       💾)
         findLargestDiskUsage
         ;;
-      🧰)
+      💎)
         installEthdo
         submenuEthdo
         ;;
