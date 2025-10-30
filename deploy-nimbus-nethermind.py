@@ -33,6 +33,7 @@ from consolemenu.items import *
 import argparse
 from dotenv import load_dotenv, dotenv_values
 from config import *
+from client_requirements import validate_version_for_network
 from tqdm import tqdm
 
 import os
@@ -481,6 +482,12 @@ def download_and_install_nethermind():
         global nethermind_version
         nethermind_version = response.json()['tag_name']
 
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('nethermind', nethermind_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
+
         # Adjust binary name
         if binary_arch == "amd64":
           _arch="x64"
@@ -609,6 +616,12 @@ def download_nimbus():
         response = requests.get(url)
         global nimbus_version
         nimbus_version = response.json()['tag_name']
+
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('nimbus', nimbus_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
 
         # Adjust binary name
         if binary_arch == "amd64":

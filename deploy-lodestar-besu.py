@@ -31,6 +31,7 @@ from consolemenu.items import *
 import argparse
 from dotenv import load_dotenv, dotenv_values
 from config import *
+from client_requirements import validate_version_for_network
 from tqdm import tqdm
 
 def clear_screen():
@@ -471,6 +472,12 @@ def download_and_install_besu():
         global besu_version
         besu_version = response.json()['tag_name']
 
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('besu', besu_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
+
         assets = response.json()['assets']
         download_url = None
         for asset in assets:
@@ -582,6 +589,12 @@ def download_lodestar():
         response = requests.get(url)
         global lodestar_version
         lodestar_version = response.json()['tag_name']
+
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('lodestar', lodestar_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
 
         # Search for the asset
         assets = response.json()['assets']

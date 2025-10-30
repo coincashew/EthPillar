@@ -31,6 +31,7 @@ from consolemenu.items import *
 import argparse
 from dotenv import load_dotenv, dotenv_values
 from config import *
+from client_requirements import validate_version_for_network
 from tqdm import tqdm
 
 def clear_screen():
@@ -442,6 +443,12 @@ def download_and_install_besu():
         global besu_version
         besu_version = response.json()['tag_name']
 
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('besu', besu_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
+
         assets = response.json()['assets']
         download_url = None
         for asset in assets:
@@ -544,6 +551,13 @@ def download_teku():
         response = requests.get(url)
         global teku_version
         teku_version = response.json()['tag_name']
+
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('teku', teku_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
+
         download_url = f'https://artifacts.consensys.net/public/teku/raw/names/teku.tar.gz/versions/{teku_version}/teku-{teku_version}.tar.gz'
 
         if download_url is None:

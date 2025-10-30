@@ -33,6 +33,7 @@ from consolemenu.items import *
 import argparse
 from dotenv import load_dotenv, dotenv_values
 from config import *
+from client_requirements import validate_version_for_network
 from tqdm import tqdm
 
 def clear_screen():
@@ -490,6 +491,12 @@ def download_and_install_reth():
         global reth_version
         reth_version = response.json()['tag_name']
 
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('reth', reth_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
+
         # Search for the asset
         assets = response.json()['assets']
         download_url = None
@@ -617,6 +624,12 @@ def download_lighthouse():
         response = requests.get(url)
         global lighthouse_version
         lighthouse_version = response.json()['tag_name']
+
+        # Validate version for network requirements
+        is_valid, error_msg = validate_version_for_network('lighthouse', lighthouse_version, eth_network)
+        if not is_valid:
+            print(error_msg)
+            exit(1)
 
         # Adjust binary name
         if binary_arch == "amd64":
