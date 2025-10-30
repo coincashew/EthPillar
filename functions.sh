@@ -914,10 +914,10 @@ exposeRpcEL(){
     read -rsn1 yn
     if [[ ${yn} = [Yy]* ]]; then
         _value=${_exposed}
-        ohai "Exposing $EL RPC Access with flag: ${_flag}"
+        ohai "Exposing $EL RPC Access with flag: ${_flag}=${_value}"
     else
         _value=${_closed}
-        ohai "Closing $EL RPC Access with flag: ${_flag}"
+        ohai "Closing $EL RPC Access with flag: ${_flag}=${_value}"
     fi
 
     _updateFlagAndRestartService
@@ -938,8 +938,8 @@ _updateFlagAndRestartService(){
         # Add new value after ExecStart line with \
         sudo sed -i -e "/^ExecStart=/a\  ${_flag}=${_value} \\\\" "${_file}"
       else
-        # Remove old value
-        sudo sed -i -r "s|${_flag}[= ]+[0-9.]+||" "${_file}"
+        # Remove old value; match any non-whitespace value, not just IPs
+        sudo sed -i -r "s|${_flag}[= ]+[^ \\]+[ ]*[\\]*||" "${_file}"
         # Add new value to end of ExecStart line
         sudo sed -i "s|^ExecStart.*$|& ${_flag}=${_value}|" "${_file}"
       fi
