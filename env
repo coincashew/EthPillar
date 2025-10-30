@@ -18,13 +18,13 @@ CL_IP_ADDRESS=127.0.0.1
 JWTSECRET_PATH="/secrets/jwtsecret"
 
 # Graffiti for validator. Maximum length is 16 characters.
-GRAFFITI="🏠🥩🪙🛡️🦒EthPillar"
+GRAFFITI="🏠🥩🪙🛡️🦓EthPillar"
 
 # ETH address receiving priority fees (tips) and MEV rewards
 FEE_RECIPIENT_ADDRESS=
 
 # MEV must be greater than this value or a block is produced locally
-MEV_MIN_BID="0.015"
+MEV_MIN_BID="0.006"
 
 # Ethereum Clients to be installed
 CONSENSUS_CLIENT=NIMBUS
