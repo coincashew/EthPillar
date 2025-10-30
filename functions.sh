@@ -925,32 +925,28 @@ exposeRpcEL(){
 
 # Helper function for Exposing RPC ports
 _updateFlagAndRestartService(){
-    # Check if multiline configuration file that ends with \
-    grep -q 'ExecStart.*\\$' ${_file}
-
-    if [[ $? = 0 ]]; then
-      # Multiline config
-      # Copy service file to editable location
-      cp ${_file} $HOME/_edit
-      # Remove multiline configs remove trailing \ and then extra empty lines
-      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" $HOME/_edit | sed 's=^\s*\\==g' | sed '/^[[:space:]]*$/d' > $HOME/_tmp
-      # Append new value after ExecStart line. Fix spacing and add \.
-      sed -e "/ExecStart.*$/a ${_flag}=${_value}" $HOME/_tmp | sed 's=^--.*$=  & \\=g' > $HOME/_result
-      rm $HOME/_tmp
+    sudo test -f "${_file}" || return 0
+    if sudo grep -q -e "${_flag}=${_value}" "${_file}"; then
+      info "✅ Already configured with ${_flag}=${_value}. Nothing to change."
     else
-      # All on one line config
-      # Copy service file to editable location
-      cp ${_file} $HOME/_edit
-      # Remove old value
-      sed -r "s/.*${_flag}[= ]+[0-9.]+.*/&\n/g; s/${_flag}[= ]+[0-9.]+//g" $HOME/_edit > $HOME/_result
-      # Add new value to end of ExecStart line
-      sed -i -e "s/^ExecStart.*$/& ${_flag}=${_value}/" $HOME/_result
+      info "🔧 Updating ${_service} service file..."
+      # Check if multiline configuration file that ends with \
+      if grep -q 'ExecStart.*\\$' "${_file}"; then
+        # Remove old value; match any non-whitespace value, not just IPs
+        sudo sed -i -r "s|${_flag}[= ]+[^ \\]+[ ]*[\\]*||" "${_file}"
+        sudo sed -i '/^[[:space:]]*$/d' "${_file}"
+        # Add new value after ExecStart line with \
+        sudo sed -i -e "/^ExecStart=/a\  ${_flag}=${_value} \\\\" "${_file}"
+      else
+        # Remove old value
+        sudo sed -i -r "s|${_flag}[= ]+[0-9.]+||" "${_file}"
+        # Add new value to end of ExecStart line
+        sudo sed -i "s|^ExecStart.*$|& ${_flag}=${_value}|" "${_file}"
+      fi
+      # Reload and restart
+      sudo systemctl daemon-reload && sudo service "${_service}" restart
+      info "✅ Configuration change complete: ${_flag}=${_value}"
     fi
-    # Install new config
-    sudo mv $HOME/_result ${_file}
-    # Reload and restart
-    sudo systemctl daemon-reload && sudo service ${_service} restart
-    ohai "Configuration change complete."
     sleep 5
 }
 
@@ -1136,7 +1132,7 @@ checkRelayLatency(){
     done
 
     # If any relays have high latency, warn user to consider removing distant relays
-    if [[ ${_warn} && ! ${NODE_MODE}=="Lido CSM Staking Node" ]]; then
+    if [[ ${_warn} -eq 1 && "${NODE_MODE}" != "Lido CSM Staking Node" ]]; then
       echo "${tty_bold}When relays are distant from your node, response times can be high. Consider removing relays with ⚠️ or ❌."
     fi
     ohai "Relay latency check complete."
