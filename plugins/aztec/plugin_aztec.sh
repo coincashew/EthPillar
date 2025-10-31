@@ -137,9 +137,9 @@ function enableSupernode(){
     sudo test -f /etc/systemd/system/consensus.service || return 0
     CL=$(sudo grep Description= /etc/systemd/system/consensus.service | awk -F'=' '{print $2}' | awk '{print $1}')
     case "${CL}" in
-        Nimbus     ) _flag='--debug-peerdas-supernode';;
-        Lodestar   ) _flag='--supernode';;
-        Lighthouse ) _flag='--supernode';;
+        Nimbus     ) _flag='--peerdas-supernode';;
+        Lodestar   ) _flag='--semiSupernode';;
+        Lighthouse ) _flag='--semi-supernode';;
         Prysm      ) _flag='--subscribe-all-subnets';;
         Teku       ) _flag='--p2p-subscribe-all-custody-subnets-enabled';;
         * ) echo "Consensus client not detected."; return 0;;
