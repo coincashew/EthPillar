@@ -1538,45 +1538,64 @@ done
 function getBackTitle(){
     getClient
     # Latest block
-    latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-    if [[ -n "$latest_block_number" && "$latest_block_number" != "0x0" ]]; then LB=$(printf 'Block %d' "$latest_block_number"); else LB="EL Syncing"; fi
+    latest_block_number=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' "${EL_RPC_ENDPOINT}" | jq -r '.result')
+    if [[ -n "$latest_block_number" && "$latest_block_number" != "0x0" ]]; then LB=$(printf '🧱 Block %d' "$latest_block_number"); else LB="🔄 EL Syncing"; fi
 
     # Latest slot
     LS=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot')
-    if [[ -n "$LS" ]]; then LS="Slot $LS"; else LS="CL Syncing"; fi
 
     # Format gas price
-    latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' ${EL_RPC_ENDPOINT} | jq -r '.result')
+    GP="N/A"
+    latest_gas_price=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' "${EL_RPC_ENDPOINT}" | jq -r '.result')
     if [[ -n "$latest_gas_price" ]]; then
       WEI=$(printf '%d' "$latest_gas_price");
-      if ((1000000000<=$WEI && $WEI<=1000000000000)); then
+      if ((1000000000<="$WEI" && "$WEI"<=1000000000000)); then
           GP="$(echo "scale=1; $WEI / 1000000000" | bc) Gwei"
-      elif ((1000000<=$WEI && $WEI<=1000000000)); then
+      elif ((1000000<="$WEI" && "$WEI"<=1000000000)); then
           GP="$(echo "scale=1; $WEI / 1000000" | bc) Mwei"
-      elif ((1000<=$WEI && $WEI<=1000000)); then
+      elif ((1000<="$WEI" && "$WEI"<=1000000)); then
           GP="$(echo "scale=1; $WEI / 1000" | bc) Kwei"
-      elif ((1<=$WEI && $WEI<=1000)); then
+      elif ((1<="$WEI" && "$WEI"<=1000)); then
           GP="$(echo "scale=1; $WEI / 1" | bc) wei"
       else
-          GP="Gas N/A - Syncing"
+          GP="🔄 Gas N/A - Syncing"
       fi
     fi
-
-    # Format backtitle
-    EL_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ "$LB" != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]] ; then printf "$LB | $GP" ; elif [[ -f /etc/systemd/system/execution.service ]]; then printf "Offline EL" ; fi)
-    CL_TEXT=$(if [[ $(systemctl is-active --quiet consensus) ]] || [[ "$LS" != "CL Syncing" ]]; then printf "$LS" ; elif [[ -f /etc/systemd/system/consensus.service ]]; then printf "Offline CL" ; fi)
-    VC_TEXT=$(if systemctl is-active --quiet validator; then printf " | VC $VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf " | Offline VC $VC"; fi)
-    CSM_TEXT=$(if systemctl is-active --quiet csm_nimbusvalidator; then printf " | CSM VC $CSM_VC"; elif [[ -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then printf " | Offline CSM VC $CSM_VC"; fi)
+    # Text formatting
+    EL_TEXT=$(if systemctl is-active --quiet execution || [[ "$LB" != "🔄 EL Syncing" ]] || [[ "$LB" == "🔄 EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf '%s | ⛽ %s' "$LB" "$GP" ; elif [[ -f /etc/systemd/system/execution.service ]]; then printf '🛑 %s' "$EL" ; fi)
+    CL_TEXT=$(if systemctl is-active --quiet consensus || [[ -n "$LS" ]]; then printf '🔗 Slot %s' "$LS" ; elif [[ -f /etc/systemd/system/consensus.service ]]; then printf '🛑 %s' "$CL" ; fi)
+    VC_TEXT=$(if systemctl is-active --quiet validator; then printf ' ✅ VC %s' "$VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf ' 🛑 VC %s' "$VC"; fi)
     HOSTNAME=$(hostname)
-    NETWORK_TEXT=$(if [[ $(systemctl is-active --quiet execution) ]] || [[ $LB != "EL Syncing" ]] || [[ "$LB" == "EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf "$NETWORK on $HOSTNAME | "; else printf "$HOSTNAME | " ; fi)
-    if [[ $NODE_MODE =~ "Validator Client Only" ]]; then
-        BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT}${VC_TEXT} | Public Goods by CoinCashew.eth"
-    else
-        BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | $CL_TEXT | $CL-$EL$VC_TEXT | Public Goods by CoinCashew.eth"
-    fi
-    if [[ ${PLUGIN_MODE:-false} == true ]]; then
-    BACKTITLE="${NETWORK_TEXT}${EL_TEXT} | ${CL_TEXT} | $CL-$EL$VC_TEXT$CSM_TEXT | Public Goods by CoinCashew.eth"
-    fi
+    NETWORK_TEXT=$(if systemctl is-active --quiet execution || [[ "$LB" != "🔄 EL Syncing" ]] || [[ "$LB" == "🔄 EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf '🌐 %s on 💻 %s' "$NETWORK" "$HOSTNAME"; else printf '💻 %s' "$HOSTNAME" ; fi)
+    END_TEXT="✨ Public Goods by CoinCashew.eth"
+
+    case ${NODE_MODE%% |*} in
+    "Solo Staking Node" | "Lido CSM Staking Node" | "Failover Staking Node" )
+      # Format CSM Plugin
+      [[ ${PLUGIN_MODE:-false} == true ]] && CSM_TEXT=$(if systemctl is-active --quiet csm_nimbusvalidator; then printf '✅ CSM VC %s' "$CSM_VC"; elif [[ -f /etc/systemd/system/csm_nimbusvalidator.service ]]; then printf '🛑 CSM VC %s' "$CSM_VC"; fi) && VC_TEXT+=" | $CSM_TEXT"
+      # Format mevboost
+      if [[ -f /etc/systemd/system/mevboost.service ]]; then
+        MB_TEXT=$(if systemctl is-active --quiet mevboost; then printf "✅ mevboost"; else printf "🛑 mevboost"; fi)
+      else
+        MB_TEXT="👀 mevboost not installed"
+      fi
+      # Handle integrated clients
+      [[ -n "$CL" ]] && CLIENT_TEXT="| $CL_TEXT | 👥 $CL-$EL |" || CLIENT_TEXT="| 👥 $EL"
+      [[ -n "$VC" ]] && VC_TEXT+=" |" || VC_TEXT=""
+      BACKTITLE="$NETWORK_TEXT | $EL_TEXT $CLIENT_TEXT${VC_TEXT} $MB_TEXT | $END_TEXT"
+      ;;
+    "Validator Client Only" | "Lido CSM Validator Client Only")
+      BACKTITLE="$NETWORK_TEXT | $EL_TEXT | $CL_TEXT | $VC_TEXT | $END_TEXT"
+      ;;
+    "Full Node")
+      # Handle integrated clients
+      [[ -n "$CL" ]] && CLIENT_TEXT="| $CL_TEXT | 👥 $CL-$EL" || CLIENT_TEXT="| 👥 $EL"
+      BACKTITLE="$NETWORK_TEXT | $EL_TEXT $CLIENT_TEXT | $END_TEXT"
+      ;;
+    *)
+      BACKTITLE="$NETWORK_TEXT"
+      ;;
+    esac
     export BACKTITLE
 }
 
