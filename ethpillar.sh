@@ -334,7 +334,7 @@ while true; do
     # Display the submenu and get the user's choice
     SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
-      --title "Execution Client" \
+      --title "Execution Client | ${EL}" \
       --menu "Choose one of the following options:" \
       0 0 0 \
       "${SUBOPTIONS[@]}" \
@@ -400,7 +400,7 @@ while true; do
     # Display the submenu and get the user's choice
     SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
-      --title "Consensus Client" \
+      --title "Consensus Client | ${CL}" \
       --menu "Choose one of the following options:" \
       0 0 0 \
       "${SUBOPTIONS[@]}" \
@@ -457,7 +457,7 @@ while true; do
       4 "Restart validator"
       5 "Edit configuration"
       )
-    [[ ${NODE_MODE} =~ "Validator Client Only" ]] && SUBOPTIONS+=(6 "Update to latest release")
+    [[ ${NODE_MODE} =~ "Validator Client Only" || ! -f /etc/systemd/system/consensus.service ]] && SUBOPTIONS+=(6 "Update to latest release")
     SUBOPTIONS+=(
       - ""
       10 "Generate / Import Validator Keys"
@@ -477,7 +477,7 @@ while true; do
     # Display the submenu and get the user's choice
     SUBCHOICE=$(whiptail --clear --cancel-button "Back" \
       --backtitle "$BACKTITLE" \
-      --title "Validator" \
+      --title "Validator | ${VC}" \
       --menu "Choose one of the following options:" \
       0 0 0 \
       "${SUBOPTIONS[@]}" \
@@ -666,17 +666,18 @@ while true; do
         if whiptail --title "Shutdown" --defaultno --yesno "Are you sure you want to shutdown?" 8 78; then sudo shutdown now; fi
         ;;
       📦)
-        test -f /etc/systemd/system/validator.service && getClient && getCurrentVersion && VC="Validator client: $CLIENT $VERSION"
-        test -f /etc/systemd/system/consensus.service && CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
-        test -f /etc/systemd/system/execution.service && EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' ${EL_RPC_ENDPOINT} | jq -r '.result')
-        MB=$(if [[ -f /etc/systemd/system/mevboost.service ]]; then printf "Mev-boost: $(mev-boost --version 2>&1 | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')"; else printf "Mev-boost: Not Installed"; fi)
-        if [[ -z $CL ]] ; then
-          CL="Not installed or still starting up."
+        test -f /etc/systemd/system/validator.service && getClient && getCurrentVersion && _VC="Validator client: $CLIENT $VERSION"
+        test -f /etc/systemd/system/consensus.service && _CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+        test -f /etc/systemd/system/execution.service && _EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' "${EL_RPC_ENDPOINT}" | jq -r '.result')
+        [[ $EL == "Erigon-Caplin" ]] && _CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
+        _MB=$(if [[ -f /etc/systemd/system/mevboost.service ]]; then printf "Mev-boost: $(mev-boost --version 2>&1 | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')"; else printf "Mev-boost: Not Installed"; fi)
+        if [[ -z $_CL ]] ; then
+          _CL="Not installed or still starting up."
         fi
-        if [[ -z $EL ]] ; then
-          EL="Not installed or still starting up."
+        if [[ -z $_EL ]] ; then
+          _EL="Not installed or still starting up."
         fi
-        whiptail --title "Installed versions" --msgbox "Consensus client: ${CL}\nExecution client: ${EL}\n${VC}\n${MB}\nEthPillar: $EP_VERSION" 12 78
+        whiptail --title "Installed versions" --msgbox "Consensus client: ${_CL}\nExecution client: ${_EL}\n${_VC}\n${_MB}\nEthPillar: $EP_VERSION" 12 78
         ;;
       📊)
         # Install btop process monitoring
@@ -1078,8 +1079,11 @@ while true; do
         sudo ufw allow 30303 comment 'Allow execution client port'
         sudo ufw allow 9000 comment 'Allow consensus client port'
         getClient
-        [[ $CL == "Lighthouse" ]] && sudo ufw allow 9001/udp comment 'Allow consensus client QUIC port'
-        [[ $EL == "Reth" ]] && sudo ufw allow 30304/udp comment 'Allow execution client discv5 port'
+        # Client specific ports
+        [[ $CL == "Lighthouse" ]] && sudo ufw allow 9001/udp comment 'Allow lighthouse QUIC port'
+        [[ $EL == "Reth" ]] && sudo ufw allow 30304/udp comment 'Allow reth discv5 port'
+        [[ $EL =~ "Erigon" ]] && sudo ufw allow 42069 comment 'Allow erigon torrent port'
+        [[ $EL =~ "Erigon" ]] && sudo ufw allow 30304 comment 'Allow erigon p2p port'
         sudo ufw enable
         sudo ufw status numbered
         ohai "UFW firewall enabled."
@@ -1543,6 +1547,7 @@ function getBackTitle(){
 
     # Latest slot
     LS=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/syncing" -H "accept: application/json" | jq -r '.data.head_slot')
+    [[ "$LS" == "0" ]] && LS="N/A | 🔄 CL Syncing"
 
     # Format gas price
     GP="N/A"
@@ -1564,10 +1569,12 @@ function getBackTitle(){
     # Text formatting
     EL_TEXT=$(if systemctl is-active --quiet execution || [[ "$LB" != "🔄 EL Syncing" ]] || [[ "$LB" == "🔄 EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf '%s | ⛽ %s' "$LB" "$GP" ; elif [[ -f /etc/systemd/system/execution.service ]]; then printf '🛑 %s' "$EL" ; fi)
     CL_TEXT=$(if systemctl is-active --quiet consensus || [[ -n "$LS" ]]; then printf '🔗 Slot %s' "$LS" ; elif [[ -f /etc/systemd/system/consensus.service ]]; then printf '🛑 %s' "$CL" ; fi)
-    VC_TEXT=$(if systemctl is-active --quiet validator; then printf ' ✅ VC %s' "$VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf ' 🛑 VC %s' "$VC"; fi)
+    VC_TEXT=$(if systemctl is-active --quiet validator; then printf '✅ VC %s' "$VC" ; elif [[ -f /etc/systemd/system/validator.service ]]; then printf '🛑 VC %s' "$VC"; fi)
     HOSTNAME=$(hostname)
     NETWORK_TEXT=$(if systemctl is-active --quiet execution || [[ "$LB" != "🔄 EL Syncing" ]] || [[ "$LB" == "🔄 EL Syncing" && "$latest_block_number" == "0x0" ]]; then printf '🌐 %s on 💻 %s' "$NETWORK" "$HOSTNAME"; else printf '💻 %s' "$HOSTNAME" ; fi)
     END_TEXT="✨ Public Goods by CoinCashew.eth"
+    # Check if integrated EL/CL client
+    if grep --ignore-case -q "Integrated Execution-Consensus Client" /etc/systemd/system/execution.service; then isIntegrated=true; fi
 
     case ${NODE_MODE%% |*} in
     "Solo Staking Node" | "Lido CSM Staking Node" | "Failover Staking Node" )
@@ -1579,17 +1586,19 @@ function getBackTitle(){
       else
         MB_TEXT="👀 mevboost not installed"
       fi
+      [[ -n "$CL" ]] && CLIENT_TEXT="| $CL_TEXT | 👥 $CL-$EL |" || CLIENT_TEXT="| 👥 $EL |"
       # Handle integrated clients
-      [[ -n "$CL" ]] && CLIENT_TEXT="| $CL_TEXT | 👥 $CL-$EL |" || CLIENT_TEXT="| 👥 $EL"
-      [[ -n "$VC" ]] && VC_TEXT+=" |" || VC_TEXT=""
-      BACKTITLE="$NETWORK_TEXT | $EL_TEXT $CLIENT_TEXT${VC_TEXT} $MB_TEXT | $END_TEXT"
+      [[ "${isIntegrated:-false}" == "true" ]] && CLIENT_TEXT="| $CL_TEXT | 👥 $EL |"
+      [[ -n "$VC" ]] && CLIENT_TEXT+=" $VC_TEXT |"
+      BACKTITLE="$NETWORK_TEXT | $EL_TEXT $CLIENT_TEXT $MB_TEXT | $END_TEXT"
       ;;
     "Validator Client Only" | "Lido CSM Validator Client Only")
       BACKTITLE="$NETWORK_TEXT | $EL_TEXT | $CL_TEXT | $VC_TEXT | $END_TEXT"
       ;;
     "Full Node")
-      # Handle integrated clients
       [[ -n "$CL" ]] && CLIENT_TEXT="| $CL_TEXT | 👥 $CL-$EL" || CLIENT_TEXT="| 👥 $EL"
+      # Handle integrated clients
+      [[ "${isIntegrated:-false}" == "true" ]] && CLIENT_TEXT="| $CL_TEXT | 👥 $EL |"
       BACKTITLE="$NETWORK_TEXT | $EL_TEXT $CLIENT_TEXT | $END_TEXT"
       ;;
     *)
@@ -1608,14 +1617,15 @@ function checkV1StakingSetup(){
 
 # If no consensus or validator client service is installed, start install workflow
 function installNode(){
-  if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/validator.service && ! -d /opt/ethpillar/aztec ]]; then
+  if [[ ! -f /etc/systemd/system/consensus.service && ! -f /etc/systemd/system/execution.service && ! -f /etc/systemd/system/validator.service && ! -d /opt/ethpillar/aztec ]]; then
           local _CLIENTCOMBO _file
           _CLIENTCOMBO=$(whiptail --title "⚙️  Node Configuration" --menu \
-          "Pick your combination:" 13 78 5 \
+          "Pick your combination:" 15 78 6 \
           "Nimbus-Nethermind" "lightweight. secure. easy to use. nim and .net" \
           "Lodestar-Besu" "performant. robust. ziglang & javascript & java" \
           "Teku-Besu" "institutional grade. enterprise staking. java" \
           "Lighthouse-Reth" "built in rust. security focused. performance" \
+          "Caplin-Erigon" "optimized integrated client. resource efficient. go lang" \
           "Aztec L2 Sequencer" "by Aztec Labs. support privacy. permissionless" \
           3>&1 1>&2 2>&3)
           if [ $? -gt 0 ]; then # user pressed <Cancel> button
@@ -1649,15 +1659,17 @@ function applyPatches(){
 
 # Determine node configuration
 function setNodeMode(){
-  if [[ -f /etc/systemd/system/execution.service && -f /etc/systemd/system/consensus.service && -f /etc/systemd/system/validator.service ]]; then
+  # Check if integrated EL/CL client
+  if grep --ignore-case -q "Integrated Execution-Consensus Client" /etc/systemd/system/execution.service; then isIntegrated=true; fi
+  if [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service || ${isIntegrated:-false} == "true" ]] && [[ -f /etc/systemd/system/validator.service ]]; then
      if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOODI}" /etc/systemd/system/validator.service) ]]; then
         NODE_MODE="Lido CSM Staking Node"
      else
         NODE_MODE="Solo Staking Node"
      fi
-  elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]] && [[ -f /etc/systemd/system/mevboost.service ]]; then
+  elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service || ${isIntegrated:-false} == "true" ]] && [[ -f /etc/systemd/system/mevboost.service ]]; then
     NODE_MODE="Failover Staking Node"
-  elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service ]]; then
+  elif [[ -f /etc/systemd/system/execution.service ]] && [[ -f /etc/systemd/system/consensus.service || ${isIntegrated:-false} == "true" ]]; then
     NODE_MODE="Full Node"
   elif [[ -f /etc/systemd/system/validator.service ]]; then
     if [[ $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_MAINNET}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOLESKY}" /etc/systemd/system/validator.service) || $(grep --ignore-case -oE "${CSM_FEE_RECIPIENT_ADDRESS_HOODI}" /etc/systemd/system/validator.service) ]]; then

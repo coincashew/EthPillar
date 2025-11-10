@@ -31,6 +31,8 @@ function getCurrentVersion(){
 
 function getClient(){
     EL=$(cat /etc/systemd/system/execution.service | grep Description= | awk -F'=' '{print $2}' | awk '{print $1}')
+    # Handle integrated ELs i.e. Erigon-Caplin
+    EL=${EL%-*}
 }
 
 function selectCustomTag(){
