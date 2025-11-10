@@ -21,7 +21,8 @@ FUSAKA_MIN_VERSIONS = {
     # Execution clients
     'reth': 'v1.7.0',
     'besu': '25.7.0',
-    'nethermind': 'v1.34.0'
+    'nethermind': 'v1.34.0',
+    'erigon': 'v3.2.1'
 }
 
 

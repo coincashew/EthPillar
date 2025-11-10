@@ -123,6 +123,7 @@ print_node_info() {
   chrony_status=$(if systemctl is-active --quiet chronyd ; then printf "Online" ; else printf "Offline" ; fi)
   consensus_status=$(if systemctl is-active --quiet consensus ; then printf "Online" ; elif [ -f /etc/systemd/system/consensus.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   execution_status=$(if systemctl is-active --quiet execution ; then printf "Online" ; elif [ -f /etc/systemd/system/execution.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
+  [[ $EL == "Erigon-Caplin" ]] && consensus_status=$execution_status
   validator_status=$(if systemctl is-active --quiet validator ; then printf "Online" ; elif [ -f /etc/systemd/system/validator.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   mevboost_status=$(if systemctl is-active --quiet mevboost ; then printf "Online" ; elif [ -f /etc/systemd/system/mevboost.service ]; then printf "Offline" ; else printf "Not Installed"; fi)
   ethpillar_commit=$(git -C "${BASE_DIR}" rev-parse HEAD)
@@ -1190,6 +1191,7 @@ EOF
 
 # Explain Validator Actions and Topup features
 showValidatorActions(){
+    [[ -z $NETWORK ]] && error "Unable to determine NETWORK"
     local VA_PATH="/en/validator-actions"
     local TOPUP_PATH="/en/top-up"
     declare -A VALIDATOR_ACTION_URLS=()
