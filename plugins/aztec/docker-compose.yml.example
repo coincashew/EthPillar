@@ -1,7 +1,7 @@
 services:
   aztec-node:
     container_name: aztec-sequencer
-    image: aztecprotocol/aztec:${DOCKER_TAG:-2.0.4}
+    image: aztecprotocol/aztec:${DOCKER_TAG:-2.1.2}
     restart: unless-stopped
     stop_grace_period: 1m
     mem_limit: 16g                          # Limit to 16GB RAM
@@ -28,7 +28,7 @@ services:
       SEQ_PUBLISHER_PRIVATE_KEY: ${SEQ_PUBLISHER_PRIVATE_KEY:-}
       GOVERNANCE_PROPOSER_PAYLOAD_ADDRESS: ${GOVERNANCE_PROPOSER_PAYLOAD_ADDRESS}
     entrypoint: >
-      sh -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start --node --archiver --sequencer --snapshots-url https://snapshots.aztec.graphops.xyz/files/'
+      sh -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start --node --archiver --sequencer --sync-mode full'
     ports:
       - ${AZTEC_PORT}:${AZTEC_PORT}
       - ${P2P_PORT}:${P2P_PORT}
