@@ -1476,8 +1476,6 @@ while true; do
       ⚙️)
         # Skip if no validators installed
         if [[ ! -f /etc/systemd/system/validator.service ]]; then echo "No validator(s) installed. Press ENTER to continue."; read; break; fi
-        # Skip if arm64
-        [[ "${_arch}" == "arm64" ]] && echo "eth-duties not available for arm64. Press ENTER to continue." && read && break
 
         # Install eth-duties if not yet installed
         if [[ ! -f /usr/local/bin/eth-duties ]]; then
