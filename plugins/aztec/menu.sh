@@ -286,7 +286,7 @@ function registerValidatorSepolia(){
 \n3) Connect your validator wallet [$VALIDATOR_ADDRESS]
 \n4) Register on the network (follow the instructions).
 \n5) You'll join the registration queue and receive the Explorer Discord role.
-\n6) Verify your verifying validator status at:\nhttps://aztecscan.xyz/l1/validators/${VALIDATOR_ADDRESS}"
+\n6) Verify your verifying validator status at:\nhttps://testnet.aztecscan.xyz/l1/validators/${VALIDATOR_ADDRESS}"
 
   # Register screen
   whiptail --title "Register Validator Information" --msgbox "$MSG" 24 83
@@ -378,7 +378,7 @@ New Validators:
     export __SELECT
     sudo bash -c "bash '$BASE_DIR/plugins/aztec/helper_root.sh'"
 
-    whiptail --title "Registration complete" --msgbox "Verify your verifying validator status at:\n\nhttps://aztecscan.xyz/l1/validators/${VALIDATOR_ADDRESS}" 9 83
+    whiptail --title "Registration complete" --msgbox "Verify your verifying validator status at:\n\nhttps://testnet.aztecscan.xyz/l1/validators/${VALIDATOR_ADDRESS}" 9 83
   fi
 }
 
