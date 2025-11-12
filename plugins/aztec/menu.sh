@@ -338,39 +338,46 @@ function registerValidator(){
   # If there's a list of comma separated nodes, use the first node
   ETHEREUM_HOSTS=${ETHEREUM_HOSTS%%,*}  
 
-  local MSG="⚠️ Ensure your Aztec node is fully synced before proceeding.
-⚠️ Ensure your VALIDATOR_ADDRESS (.env file) has at least 0.01 sepoliaETH.
+  local MSG="⚠️ Ensure your node is fully synced before proceeding.
 
-To register your validator, we will run this command.
+Prerequisites for Smooth Registration:
 
-aztec add-l1-validator
-  --staking-asset-handler 0xF739D03e98e23A7B65940848aBA8921fF3bAc4b2
-  --l1-rpc-urls $ETHEREUM_HOSTS
-  --l1-chain-id 11155111
-  --private-key <HIDDEN>
-  --attester $VALIDATOR_ADDRESS
-  --proposer-eoa $VALIDATOR_ADDRESS
+Existing Validators:
 
-where
-  --staking-asset-handler is the Aztec L1 contract address
-  --l1-chain-id is the Sepolia chainid"
+- Hold 0.2–0.5 Sepolia ETH in your new validator address for gas fees.
+- Ensure your previous wallet also has some Sepolia ETH.
+- Have access to your old sequencer private key.
+
+New Validators:
+
+ - Contact the team with your EVM address to receive the required 200,000 STK.
+ - You need 0.2–0.5 Sepolia ETH in your new validator address for gas fees."
 
   # Register screen
-  whiptail --title "Register Validator Information" --msgbox "$MSG" 24 78
+  whiptail --title "Register Validator Information" --msgbox "$MSG" 22 78
   # Confirmation to run command
-  if whiptail --title "Register as Verifying Validator" --defaultno --yesno "Are you sure you want to register?" 9 78; then
-    aztec add-l1-validator \
-      --staking-asset-handler 0xF739D03e98e23A7B65940848aBA8921fF3bAc4b2 \
-      --l1-rpc-urls "$ETHEREUM_HOSTS" \
-      --l1-chain-id 11155111 \
-      --private-key "$VALIDATOR_PRIVATE_KEYS" \
-      --attester "$VALIDATOR_ADDRESS" \
-      --proposer-eoa "$VALIDATOR_ADDRESS"
-      # shellcheck disable=SC2181
-      if [ $? -ne 0 ]; then
-         error "Unable to register validator. Try again."
-         exit 1
+  if whiptail --title "Register as Verifying Validator" --defaultno --yesno "I understand the prerequisites and have the requirements. Continue?" 9 78; then
+
+    __SELECT=$(whiptail --title "🔧 Validator type" --menu \
+          "$__MSG" 9 78 2 \
+          "EXISTING" "| I have my old validator info" \
+          "NEW     " "| I have 200k STK from the team" \
+          3>&1 1>&2 2>&3)
+    if [ -z "$__SELECT" ]; then exit; fi # pressed cancel
+
+    if [[ -f /opt/ethpillar/aztec/keystore/key1.json ]]; then
+      if ! whiptail --title "⚠️ You might have already registered" --defaultno --yesno "key1.json already exists.\n\n⚠️ BACKUP YOUR CURRENT KEYS FIRST!\n\nOverwrite and continue?" 11 78; then
+        exit
       fi
+    fi
+
+    info "⚠️ ✏️ BE READY to write down your private key both ETH and BLS and your ETH address."
+    read -p "   Press [Enter] to generate your new keys..."
+
+    # Runs as root. Workaround for aztec issue: Due to how we containerize our applications, we require your working directory to be somewhere within /root.
+    export __SELECT
+    sudo bash -c "bash '$BASE_DIR/plugins/aztec/helper_root.sh'"
+
     whiptail --title "Registration complete" --msgbox "Verify your verifying validator status at:\n\nhttps://aztecscan.xyz/l1/validators/${VALIDATOR_ADDRESS}" 9 83
   fi
 }
@@ -383,19 +390,17 @@ while true; do
       🔍 "View Logs"
       🔧 "Edit .env configuration"
       📦 "Edit docker-compose.yml"
+      🔒 "Edit keystore file"
       ✅ "Start"
       🛑 "Stop"
       🔄 "Restart"
       🛠️ "Update docker image"
       🗑️ "Uninstall plugin"
       - ""
-    )
-    [[ -f "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase ]] && SUBOPTIONS+=(🔐 "Backup Validator Key: Keep this safe")
-    SUBOPTIONS+=(
       🛡️ "Troubleshooting: Run Health Checks"
       💻 "Claim Guardian Role: Run a Node with good uptime"
       🚀 "Register Validator: Become a Verifying Validator"
-      🔒 "Next Steps: Useful Aztec Links"
+      🌐 "Next Steps: Useful Aztec Links"
       - ""
       👋 "Back to main menu"
     )
@@ -427,6 +432,14 @@ while true; do
       📦)
         sudo "${EDITOR}" "$PLUGIN_INSTALL_PATH"/docker-compose.yml
         ;;
+      🔒)
+        if [[ -f /opt/ethpillar/aztec/keystore/key1.json ]]; then
+          sudo "${EDITOR}" /opt/ethpillar/aztec/keystore/key1.json
+        else
+          info "No key store. To create keystore, use Register Validator: Become a Verifying Validator"
+          sleep 3
+        fi
+        ;;
       ✅)
         startCommand
         ;;
@@ -452,28 +465,6 @@ while true; do
         cd ~/git/ethpillar
         exec ./plugins/aztec/plugin_aztec.sh -r
         ;;
-      🔐)
-        tmpfile=$(mktemp)
-        {
-          echo "1) Keep this safe."
-          echo "2) Do not share or lose it."
-          echo "3) Can be used to restore your validator."
-          echo "4) Make a backup."
-          echo "Note: Disregard this seed backup, if you're using private keys generated elsewhere."
-          echo
-          echo "File Location: $PLUGIN_INSTALL_PATH/aztec_seed_phrase"
-          echo
-          echo "======START OF FILE====="
-          sudo cat "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase
-          echo "======END OF FILE======="
-        } > "$tmpfile"
-        whiptail --title "🔐 Backup Validator Seed" --textbox "$tmpfile" 28 83
-        rm -f "$tmpfile"
-        if whiptail --title "🗑️ Delete Validator Seed" --defaultno --yesno "Are you sure you made a backup and we can delete the seed now?" 9 78; then
-          sudo rm "$PLUGIN_INSTALL_PATH"/aztec_seed_phrase || error "Unable to delete aztec_seed_phrase"
-          whiptail --title "Seed is deleted from node" --msgbox "You have deleted the secret seed phrase." 8 78
-        fi
-        ;;
       🛡️)
         healthChecks
         ;; 
@@ -481,9 +472,9 @@ while true; do
         claimGuardianRole
         ;;
       🚀)
-        registerValidatorSepolia
+        registerValidator
         ;;
-      🔒)
+      🌐)
         nextSteps
         ;;
       👋)

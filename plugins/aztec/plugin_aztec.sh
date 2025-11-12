@@ -238,27 +238,6 @@ if ! command -v cast &> /dev/null; then
    install_foundry
 fi
 
-info "🔐 Generating new Ethereum private key for validator with cast..."
-# shellcheck disable=SC2033
-sudo install -d -m 755 "$PLUGIN_INSTALL_PATH" || true
-tmp_seed=$(mktemp)
-umask 077
-cast wallet new-mnemonic > "$tmp_seed" || error "Unable to generate new cast wallet"
-ADDRESS=$(grep "Address: " "$tmp_seed" | awk '{print $2}')
-PRIVATE_KEY=$(grep "Private key: " "$tmp_seed" | awk '{print $3}')
-# shellcheck disable=SC2033
-sudo install -m 600 "$tmp_seed" "$PLUGIN_INSTALL_PATH/aztec_seed_phrase"
-rm -f "$tmp_seed"
-
-info "🔧 Update config values in .env..."
-# shellcheck disable=SC2015
-[[ -n $PRIVATE_KEY ]] && sudo sed -i "s/^VALIDATOR_PRIVATE_KEYS.*$/VALIDATOR_PRIVATE_KEYS=${PRIVATE_KEY}/" $PLUGIN_INSTALL_PATH/.env || error "Unable to set VALIDATOR_PRIVATE_KEYS"
-# shellcheck disable=SC2015
-[[ -n $ADDRESS ]] && sudo sed -i "s/^VALIDATOR_ADDRESS.*$/VALIDATOR_ADDRESS=${ADDRESS}/" $PLUGIN_INSTALL_PATH/.env || error "Unable to set VALIDATOR_ADDRESS"
-# shellcheck disable=SC2015
-# COINBASE is block reward recipient. On mainnet, use a unique hardware wallet secured ETH address.
-[[ -n $ADDRESS ]] && sudo sed -i "s/^COINBASE.*$/COINBASE=${ADDRESS}/" $PLUGIN_INSTALL_PATH/.env || error "Unable to set COINBASE"
-
 if [[ $RPC_CONFIG == "REMOTE" ]]; then
   sudo sed -i "s|^ETHEREUM_HOSTS.*$|ETHEREUM_HOSTS=${ETH_RPC}|" $PLUGIN_INSTALL_PATH/.env || error "Unable to set ETHEREUM_HOSTS"
   sudo sed -i "s|^L1_CONSENSUS_HOST_URLS.*$|L1_CONSENSUS_HOST_URLS=${BEACON_RPC}|" $PLUGIN_INSTALL_PATH/.env || error "Unable to set L1_CONSENSUS_HOST_URLS"
