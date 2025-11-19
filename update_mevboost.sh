@@ -22,7 +22,7 @@ function getCurrentVersion(){
     #Find version in format #.#.#
     if [[ $INSTALLED ]] ; then
         # shellcheck disable=SC2001
-        VERSION=$(echo "$INSTALLED" | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')
+        VERSION=$(echo "$INSTALLED" | sed -E 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
 	else
 		VERSION="Client not installed."
 	fi
@@ -82,7 +82,7 @@ function promptViewLogs(){
 function getLatestVersion(){
     TAG_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
 	#Get tag name and remove leading 'v'
-	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed -E 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
 	# Exit in case of null tag
 	[[ -z $TAG ]] || [[ $TAG == "null"  ]] && echo "ERROR: Couldn't find the latest version tag" && exit 1
 	CHANGES_URL="https://github.com/flashbots/mev-boost/releases"
