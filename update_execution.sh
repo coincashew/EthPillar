@@ -149,18 +149,36 @@ function updateClient(){
 	case $EL in
 	  Nethermind)
 		[[ "${_arch}" == "amd64" ]] && _architecture="x64" || _architecture="arm64"
+
+		# Force lowercase platform (important!)
+		_platform_lower=$(echo "${_platform}" | tr '[:upper:]' '[:lower:]')
+
 		RELEASE_URL="https://api.github.com/repos/NethermindEth/nethermind/$_URL_SUFFIX"
-		BINARIES_URL=$(curl -s "$RELEASE_URL" | jq -r ".assets[] | select(.name) | .browser_download_url" | grep --ignore-case "${_platform}"-"${_architecture}")
+
+		BINARIES_URL=$(curl -s "$RELEASE_URL" | \
+		jq -r --arg plat "$_platform_lower" --arg arch "${_architecture}" \
+		'.assets[] | select(.name | endswith("-\($plat)-\($arch).zip")) | .browser_download_url' | \
+		head -n 1 | tr -d '\r\n ')
+
+		if [[ -z "$BINARIES_URL" ]]; then
+			curl -s "$RELEASE_URL" | jq -r '.assets[].name' >&2
+			error "❌ Could not find download URL for ${_platform_lower}-${_architecture}.zip in release $_URL_SUFFIX"
+		fi
+
 		info "✅ Downloading URL: $BINARIES_URL"
+
 		cd "$HOME" || true
+
 		wget -O nethermind.zip "$BINARIES_URL" || error "❌ Unable to wget file"
+
 		unzip -o nethermind.zip -d "$HOME"/nethermind || error "❌ Unable to unzip file"
-		rm nethermind.zip
+		rm -f nethermind.zip
+
 		sudo systemctl stop execution
 		sudo rm -rf /usr/local/bin/nethermind
 		sudo mv "$HOME"/nethermind /usr/local/bin/nethermind || error "❌ Unable to move file"
-		sudo systemctl start execution
-	    ;;
+		sudo systemctl start execution		
+		;;
 	  Besu)
 		updateJRE
 		RELEASE_URL="https://api.github.com/repos/hyperledger/besu/$_URL_SUFFIX"

@@ -18,19 +18,24 @@ _platform=$(get_platform)
 _arch=$(get_arch)
 
 function getCurrentVersion(){
-    INSTALLED=$(mev-boost --version 2>&1)
-    #Find version in format #.#.#
-    if [[ $INSTALLED ]] ; then
+    INSTALLED=$(mev-boost --version 2>&1)  # capture stderr too, just in case
+    if [[ -n $INSTALLED ]] ; then
         # shellcheck disable=SC2001
-        VERSION=$(echo "$INSTALLED" | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')
-	else
-		VERSION="Client not installed."
-	fi
+		# Extract major.minor or major.minor.patch, optional leading 'v', ignore suffix/commit info
+		# Patch part is optional to handle versions like 1.11 (no patch)
+		VERSION=$(echo "$INSTALLED" | sed 's/.*v\?\([0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?\).*/\1/')
+        # Fallback if sed fails or no match
+        if [[ -z $VERSION || $VERSION == "$INSTALLED" ]]; then
+            VERSION="unknown"
+        fi
+    else
+        VERSION="Client not installed."
+    fi
 }
 
 function selectCustomTag(){
 	local _listTags _tag
-	_listTags=$(curl -fsSL https://api.github.com/repos/flashbots/mev-boost/tags | jq -r '.[].name' | sort -hr)
+	_listTags=$(curl -fsSL https://api.github.com/repos/flashbots/mev-boost/tags | jq -r '.[].name' | sort -Vr)
 	if [ -z "$_listTags" ]; then
 		error "❌ Could not retrieve tags. Try again later."
 	fi
@@ -80,9 +85,7 @@ function promptViewLogs(){
 }
 
 function getLatestVersion(){
-    TAG_URL="https://api.github.com/repos/flashbots/mev-boost/releases/latest"
-	#Get tag name and remove leading 'v'
-	TAG=$(curl -s $TAG_URL | jq -r .tag_name | sed 's/.*v\([0-9]*\.[0-9]*\).*/\1/')
+	TAG=$(curl -s https://api.github.com/repos/flashbots/mev-boost/releases/latest | jq -r .tag_name | sed 's/^v//')  # strip leading 'v' → "1.10.1"
 	# Exit in case of null tag
 	[[ -z $TAG ]] || [[ $TAG == "null"  ]] && echo "ERROR: Couldn't find the latest version tag" && exit 1
 	CHANGES_URL="https://github.com/flashbots/mev-boost/releases"

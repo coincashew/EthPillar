@@ -12,7 +12,7 @@
 # 🙌 Ask questions on Discord:
 #    * https://discord.gg/dEpAVWgFNB
 
-EP_VERSION="5.2.4"
+EP_VERSION="5.2.7"
 
 # Default text editor
 export EDITOR="nano"
@@ -670,11 +670,14 @@ while true; do
         test -f /etc/systemd/system/consensus.service && _CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
         test -f /etc/systemd/system/execution.service && _EL=$(curl -s -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":2}' "${EL_RPC_ENDPOINT}" | jq -r '.result')
         [[ $EL == "Erigon-Caplin" ]] && _CL=$(curl -s -X GET "${API_BN_ENDPOINT}/eth/v1/node/version" -H "accept: application/json" | jq -r '.data.version')
-        _MB=$(if [[ -f /etc/systemd/system/mevboost.service ]]; then printf "Mev-boost: $(mev-boost --version 2>&1 | sed 's/.*\s\([0-9]*\.[0-9]*\).*/\1/')"; else printf "Mev-boost: Not Installed"; fi)
-        if [[ -z $_CL ]] ; then
+        _MB=$(if [[ -f /etc/systemd/system/mevboost.service ]]; then printf "Mev-boost: %s" "$(mev-boost --version 2>&1 | sed -E 's/.*v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/' || echo 'unknown')"; else printf "Mev-boost: Not Installed"; fi)
+        if [[ -z "${_VC:-}" ]] ; then
+          _VC="Validator client: Not installed."
+        fi
+        if [[ -z "${_CL:-}" ]] ; then
           _CL="Not installed or still starting up."
         fi
-        if [[ -z $_EL ]] ; then
+        if [[ -z "${_EL:-}" ]] ; then
           _EL="Not installed or still starting up."
         fi
         whiptail --title "Installed versions" --msgbox "Consensus client: ${_CL}\nExecution client: ${_EL}\n${_VC}\n${_MB}\nEthPillar: $EP_VERSION" 12 78

@@ -15,6 +15,28 @@
 
 ---
 
+## Switching to this fork for updates!
+
+This is a fork of CoinCashew's excellent staking tool at https://github.com/coincashew/ethpillar.  
+We haven't heard from CoinCashew for a while, so this is a place where fixes and updates can be made.
+
+To get the updates from this repo you'll need to do the following only once:
+
+After installing EthPillar normally (see below) or if you have an existing install, run these two commands:
+
+```bash
+cd ~/git/ethpillar
+git remote set-url origin https://github.com/mjkeating/EthPillar.git
+```
+
+After this, from EthPillar you can run **System Administration → Update EthPillar** and it will update from this repo.
+
+Hopefully, we'll see CoinCashew return soon!
+
+**Note:** This fork is now at version **5.2.7** - it includes fixes for Nethermind and MEV-Boost updating. Also, improved versions display.
+
+---
+
 ## 🚀 What is EthPillar?
 
 EthPillar is a free, open-source tool to set up and manage your Ethereum node with just a few commands. Whether you’re home solo staking, using Lido CSM, defending cypherpunk ethos with Aztec L2 sequencer node, or running your own RPC node, EthPillar makes everything easy—from installing clients to monitoring your system—all via a friendly text user interface (TUI).
