@@ -56,13 +56,15 @@ function selectCustomTag(){
 	    error "❌ Unsupported or unknown client '$EL'."
 	    ;;
 	esac
-	local _listTags _tag
-	_listTags=$(curl -fsSL https://api.github.com/repos/"${_repo}"/tags | jq -r '.[].name' | sort -hr)
-	if [ -z "$_listTags" ]; then
+	local _tag
+	# Create array from tags, using mapfile for proper handling
+	mapfile -t _listTags < <(curl -fsSL https://api.github.com/repos/"${_repo}"/tags | jq -r '.[].name' | sort -V | tac)
+	
+	if [ -z "${_listTags[0]}" ]; then
 		error "❌ Could not retrieve tags for ${_repo}. Try again later."
 	fi
 	info "ℹ️  Select the Version: Type the number to use. For example, 2 (for the 2nd most recent release)"
-	select _tag in $_listTags; do
+	select _tag in "${_listTags[@]}"; do
         if [ -n "$_tag" ]; then
 			__OTHERTAG=$_tag
             break
