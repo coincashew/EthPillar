@@ -151,6 +151,8 @@ function updateClient(){
 		test -f /etc/systemd/system/validator.service && sudo service validator start
 	    ;;
 	  Lodestar)
+		# The Lodestar binary bundles Node.js, which needs libatomic1
+		sudo apt-get install -y libatomic1 || error "❌ Unable to install libatomic1"
 		RELEASE_URL="https://api.github.com/repos/ChainSafe/lodestar/$_URL_SUFFIX"
 		LATEST_TAG=$(curl -s "$RELEASE_URL" | jq -r ".tag_name")
 		BINARIES_URL="https://github.com/ChainSafe/lodestar/releases/download/${LATEST_TAG}/lodestar-${LATEST_TAG}-${_platform}-${_arch}.tar.gz"

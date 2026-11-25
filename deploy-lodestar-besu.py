@@ -579,6 +579,9 @@ WantedBy=multi-user.target
 
 def download_lodestar():
     if consensus_client == 'lodestar':
+        # The Lodestar binary bundles Node.js, which needs libatomic1
+        subprocess.run(["sudo", "apt-get", '-qq', "install", "libatomic1", "-y"], check=True)
+
         # Change to the home folder
         os.chdir(os.path.expanduser("~"))
 
